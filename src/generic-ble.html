@@ -1,0 +1,166 @@
+<script type="text/x-red" data-template-name="Generic BLE in">
+  <div class='form-row'>
+    <label for='node-input-name'>
+      <i class='fa fa-tag'></i>
+      <span data-i18n='node-red:common.label.name'></span>
+    </label>
+    <input type='text' id='node-input-name' data-i18n='[placeholder]node-red:common.label.name'>
+  </div>
+  <div class="form-row node-input-genericBle">
+    <label for="node-input-bleenv">
+      <i class="fa fa-random"></i>
+      <span data-i18n="generic-ble.label.genericBle"></span></label>
+    <input type="text" id="node-input-genericBle">
+  </div>
+  <div class="form-row" id="node-toString">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-toString" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-input-toString" style="width: 70%;" data-i18n="generic-ble.label.toString"></label>
+  </div>
+</script>
+
+<script type="text/javascript">
+  RED.nodes.registerType('Generic BLE in', {
+    category: 'input',
+    color: '#4d94ff',
+    defaults: {
+      name: { value: '' },
+      genericBle: { type: 'Generic BLE', required: true },
+      toString: { value: false, required: false }
+    },
+    inputs: 0,
+    outputs: 1,
+    icon: '../bluetooth.png',
+    label: function() {
+      return this.name || 'Generic BLE';
+    },
+    labelStyle: function() {
+      return this.name ? 'node_label_italic' : '';
+    }
+  });
+</script>
+
+<script type="text/x-red" data-template-name="Generic BLE out">
+  <div class='form-row'>
+    <label for='node-input-name'>
+      <i class='fa fa-tag'></i>
+      <span data-i18n='node-red:common.label.name'></span>
+    </label>
+    <input type='text' id='node-input-name' data-i18n='[placeholder]node-red:common.label.name'>
+  </div>
+  <div class="form-row node-input-genericBle">
+    <label for="node-input-bleenv">
+      <i class="fa fa-random"></i>
+      <span data-i18n="generic-ble.label.genericBle"></span></label>
+    <input type="text" id="node-input-genericBle">
+  </div>
+  <div class="form-row" id="node-toString">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-toString" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-input-toString" style="width: 70%;" data-i18n="generic-ble.label.toString"></label>
+  </div>
+</script>
+
+<script type="text/javascript">
+  RED.nodes.registerType('Generic BLE out', {
+    category: 'output',
+    color: '#4d94ff',
+    defaults: {
+      name: { value: '' },
+      genericBle: { type: 'Generic BLE', required: true },
+      toString: { value: false, required: false }
+    },
+    inputs: 1,
+    outputs: 0,
+    icon: '../bluetooth.png',
+    align: 'right',
+    label: function() {
+      return this.name || 'Generic BLE';
+    },
+    labelStyle: function() {
+      return this.name ? 'node_label_italic' : '';
+    }
+  });
+</script>
+
+<script type="text/x-red" data-template-name="Generic BLE">
+  <div class='form-row'>
+    <label for='node-config-input-bleDevices'>
+      <i class='fa fa-tag'></i>
+      <span data-i18n='generic-ble.label.bleDevices'></span>
+    </label>
+    <select type='text' id='node-config-input-bleDevices' style='width: 30%;'>
+    </select>
+    <input type="checkbox" id="node-config-input-selectable" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-config-input-selectable" style="width: 70%;" data-i18n="generic-ble.label.selectable"></label>
+  </div>
+  <div class='form-row'>
+    <label for='node-config-input-localName'>
+      <i class='fa fa-tag'></i>
+      <span data-i18n='generic-ble.label.localName'></span>
+    </label>
+    <input type='text' id='node-config-input-localName' data-i18n='[placeholder]generic-ble.placeholder.localName'>
+  </div>
+  <div class='form-row'>
+    <label for='node-config-input-address'>
+      <i class='fa fa-random'></i>
+      <span data-i18n='generic-ble.label.address'></span>
+    </label>
+    <input type='text' id='node-config-input-address' data-i18n='[placeholder]generic-ble.placeholder.address'>
+  </div>
+  <div class='form-row'>
+    <label for='node-config-input-uuid'>
+      <i class='fa fa-random'></i>
+      <span data-i18n='generic-ble.label.uuid'></span>
+    </label>
+    <input type='text' id='node-config-input-uuid' data-i18n='[placeholder]generic-ble.placeholder.uuid'>
+  </div>
+  <div class="form-row node-config-input-initInterval">
+    <label for="node-input-initInterval">
+      <i class="fa fa-edit"></i>
+      <span data-i18n="generic-ble.label.initInterval"></span></label>
+    <input type="text" id="node-config-input-initInterval" maxlength="5" data-i18n='[placeholder]generic-ble.placeholder.initInterval'>
+  </div>
+</script>
+
+<script type='text/javascript'>
+  'use strict';
+  RED.nodes.registerType('Generic BLE',{
+    category: 'config',
+    defaults: {
+      localName: { value: '', required: true },
+      address: { value: '', required: true },
+      uuid: { value: '', required: false },
+    },
+    label: function() {
+      return this.localName;
+    },
+    oneditprepare: function() {
+      var that = this;
+      $('#node-config-input-bleDevices').prop('disabled', true);
+      $('#node-config-input-selectable').prop('disabled', true);
+      $.getJSON('__bledevlist', function(bleDevices) {
+        $.each(bleDevices, function(i, v) {
+          var label = (v.localName || that._('generic-ble.label.unnamed')) + ' (' + v.rssi + ' dBm)';
+          var option = $('<option></option>').attr('value', JSON.stringify(v)).text(label);
+          $('#node-config-input-bleDevices').append(option);
+        });
+        if (bleDevices.length > 0) {
+          $('#node-config-input-selectable').prop('disabled', false);
+        }
+        $('#node-config-input-selectable').blur(function() {
+          var selected = JSON.parse($(this).val());
+          $('#node-config-input-localName').val(selected.localName);
+          $('#node-config-input-address').val(selected.address);
+          $('#node-config-input-uuid').val(selected.uuid);
+          $.getJSON('__bledev/' + encodeURIComponent(selected.address), function(bleDevice) {
+            $('#node-config-input-localName').val(bleDevice.localName);
+            $('#node-config-input-address').val(bleDevice.address);
+            $('#node-config-input-uuid').val(bleDevice.uuid);
+          });
+        });
+        $('#node-config-input-selectable').val(false);
+      });
+    }
+  });
+</script>
