@@ -1,0 +1,19 @@
+language: node_js
+node_js:
+  - 4.7
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - g++-4.8
+    - bluez
+
+sudo: require
+
+install:
+  - if [[ $TRAVIS_OS_NAME == "linux" ]]; then export CXX=g++-4.8; fi
+  - $CXX --version
+  - npm install --unsafe-perm
+  - npm install

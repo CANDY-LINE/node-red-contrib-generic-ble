@@ -1,0 +1,16 @@
+.git
+.node-red
+node_modules
+images
+src
+tests
+.gitignore
+.npmignore
+.jshintrc
+.travis.yml
+gulpfile.js
+*.tgz
+*.zip
+*.log
+.dockerignore
+.node-version

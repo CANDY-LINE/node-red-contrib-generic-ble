@@ -1,0 +1,4 @@
+# Message Resources for English (fallback language)
+generic-ble:
+  label:
+    node: Generic BLE

@@ -1,0 +1,7 @@
+node_modules
+*.map
+dist
+!gulpfile.js
+*.tgz
+*.log
+.node-version

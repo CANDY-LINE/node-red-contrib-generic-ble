@@ -1,0 +1,79 @@
+{
+  "name": "node-red-contrib-generic-ble",
+  "version": "1.0.0",
+  "description": "Node-RED nodes for generic BLE devices",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CANDY-LINE/node-red-contrib-generic-ble.git"
+  },
+  "author": "Daisuke Baba <baba.daisuke@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/CANDY-LINE/node-red-contrib-generic-ble/issues"
+  },
+  "scripts": {
+    "build": "gulp build",
+    "test": "gulp test",
+    "clean": "gulp clean",
+    "prepublish": "gulp build"
+  },
+  "homepage": "https://github.com/CANDY-LINE/node-red-contrib-generic-ble#readme",
+  "keywords": [
+    "node-red",
+    "bluetooth",
+    "BLE",
+    "bluetooth low energy",
+    "bluetooth smart",
+    "CANDY RED",
+    "CANDY EGG"
+  ],
+  "browserify-shim": {
+  },
+  "devDependencies": {
+    "node-red": "^0.16.2",
+    "babel": "^6.23.0",
+    "babel-cli": "^6.24.0",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-babili": "0.0.12",
+    "babel-preset-es2015": "^6.24.0",
+    "babelify": "^7.3.0",
+    "browserify": "^14.3.0",
+    "browserify-shim": "^3.8.14",
+    "chai": "^3.3.0",
+    "del": "^2.2.2",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-clean-css": "^2.4.0",
+    "gulp-cli": "^1.2.2",
+    "gulp-header": "^1.8.8",
+    "gulp-htmlmin": "^3.0.0",
+    "gulp-if": "^2.0.2",
+    "gulp-jshint": "^2.0.4",
+    "gulp-less": "^3.3.0",
+    "gulp-manifest": "^0.1.1",
+    "gulp-mocha": "^4.3.0",
+    "gulp-resources": "^0.5.0",
+    "gulp-sourcemaps": "^2.5.1",
+    "gulp-uglify": "^2.1.2",
+    "gulp-util": "^3.0.8",
+    "gulp-yaml": "^1.0.1",
+    "jshint": "^2.9.1",
+    "jshint-stylish": "^2.0.1",
+    "mocha": "^3.0.2",
+    "sinon": "^2.1.0",
+    "supertest": "^1.1.0",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "dependencies": {
+    "noble": "^1.8.1",
+    "source-map-support": "^0.4.2",
+    "lru-cache": "^4.0.0"
+  },
+  "node-red": {
+    "nodes": {
+      "generic-ble": "dist/generic-ble.js"
+    }
+  }
+}
