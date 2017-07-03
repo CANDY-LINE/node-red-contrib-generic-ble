@@ -84,13 +84,12 @@ function toDetailedObject(peripheral) {
   let p = Promise.resolve();
   return toApiObject(peripheral).then(obj => {
     if (peripheral.services) {
-      obj.services = peripheral.services.map((s) => {
-        let service = {
-          uuid: s.uuid,
-          name: s.name,
-          type: s.type
-        };
-        service.characteristics = s.characteristics.map((c) => {
+      obj.characteristics = [];
+      peripheral.services.map((s) => {
+        obj.characteristics = obj.characteristics.concat(s.characteristics.map((c) => {
+          if (!c.type) {
+            return null;
+          }
           let characteristic = {
             uuid: c.uuid,
             name: c.name,
@@ -110,8 +109,7 @@ function toDetailedObject(peripheral) {
             });
           }
           return characteristic;
-        });
-        return service;
+        }).filter(c => c));
       });
     }
     return p.then(() => Promise.resolve(obj));
