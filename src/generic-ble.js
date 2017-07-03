@@ -66,14 +66,52 @@ function stopScanning(RED) {
 
 function toApiObject(peripheral) {
   if (!peripheral) {
-    return null;
+    return Promise.resolve(null);
   }
-  return {
+  return Promise.resolve({
     localName: peripheral.advertisement.localName,
     address: peripheral.address === 'unknown' ? '' : peripheral.address,
     uuid: peripheral.uuid,
     rssi: peripheral.rssi
-  };
+  });
+}
+
+function toDetailedObject(peripheral) {
+  let p = Promise.resolve();
+  return toApiObject(peripheral).then(obj => {
+    if (peripheral.services) {
+      obj.services = peripheral.services.map((s) => {
+        let service = {
+          uuid: s.uuid,
+          name: s.name,
+          type: s.type
+        };
+        service.characteristics = s.characteristics.map((c) => {
+          let characteristic = {
+            uuid: c.uuid,
+            name: c.name,
+            type: c.type,
+            properties: c.properties
+          };
+          if (c.type === 'org.bluetooth.characteristic.gap.device_name') {
+            p = new Promise((resolve) => {
+              c.read((err, data) => {
+                if (err) {
+                  return resolve();
+                }
+                obj.localName = data.toString();
+                peripheral.advertisement.localName = obj.localName;
+                return resolve();
+              });
+            });
+          }
+          return characteristic;
+        });
+        return service;
+      });
+    }
+    return p.then(() => Promise.resolve(obj));
+  });
 }
 
 export default function(RED) {
@@ -98,7 +136,13 @@ export default function(RED) {
   RED.httpAdmin.get(
       '/__bledevlist',
       RED.auth.needsPermission('generic-ble.read'), (req, res) => {
-    res.json(bleDevices.keys().map(k => toApiObject(bleDevices.get(k))));
+    let promises = bleDevices.keys().map(k => toApiObject(bleDevices.get(k)));
+    Promise.all(promises).then(body => {
+      if (DEBUG) {
+        console.log('/__bledevlist', body);
+      }
+      res.json(body);
+    });
   });
   // __bledev endpoint
   RED.httpAdmin.get(
@@ -108,10 +152,59 @@ export default function(RED) {
     if (!address) {
       return res.status(404).end();
     }
-    let bleDevice = toApiObject(bleDevices.get(address));
-    if (!bleDevice) {
+    let peripheral = bleDevices.get(address);
+    if (!peripheral) {
       return res.status(404).end();
     }
-    res.json(bleDevice);
+    // load the live object for invoking functions
+    // as cached object is disconnected from noble context
+    peripheral = noble._peripherals[peripheral.uuid];
+    if (!peripheral) {
+      return res.status(404).end();
+    }
+    toApiObject(peripheral).then(bleDevice => {
+      if (!bleDevice.services && peripheral.state === 'disconnected') {
+        RED.log.debug(`[GenericBLE] Connecting ${address}`);
+        let timeout = setTimeout(() => {
+          RED.log.error(`[GenericBLE] BLE Connection Timeout`);
+          res.status(500).send('Connection Timeout').end();
+          peripheral.disconnect();
+        }, 5000);
+        peripheral.connect((err) => {
+          if (err) {
+            RED.log.error(`${err}\n${err.stack}`);
+            return;
+          }
+          clearTimeout(timeout);
+          RED.log.debug(`[GenericBLE] Searching services in ${address}`);
+          peripheral.discoverAllServicesAndCharacteristics(
+              (err, services, characteristics) => {
+            if (err) {
+              RED.log.error(`${err}\n${err.stack}`);
+              return;
+            }
+            toDetailedObject(peripheral).then(bleDevice => {
+              if (DEBUG) {
+                console.log(`services.length=${services.length}, characteristics.length=${characteristics.length}`);
+                console.log(`/__bledev/${address}`, bleDevice);
+              }
+              res.json(bleDevice);
+              peripheral.disconnect();
+            }).catch(err => {
+              RED.log.error(`${err}\n${err.stack}`);
+              return res.status(500).send(err.toString()).end();
+            });
+          });
+        });
+      } else {
+        if (DEBUG) {
+          console.log(`/__bledev/${address}`, bleDevice);
+        }
+        res.json(bleDevice);
+      }
+    }).catch(err => {
+      RED.log.error(`${err}\n${err.stack}`);
+      return res.status(500).send(err.toString()).end();
+    });
   });
 }
