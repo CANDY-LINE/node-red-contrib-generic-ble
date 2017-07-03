@@ -7,7 +7,7 @@ generic-ble:
     bleDevices: Scan Result
     localName: Local Name
     unnamed: (Unnamed)
-    address: MAC address
+    address: MAC
     uuid: UUID
   placeholder:
     address: aa:11:bb:22:cc:33 (case insensitive)
