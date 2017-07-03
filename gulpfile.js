@@ -53,15 +53,14 @@ gulp.task('assets', ['i18n'], () => {
 
 gulp.task('js', ['assets'], () => {
   return gulp.src('./src/**/*.js')
+    .pipe(gulpif(sourcemapEnabled, sourcemaps.init(), util.noop()))
     .pipe(babel({
       minified: minified,
       compact: minified,
       presets: ["es2015"],
-      plugins: ['add-module-exports'],
-      sourceMaps: sourcemapEnabled,
+      plugins: ['add-module-exports']
     }))
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.init({loadMaps: true}), util.noop()))
-    .pipe(uglify({
+    .pipe(gulpif(!sourcemapEnabled, uglify({
       mangle: minified,
       compress: {
         dead_code: true,
@@ -70,12 +69,12 @@ gulp.task('js', ['assets'], () => {
         unused: true,
         toplevel: true,
         if_return: true,
-        drop_console: !sourcemapEnabled,
+        drop_console: true,
         conditionals: true,
         unsafe_math: true,
         unsafe: true
       },
-    }))
+    }), util.noop()))
     .pipe(gulpif(sourcemapEnabled, sourcemaps.write(), util.noop()))
     .pipe(gulp.dest('./dist'));
 });
