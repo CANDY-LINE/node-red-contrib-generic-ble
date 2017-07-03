@@ -4,6 +4,8 @@ generic-ble:
     genericBle: BLE
     toString: Stringify in payload
     selectable: Select from scan result
+    bleDevices: Scan Result
+    localName: Local Name
     unnamed: (Unnamed)
     address: MAC address
     uuid: UUID
