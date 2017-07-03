@@ -1,5 +1,6 @@
 'use strict';
 
+import 'source-map-support/register';
 import noble from 'noble';
 import NodeCache from 'node-cache';
 
