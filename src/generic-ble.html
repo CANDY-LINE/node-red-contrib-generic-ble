@@ -122,6 +122,15 @@
 
 <script type='text/javascript'>
   'use strict';
+  function getAddressOrUUID(peripheral) {
+    if (!peripheral) {
+      return null;
+    }
+    if (!peripheral.address || peripheral.address === 'unknown') {
+      return peripheral.uuid;
+    }
+    return peripheral.address;
+  }
   RED.nodes.registerType('Generic BLE',{
     category: 'config',
     defaults: {
@@ -143,14 +152,18 @@
           $('#node-config-input-bleDevices').append(option);
         });
         if (bleDevices.length > 0) {
-          $('#node-config-input-selectable').prop('disabled', false);
+          $('#node-config-input-selectable')
+            .prop('disabled', false)
+            .click(function() {
+              $('#node-config-input-bleDevices').prop('disabled', !$(this).prop('checked'));
+            });
         }
-        $('#node-config-input-selectable').blur(function() {
+        $('#node-config-input-bleDevices').change(function() {
           var selected = JSON.parse($(this).val());
           $('#node-config-input-localName').val(selected.localName);
           $('#node-config-input-address').val(selected.address);
           $('#node-config-input-uuid').val(selected.uuid);
-          $.getJSON('__bledev/' + encodeURIComponent(selected.address), function(bleDevice) {
+          $.getJSON('__bledev/' + encodeURIComponent(getAddressOrUUID(selected)), function(bleDevice) {
             $('#node-config-input-localName').val(bleDevice.localName);
             $('#node-config-input-address').val(bleDevice.address);
             $('#node-config-input-uuid').val(bleDevice.uuid);
