@@ -141,6 +141,16 @@
     label: function() {
       return this.localName;
     },
+    oneditsave: function() {
+      var address = $('#node-config-input-address').val();
+      if (address) {
+        $('#node-config-input-address').val(address.toLowerCase());
+      }
+      var uuid = $('#node-config-input-uuid').val();
+      if (uuid) {
+        $('#node-config-input-uuid').val(uuid.toLowerCase());
+      }
+    },
     oneditprepare: function() {
       var that = this;
       $('#node-config-input-bleDevices').prop('disabled', true);
