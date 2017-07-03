@@ -166,9 +166,9 @@ export default function(RED) {
     }
     toApiObject(peripheral).then(bleDevice => {
       if (!bleDevice.services && peripheral.state === 'disconnected') {
-        RED.log.debug(`[GenericBLE] Connecting ${address}`);
+        RED.log.debug(`[GenericBLE] <${address}> Connecting peripheral...`);
         let timeout = setTimeout(() => {
-          RED.log.error(`[GenericBLE] BLE Connection Timeout`);
+          RED.log.error(`[GenericBLE] <${address}> BLE Connection Timeout: ${bleDevice.localName} (${bleDevice.rssi})`);
           res.status(500).send('Connection Timeout').end();
           peripheral.disconnect();
           deleteBleDevice(address);
@@ -179,7 +179,7 @@ export default function(RED) {
             return;
           }
           clearTimeout(timeout);
-          RED.log.debug(`[GenericBLE] Searching services in ${address}`);
+          RED.log.debug(`[GenericBLE] <${address}> Searching services in the peripheral...`);
           peripheral.discoverAllServicesAndCharacteristics(
               (err, services, characteristics) => {
             if (err) {
