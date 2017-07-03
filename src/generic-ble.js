@@ -67,11 +67,10 @@ function toApiObject(peripheral) {
   if (!peripheral) {
     return null;
   }
-  let serviceUuids = peripheral.advertisement.serviceUuids || [];
   return {
     localName: peripheral.advertisement.localName,
-    address: peripheral.address,
-    uuid: serviceUuids.length > 0 ? serviceUuids[0] : '',
+    address: peripheral.address === 'unknown' ? '' : peripheral.address,
+    uuid: peripheral.uuid,
     rssi: peripheral.rssi
   };
 }
