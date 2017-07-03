@@ -28,6 +28,13 @@ function getAddressOrUUID(peripheral) {
   return peripheral.address;
 }
 
+function deleteBleDevice(addressOrUUID) {
+  bleDevices.del(addressOrUUID);
+  if (DEBUG) {
+    console.log(`[GenericBLE:DEBUG] Delete => ${addressOrUUID}`);
+  }
+}
+
 function onDiscover(peripheral) {
   let addressOrUUID = getAddressOrUUID(peripheral);
   if (!addressOrUUID) {
@@ -38,10 +45,7 @@ function onDiscover(peripheral) {
       console.log('[GenericBLE:DEBUG] ',peripheral);
     }
   } else {
-    bleDevices.del(addressOrUUID);
-    if (DEBUG) {
-      console.log(`[GenericBLE:DEBUG] Delete => ${addressOrUUID}`);
-    }
+    deleteBleDevice(addressOrUUID);
   }
 }
 
@@ -169,6 +173,7 @@ export default function(RED) {
           RED.log.error(`[GenericBLE] BLE Connection Timeout`);
           res.status(500).send('Connection Timeout').end();
           peripheral.disconnect();
+          deleteBleDevice(address);
         }, 5000);
         peripheral.connect((err) => {
           if (err) {
