@@ -151,14 +151,7 @@
           var option = $('<option></option>').attr('value', JSON.stringify(v)).text(label);
           $('#node-config-input-bleDevices').append(option);
         });
-        if (bleDevices.length > 0) {
-          $('#node-config-input-selectable')
-            .prop('disabled', false)
-            .click(function() {
-              $('#node-config-input-bleDevices').prop('disabled', !$(this).prop('checked'));
-            });
-        }
-        $('#node-config-input-bleDevices').change(function() {
+        function changeOrBlur() {
           var selected = JSON.parse($(this).val());
           $('#node-config-input-localName').val(selected.localName);
           $('#node-config-input-address').val(selected.address);
@@ -168,8 +161,20 @@
             $('#node-config-input-address').val(bleDevice.address);
             $('#node-config-input-uuid').val(bleDevice.uuid);
           });
-        });
+        }
+        $('#node-config-input-bleDevices').change(changeOrBlur).blur(changeOrBlur);
         $('#node-config-input-selectable').val(false);
+        if (bleDevices.length > 0) {
+          $('#node-config-input-selectable')
+            .prop('disabled', false)
+            .click(function() {
+              let checked = $(this).prop('checked');
+              $('#node-config-input-bleDevices').prop('disabled', !checked);
+              if (checked) {
+                $('#node-config-input-bleDevices').trigger('change');
+              }
+            });
+        }
       });
     }
   });
