@@ -41,7 +41,7 @@ function onDiscover(peripheral) {
     return;
   } else if (peripheral.connectable) {
     bleDevices.set(addressOrUUID, peripheral);
-    if (DEBUG) {
+    if (false && DEBUG) {
       console.log('[GenericBLE:DEBUG] ',peripheral);
     }
   } else {
@@ -141,7 +141,7 @@ export default function(RED) {
     let promises = bleDevices.keys().map(k => toApiObject(bleDevices.get(k)));
     Promise.all(promises).then(body => {
       if (DEBUG) {
-        console.log('/__bledevlist', body);
+        console.log('/__bledevlist', JSON.stringify(body, null, 2));
       }
       res.json(body);
     });
@@ -195,7 +195,7 @@ export default function(RED) {
             toDetailedObject(peripheral).then(bleDevice => {
               if (DEBUG) {
                 console.log(`services.length=${services.length}, characteristics.length=${characteristics.length}`);
-                console.log(`/__bledev/${address}`, bleDevice);
+                console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
               }
               peripheral.disconnect();
               noble.startScanning([], true);
@@ -210,7 +210,7 @@ export default function(RED) {
         });
       } else {
         if (DEBUG) {
-          console.log(`/__bledev/${address}`, bleDevice);
+          console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
         }
         return res.json(bleDevice);
       }
