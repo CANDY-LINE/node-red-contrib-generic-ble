@@ -171,11 +171,15 @@ export default function(RED) {
           RED.log.error(`[GenericBLE] <${address}> BLE Connection Timeout: ${bleDevice.localName} (${bleDevice.rssi})`);
           res.status(500).send('Connection Timeout').end();
           peripheral.disconnect();
+          noble.startScanning([], true);
           deleteBleDevice(address);
         }, 5000);
+        noble.stopScanning();
         peripheral.connect((err) => {
           if (err) {
             RED.log.error(`${err}\n${err.stack}`);
+            peripheral.disconnect();
+            noble.startScanning([], true);
             return;
           }
           clearTimeout(timeout);
@@ -184,6 +188,8 @@ export default function(RED) {
               (err, services, characteristics) => {
             if (err) {
               RED.log.error(`${err}\n${err.stack}`);
+              peripheral.disconnect();
+              noble.startScanning([], true);
               return;
             }
             toDetailedObject(peripheral).then(bleDevice => {
@@ -191,10 +197,13 @@ export default function(RED) {
                 console.log(`services.length=${services.length}, characteristics.length=${characteristics.length}`);
                 console.log(`/__bledev/${address}`, bleDevice);
               }
-              res.json(bleDevice);
               peripheral.disconnect();
+              noble.startScanning([], true);
+              return res.json(bleDevice);
             }).catch(err => {
               RED.log.error(`${err}\n${err.stack}`);
+              peripheral.disconnect();
+              noble.startScanning([], true);
               return res.status(500).send(err.toString()).end();
             });
           });
@@ -203,7 +212,7 @@ export default function(RED) {
         if (DEBUG) {
           console.log(`/__bledev/${address}`, bleDevice);
         }
-        res.json(bleDevice);
+        return res.json(bleDevice);
       }
     }).catch(err => {
       RED.log.error(`${err}\n${err.stack}`);
