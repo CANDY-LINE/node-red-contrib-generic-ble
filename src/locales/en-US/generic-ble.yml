@@ -9,6 +9,8 @@ generic-ble:
     unnamed: (Unnamed)
     address: MAC
     uuid: UUID
+    characteristics: GATT Characteristics
+    notAvailable: (not available)
   placeholder:
     localName: BLE device name
     address: aa:11:bb:22:cc:33 (case insensitive)

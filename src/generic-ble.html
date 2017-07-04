@@ -118,6 +118,10 @@
     </label>
     <input type='text' id='node-config-input-uuid' data-i18n='[placeholder]generic-ble.placeholder.uuid'>
   </div>
+  <div class='form-row node-config-input-characteristics-container-row'>
+    <i class='fa fa-gear'></i> <span data-i18n='generic-ble.label.characteristics'></span>
+    <ol id='node-config-input-characteristics-container'></ol>
+  </div>
 </script>
 
 <script type='text/javascript'>
@@ -137,6 +141,17 @@
       localName: { value: '', required: false },
       address: { value: '', required: false },
       uuid: { value: '', required: false },
+      // characteristic
+      // {
+      //   "uuid": "2a19",
+      //   "name": "Battery Level",
+      //   "type": "org.bluetooth.characteristic.battery_level",
+      //   "properties": [
+      //     "read",
+      //     "notify"
+      //   ]
+      // },
+      characteristics: { value: [] },
     },
     label: function() {
       return this.localName;
@@ -153,6 +168,53 @@
     },
     oneditprepare: function() {
       var that = this;
+
+      $('#node-config-input-characteristics-container').css('min-height','250px').css('min-width','450px').editableList({
+        addItem: function(container, i, opt) {
+          var characteristic = opt;
+          var row = $('<div/>').appendTo(container);
+          var row2 = $('<div/>').appendTo(container);
+
+          if (!characteristic.type) {
+            var na = $('<span/>',{style:'margin-left: 5px;'}).text(that._('generic-ble.label.notAvailable')).appendTo(row);
+            return;
+          }
+
+          var name = $('<span/>',{style:'margin-left: 5px;'}).text(characteristic.name).appendTo(row);
+          var uuid = $('<span/>',{style:'margin-left: 5px;'}).text(' (' + characteristic.uuid + ')').appendTo(row);
+
+          var properties = characteristic.properties || [];
+          if (properties.indexOf('read') >= 0) {
+            $('<span/>',{
+                style:'float: right; color: red; font-weight: bold; margin-right:0.4em;',
+                class:'debug-message-element'
+              }).text('Read').appendTo(row);
+          }
+          if (properties.indexOf('write') >= 0) {
+            $('<span/>',{
+                style:'float: right; color: green; font-weight: bold; margin-right:0.4em;',
+                class:'debug-message-element'
+              }).text('Write').appendTo(row);
+          }
+          if (properties.indexOf('notify') >= 0) {
+            $('<span/>',{
+                style:'float: right; color: blue; font-weight: bold; margin-right:0.4em;',
+                class:'debug-message-element'
+              }).text('Notify').appendTo(row);
+          }
+
+          var type = $('<span/>',{style:'margin-left: 5px;'}).text(characteristic.type).appendTo(row2);
+        },
+        sortable: false,
+        removable: false,
+        addButton: false
+      });
+
+      for (var i = 0; i < this.characteristics.length; i++) {
+        var characteristic = this.characteristics[i];
+        $('#node-config-input-characteristics-container').editableList('addItem', characteristic);
+      }
+
       $('#node-config-input-bleDevices').prop('disabled', true);
       $('#node-config-input-selectable').prop('disabled', true);
       $.getJSON('__bledevlist', function(bleDevices) {
@@ -166,10 +228,27 @@
           $('#node-config-input-localName').val(selected.localName);
           $('#node-config-input-address').val(selected.address);
           $('#node-config-input-uuid').val(selected.uuid);
+          var children = $('#node-config-input-characteristics-container')[0].children;
+          var len = children.length;
+          for (var i = 0; i < len; i++) {
+            children[0].remove();
+          }
+          var spin = $('<img id="node-config-input-characteristics-laoding" src="red/images/spin.svg"/>',
+            {style:'float: center;'})
+            .appendTo($('#node-config-input-characteristics-container'));
           $.getJSON('__bledev/' + encodeURIComponent(getAddressOrUUID(selected)), function(bleDevice) {
+            spin.remove();
             $('#node-config-input-localName').val(bleDevice.localName);
             $('#node-config-input-address').val(bleDevice.address);
             $('#node-config-input-uuid').val(bleDevice.uuid);
+            var characteristics = bleDevice.characteristics || [];
+            for (var i = 0; i < characteristics.length; i++) {
+              $('#node-config-input-characteristics-container')
+                .editableList('addItem', characteristics[i]);
+            }
+          }).fail(function () {
+            spin.remove();
+            $('#node-config-input-characteristics-container').editableList('addItem');
           });
         }
         $('#node-config-input-bleDevices').change(changeOrBlur).blur(changeOrBlur);
