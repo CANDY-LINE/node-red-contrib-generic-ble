@@ -3,6 +3,7 @@
 import 'source-map-support/register';
 import noble from 'noble';
 import NodeCache from 'node-cache';
+import semaphore from 'semaphore';
 
 const DEBUG = false;
 const bleDevices = new NodeCache({
@@ -10,6 +11,9 @@ const bleDevices = new NodeCache({
   checkperiod : 60 * 1000
 });
 const configBleDevices = {};
+const Semaphores = {
+  BLE_SCANNING: semaphore(1)
+};
 
 function onStateChange(state) {
   if (state === 'poweredOn') {
@@ -138,7 +142,6 @@ export default function(RED) {
   }
   RED.nodes.registerType('Generic BLE', GenericBLENode);
 
-
   startScanning(RED);
 
   // __bledevlist endpoint
@@ -178,40 +181,52 @@ export default function(RED) {
           RED.log.error(`[GenericBLE] <${address}> BLE Connection Timeout: ${bleDevice.localName} (${bleDevice.rssi})`);
           res.status(500).send({status:500, message:'Connection Timeout'}).end();
           peripheral.disconnect();
+          Semaphores.BLE_SCANNING.leave();
           noble.startScanning([], true);
           deleteBleDevice(address);
+          timeout = null;
         }, 5000);
-        noble.stopScanning();
-        peripheral.connect((err) => {
-          if (err) {
-            RED.log.error(`${err}\n${err.stack}`);
-            peripheral.disconnect();
-            noble.startScanning([], true);
-            return;
-          }
-          clearTimeout(timeout);
-          RED.log.debug(`[GenericBLE] <${address}> Searching services in the peripheral...`);
-          peripheral.discoverAllServicesAndCharacteristics(
-              (err, services, characteristics) => {
+        Semaphores.BLE_SCANNING.take(() => {
+          noble.stopScanning();
+          peripheral.connect((err) => {
             if (err) {
               RED.log.error(`${err}\n${err.stack}`);
               peripheral.disconnect();
+              Semaphores.BLE_SCANNING.leave();
               noble.startScanning([], true);
               return;
             }
-            toDetailedObject(peripheral).then(bleDevice => {
-              if (DEBUG) {
-                console.log(`services.length=${services.length}, characteristics.length=${characteristics.length}`);
-                console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
+            if (!timeout) {
+              // timeout is already performed
+              return;
+            }
+            clearTimeout(timeout);
+            RED.log.debug(`[GenericBLE] <${address}> Searching services in the peripheral...`);
+            peripheral.discoverAllServicesAndCharacteristics(
+                (err, services, characteristics) => {
+              if (err) {
+                RED.log.error(`${err}\n${err.stack}`);
+                peripheral.disconnect();
+                Semaphores.BLE_SCANNING.leave();
+                noble.startScanning([], true);
+                return;
               }
-              peripheral.disconnect();
-              noble.startScanning([], true);
-              return res.json(bleDevice);
-            }).catch(err => {
-              RED.log.error(`${err}\n${err.stack}`);
-              peripheral.disconnect();
-              noble.startScanning([], true);
-              return res.status(500).send(err.toString()).end();
+              toDetailedObject(peripheral).then(bleDevice => {
+                if (DEBUG) {
+                  console.log(`services.length=${services.length}, characteristics.length=${characteristics.length}`);
+                  console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
+                }
+                peripheral.disconnect();
+                Semaphores.BLE_SCANNING.leave();
+                noble.startScanning([], true);
+                return res.json(bleDevice);
+              }).catch(err => {
+                RED.log.error(`${err}\n${err.stack}`);
+                peripheral.disconnect();
+                Semaphores.BLE_SCANNING.leave();
+                noble.startScanning([], true);
+                return res.status(500).send(err.toString()).end();
+              });
             });
           });
         });

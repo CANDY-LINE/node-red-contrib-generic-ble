@@ -61,8 +61,9 @@
   },
   "dependencies": {
     "noble": "^1.8.1",
-    "source-map-support": "^0.4.2",
-    "node-cache": "^4.1.0"
+    "node-cache": "^4.1.0",
+    "semaphore": "^1.0.5",
+    "source-map-support": "^0.4.2"
   },
   "node-red": {
     "nodes": {
