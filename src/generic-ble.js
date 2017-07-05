@@ -166,7 +166,7 @@ export default function(RED) {
       return res.status(404).end();
     }
     toApiObject(peripheral).then(bleDevice => {
-      if (!bleDevice.services && peripheral.state === 'disconnected') {
+      if (peripheral.state !== 'connected') {
         RED.log.debug(`[GenericBLE] <${address}> Connecting peripheral...`);
         let timeout = setTimeout(() => {
           RED.log.error(`[GenericBLE] <${address}> BLE Connection Timeout: ${bleDevice.localName} (${bleDevice.rssi})`);
