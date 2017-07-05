@@ -224,6 +224,16 @@
         that.characteristics = [];
       }
 
+      function getBleDeviceKey() {
+        try {
+          var current = JSON.parse($('#node-config-input-bleDevices').val());
+          var currentId = current.localName + ':' + current.address + ':' + current.uuid;
+          return currentId;
+        } catch (_) {
+          return '';
+        }
+      }
+
       $('#node-config-input-bleDevices').prop('disabled', true);
       $('#node-config-input-selectable').prop('disabled', true);
       $.getJSON('__bledevlist', function(bleDevices) {
@@ -234,6 +244,7 @@
         });
         function changeOrBlur() {
           var selected = JSON.parse($(this).val());
+          var selectedId = selected.localName + ':' + selected.address + ':' + selected.uuid;
           $('#node-config-input-localName').val(selected.localName);
           $('#node-config-input-address').val(selected.address);
           $('#node-config-input-uuid').val(selected.uuid);
@@ -245,25 +256,29 @@
 
           $.getJSON('__bledev/' + encodeURIComponent(getAddressOrUUID(selected)), function(bleDevice) {
             spin.remove();
-            clearCharacteristics();
+            if (getBleDeviceKey() === selectedId) {
+              clearCharacteristics();
 
-            $('#node-config-input-localName').val(bleDevice.localName);
-            $('#node-config-input-address').val(bleDevice.address);
-            $('#node-config-input-uuid').val(bleDevice.uuid);
+              $('#node-config-input-localName').val(bleDevice.localName);
+              $('#node-config-input-address').val(bleDevice.address);
+              $('#node-config-input-uuid').val(bleDevice.uuid);
 
-            var characteristics = bleDevice.characteristics || [];
-            for (var i = 0; i < characteristics.length; i++) {
-              $('#node-config-input-characteristics-container')
-                .editableList('addItem', characteristics[i]);
-            }
-            that.characteristics = characteristics;
-            if (that.characteristics.length === 0) {
-              $('#node-config-input-characteristics-container').editableList('addItem');
+              var characteristics = bleDevice.characteristics || [];
+              for (var i = 0; i < characteristics.length; i++) {
+                $('#node-config-input-characteristics-container')
+                  .editableList('addItem', characteristics[i]);
+              }
+              that.characteristics = characteristics;
+              if (that.characteristics.length === 0) {
+                $('#node-config-input-characteristics-container').editableList('addItem');
+              }
             }
           }).fail(function () {
             spin.remove();
-            clearCharacteristics();
-            $('#node-config-input-characteristics-container').editableList('addItem');
+            if (getBleDeviceKey() === selectedId) {
+              clearCharacteristics();
+              $('#node-config-input-characteristics-container').editableList('addItem');
+            }
           });
         }
         $('#node-config-input-bleDevices').change(changeOrBlur).blur(changeOrBlur);
