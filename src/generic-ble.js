@@ -9,6 +9,7 @@ const bleDevices = new NodeCache({
   stdTTL : 10 * 60 * 1000,
   checkperiod : 60 * 1000
 });
+const configBleDevices = {};
 
 function onStateChange(state) {
   if (state === 'poweredOn') {
@@ -127,7 +128,12 @@ export default function(RED) {
       this.characteristics = n.characteristics || [];
       this.on('close', () => {
         stopScanning(RED);
+        Object.keys(configBleDevices).forEach(k => delete configBleDevices[k]);
       });
+      let key = getAddressOrUUID(n);
+      if (key) {
+        configBleDevices[key] = this;
+      }
     }
   }
   RED.nodes.registerType('Generic BLE', GenericBLENode);
