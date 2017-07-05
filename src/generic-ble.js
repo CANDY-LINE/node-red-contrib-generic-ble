@@ -4,6 +4,7 @@ import 'source-map-support/register';
 import noble from 'noble';
 import NodeCache from 'node-cache';
 import semaphore from 'semaphore';
+import queue from 'queue';
 
 const DEBUG = false;
 const bleDevices = new NodeCache({
@@ -14,6 +15,10 @@ const configBleDevices = {};
 const Semaphores = {
   BLE_SCANNING: semaphore(1)
 };
+const q = queue({
+  concurrency: 1,
+  autostart: true
+});
 
 function onStateChange(state) {
   if (state === 'poweredOn') {
@@ -71,6 +76,11 @@ function stopScanning(RED) {
   noble.removeListener('stateChange', onStateChange);
   noble.removeListener('discover', onDiscover);
   Object.keys(bleDevices).forEach(k => delete bleDevices[k]);
+}
+
+function resetQueue() {
+  q.end();
+  q.start();
 }
 
 function toApiObject(peripheral) {
@@ -143,6 +153,7 @@ export default function(RED) {
   RED.nodes.registerType('Generic BLE', GenericBLENode);
 
   startScanning(RED);
+  resetQueue();
 
   // __bledevlist endpoint
   RED.httpAdmin.get(
