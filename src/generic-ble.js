@@ -124,6 +124,7 @@ export default function(RED) {
       this.localName = n.localName;
       this.address = n.address;
       this.uuid = n.uuid;
+      this.characteristics = n.characteristics || [];
       this.on('close', () => {
         stopScanning(RED);
       });
