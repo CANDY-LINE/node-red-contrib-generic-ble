@@ -159,24 +159,24 @@ export default function(RED) {
       RED.auth.needsPermission('generic-ble.read'), (req, res) => {
     let address = req.params.address;
     if (!address) {
-      return res.status(404).end();
+      return res.status(404).send({status:404, message:'missing peripheral'}).end();
     }
     let peripheral = bleDevices.get(address);
     if (!peripheral) {
-      return res.status(404).end();
+      return res.status(404).send({status:404, message:'missing peripheral'}).end();
     }
     // load the live object for invoking functions
     // as cached object is disconnected from noble context
     peripheral = noble._peripherals[peripheral.uuid];
     if (!peripheral) {
-      return res.status(404).end();
+      return res.status(404).send({status:404, message:'missing peripheral'}).end();
     }
     toApiObject(peripheral).then(bleDevice => {
       if (peripheral.state !== 'connected') {
         RED.log.debug(`[GenericBLE] <${address}> Connecting peripheral...`);
         let timeout = setTimeout(() => {
           RED.log.error(`[GenericBLE] <${address}> BLE Connection Timeout: ${bleDevice.localName} (${bleDevice.rssi})`);
-          res.status(500).send('Connection Timeout').end();
+          res.status(500).send({status:500, message:'Connection Timeout'}).end();
           peripheral.disconnect();
           noble.startScanning([], true);
           deleteBleDevice(address);
