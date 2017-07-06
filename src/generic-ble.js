@@ -193,12 +193,9 @@ function characteristicsTask(characteristics, bleDevice, RED) {
         if (isNotification) {
           let payload = {
             uuid: bleDevice.uuid,
-            characteristic: {
-              uuid: c.uuid,
-              data: data,
-              notification: true
-            }
+            notification: true
           };
+          payload[c.uuid] = data;
           bleDevice.emit('ble-notify', payload);
         }
       });
