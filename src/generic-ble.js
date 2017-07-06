@@ -177,7 +177,7 @@ function characteristicsTask(characteristics, bleDevice, RED) {
       }).catch((err) => {
         reject(err);
       });
-    }, BLE_NOTIFY_WAIT_MS);
+    }, bleDevice.listeningPeriod || BLE_NOTIFY_WAIT_MS);
 
     RED.log.debug(`<characteristicsTask> START`);
     process.nextTick(loop);
@@ -407,6 +407,7 @@ export default function(RED) {
       this.localName = n.localName;
       this.address = n.address;
       this.uuid = n.uuid;
+      this.listeningPeriod = n.listeningPeriod;
       this.characteristics = n.characteristics || [];
       let key = getAddressOrUUID(n);
       if (key) {

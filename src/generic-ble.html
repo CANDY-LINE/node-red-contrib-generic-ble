@@ -118,6 +118,13 @@
     </label>
     <input type='text' id='node-config-input-uuid' data-i18n='[placeholder]generic-ble.placeholder.uuid'>
   </div>
+  <div class='form-row'>
+    <label for='node-config-input-listeningPeriod'>
+      <i class='fa fa-tag'></i>
+      <span data-i18n='generic-ble.label.listeningPeriod'></span>
+    </label>
+    <input type='text' id='node-config-input-listeningPeriod' data-i18n='[placeholder]generic-ble.placeholder.listeningPeriod'>
+  </div>
   <div class='form-row node-config-input-characteristics-container-row'>
     <i class='fa fa-gear'></i> <span data-i18n='generic-ble.label.characteristics'></span>
     <ol id='node-config-input-characteristics-container'></ol>
@@ -141,6 +148,7 @@
       localName: { value: '', required: false },
       address: { value: '', required: false },
       uuid: { value: '', required: false },
+      listeningPeriod: { value: '', required: false },
       // characteristic
       // {
       //   "uuid": "2a19",
