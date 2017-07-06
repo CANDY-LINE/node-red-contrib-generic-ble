@@ -516,6 +516,7 @@ export default function(RED) {
   }
   RED.nodes.registerType('Generic BLE out', GenericBLEOutNode);
 
+  bleDevices.flushAll();
   startScanning(RED);
   resetQueue(RED);
 
