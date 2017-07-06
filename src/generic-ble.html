@@ -146,10 +146,10 @@
       //   "uuid": "2a19",
       //   "name": "Battery Level",
       //   "type": "org.bluetooth.characteristic.battery_level",
-      //   "properties": [
-      //     "read",
-      //     "notify"
-      //   ]
+      //   "notifiable": true,
+      //   "readable": true,
+      //   "writable": true,
+      //   "writeWithoutResponse": true
       // },
       characteristics: { value: [] },
     },
@@ -183,20 +183,25 @@
           var name = $('<span/>',{style:'margin-left: 5px;'}).text(characteristic.name).appendTo(row);
           var uuid = $('<span/>',{style:'margin-left: 5px;'}).text(' (' + characteristic.uuid + ')').appendTo(row);
 
-          var properties = characteristic.properties || [];
-          if (properties.indexOf('read') >= 0) {
+          if (characteristic.readable) {
             $('<span/>',{
                 style:'float: right; color: red; font-weight: bold; margin-right:0.4em;',
                 class:'debug-message-element'
               }).text('Read').appendTo(row);
           }
-          if (properties.indexOf('write') >= 0) {
+          if (characteristic.writable) {
             $('<span/>',{
                 style:'float: right; color: green; font-weight: bold; margin-right:0.4em;',
                 class:'debug-message-element'
               }).text('Write').appendTo(row);
           }
-          if (properties.indexOf('notify') >= 0) {
+          if (characteristic.writeWithoutResponse) {
+            $('<span/>',{
+                style:'float: right; color: green; font-weight: bold; margin-right:0.4em;',
+                class:'debug-message-element'
+              }).text('WriteWithoutResp').appendTo(row);
+          }
+          if (characteristic.notifiable) {
             $('<span/>',{
                 style:'float: right; color: blue; font-weight: bold; margin-right:0.4em;',
                 class:'debug-message-element'
