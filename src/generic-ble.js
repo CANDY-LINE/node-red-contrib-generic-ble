@@ -283,7 +283,9 @@ function schedulePeripheralTask(uuid, task, RED) {
 function addErrorListenerToQueue(RED) {
   q.removeAllListeners('error');
   q.on('error', (err) => {
-    RED.log.info(`[GenericBLE] ${err}`);
+    if (DEBUG) {
+      RED.log.error(`[GenericBLE] ${err}`);
+    }
   });
 }
 
