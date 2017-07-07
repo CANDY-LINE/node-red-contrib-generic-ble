@@ -256,6 +256,9 @@
           $('#node-config-input-bleDevices').append(option);
         });
         function changeOrBlur() {
+          if (!$('#node-config-input-selectable').prop('checked')) {
+            return;
+          }
           var selected = JSON.parse($(this).val());
           var selectedId = selected.localName + ':' + selected.address + ':' + selected.uuid;
           $('#node-config-input-localName').val(selected.localName);
