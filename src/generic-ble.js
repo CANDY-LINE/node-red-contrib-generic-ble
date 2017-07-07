@@ -194,12 +194,12 @@ function characteristicsTask(services, bleDevice, RED) {
       characteristic.removeAllListeners('data');
       characteristic.on('data', (data, isNotification) => {
         if (isNotification) {
-          let payload = {
+          let readObj = {
             uuid: bleDevice.uuid,
             notification: true
           };
-          payload[c.uuid] = data;
-          bleDevice.emit('ble-notify', payload);
+          readObj[c.uuid] = data;
+          bleDevice.emit('ble-notify', bleDevice.uuid, readObj);
         }
       });
       characteristic.subscribe((err) => {
@@ -497,6 +497,18 @@ export default function(RED) {
         this.genericBleNode.on('ble-read', (uuid, readObj, err) => {
           if (err) {
             RED.log.error(`[GenericBLE] <${uuid}> read: ${err}`);
+            return;
+          }
+          this.send({
+            payload: {
+              uuid: uuid,
+              characteristics: readObj
+            }
+          });
+        });
+        this.genericBleNode.on('ble-notify', (uuid, readObj, err) => {
+          if (err) {
+            RED.log.error(`[GenericBLE] <${uuid}> notify: ${err}`);
             return;
           }
           this.send({
