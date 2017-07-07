@@ -28,7 +28,6 @@
     "CANDY EGG"
   ],
   "devDependencies": {
-    "node-red": "^0.17.3",
     "babel": "^6.23.0",
     "babel-cli": "^6.24.0",
     "babel-plugin-add-module-exports": "^0.2.1",

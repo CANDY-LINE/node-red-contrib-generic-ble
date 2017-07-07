@@ -35,6 +35,12 @@ gulp.task('clean', () => {
   ]);
 });
 
+gulp.task('cleanTestJs', () => {
+  return del([
+    'dist/**/*.test.js',
+  ]);
+});
+
 gulp.task('i18n', () => {
   return gulp.src([
       './src/locales/**/*.{yaml,yml}'
@@ -104,7 +110,7 @@ gulp.task('testAssets', () => {
   .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('testJs', ['build'], () => {
+gulp.task('testJs', ['cleanTestJs', 'build'], () => {
   return gulp.src('./tests/**/*.js')
     .pipe(sourcemaps.init())
     .pipe(babel({
