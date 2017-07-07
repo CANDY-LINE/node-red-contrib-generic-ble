@@ -78,7 +78,10 @@ function valToBuffer(hexOrIntArray, len=1) {
   return new Buffer(0);
 }
 
-function characteristicsTask(characteristics, bleDevice, RED) {
+function characteristicsTask(services, bleDevice, RED) {
+  let characteristics = services.reduce((prev, curr) => {
+    return prev.concat(curr.characteristics);
+  }, []);
   return new Promise((resolve, reject) => {
     let loop = () => {
       let writeRequest = bleDevice._writeRequests.shift() || [];
@@ -226,12 +229,27 @@ function connectToPeripheral(peripheral) {
       clearTimeout(timeout);
       timeout = null;
       let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
+      if (TRACE) {
+        console.log(`<connectToPeripheral> discovering all services and characteristics...`);
+      }
+      if (peripheral.services) {
+        if (TRACE) {
+          console.log(`<connectToPeripheral> discovered`);
+        }
+        return resolve([peripheral.services, bleDevice]);
+      }
       peripheral.discoverAllServicesAndCharacteristics(
-          (err, services, characteristics) => {
+          (err, services) => {
         if (err) {
+          if (TRACE) {
+            console.log(`<connectToPeripheral> err`, err);
+          }
           return reject(`${err}\n${err.stack}`);
         }
-        return resolve([services, characteristics, bleDevice]);
+        if (TRACE) {
+          console.log(`<connectToPeripheral> discovered`);
+        }
+        return resolve([services, bleDevice]);
       });
     };
     timeout = setTimeout(() => {
@@ -264,7 +282,7 @@ function schedulePeripheralTask(uuid, task, RED) {
     }
 
     connectToPeripheral(peripheral).then((result) => {
-      return task(/* characteristics */result[1], /* bleDevice */ result[2], RED);
+      return task(/* services */result[0], /* bleDevice */ result[1], RED);
     }).then(() => {
       tearDown();
       done();
