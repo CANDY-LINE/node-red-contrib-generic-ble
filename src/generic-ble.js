@@ -5,7 +5,7 @@ import noble from 'noble';
 import NodeCache from 'node-cache';
 import queue from 'queue';
 
-const DEBUG = false;
+const TRACE = false;
 const BLE_CONNECTION_TIMEOUT_MS = parseInt(process.env.BLE_CONNECTION_TIMEOUT_MS || 5000);
 const BLE_CONCURRENT_CONNECTIONS = parseInt(process.env.BLE_CONCURRENT_CONNECTIONS || 1);
 const BLE_READ_WRITE_INTERVAL_MS = parseInt(process.env.BLE_READ_WRITE_INTERVAL_MS || 50);
@@ -41,8 +41,8 @@ function getAddressOrUUID(peripheral) {
 
 function deleteBleDevice(addressOrUUID) {
   let value = bleDevices.del(addressOrUUID);
-  if (value && DEBUG) {
-    console.log(`[GenericBLE:DEBUG] Delete => ${addressOrUUID}`);
+  if (value && TRACE) {
+    console.log(`[GenericBLE:TRACE] Delete => ${addressOrUUID}`);
   }
 }
 
@@ -162,7 +162,9 @@ function characteristicsTask(characteristics, bleDevice, RED) {
     let timeout = setTimeout(() => {
       loop = null;
       timeout = null;
-      RED.log.debug(`<characteristicsTask> END`);
+      if (TRACE) {
+        RED.log.info(`<characteristicsTask> END`);
+      }
       Promise.all(characteristics.map((c) => {
         c.removeAllListeners('data');
         return new Promise((resolve) => {
@@ -175,7 +177,9 @@ function characteristicsTask(characteristics, bleDevice, RED) {
       });
     }, bleDevice.listeningPeriod || BLE_NOTIFY_WAIT_MS);
 
-    RED.log.debug(`<characteristicsTask> START`);
+    if (TRACE) {
+      RED.log.info(`<characteristicsTask> START`);
+    }
     process.nextTick(loop);
 
     bleDevice.characteristics.filter(c => c.notifiable).forEach(c => {
@@ -274,7 +278,7 @@ function schedulePeripheralTask(uuid, task, RED) {
 function addErrorListenerToQueue(RED) {
   q.removeAllListeners('error');
   q.on('error', (err) => {
-    if (DEBUG) {
+    if (TRACE) {
       RED.log.error(`[GenericBLE] ${err}`);
     }
   });
@@ -286,6 +290,10 @@ function addDoneListenerToQueue(RED) {
     process.nextTick(() => {
       Object.keys(configBleDevices).forEach((k) => {
         let bleDevice = configBleDevices[k];
+        if (TRACE) {
+          RED.log.info(`[GenericBLE] k=>${k}, bleDevice.uuid=>${bleDevice.uuid}`);
+          RED.log.info(`[GenericBLE] noble._peripherals => ${Object.keys(noble._peripherals)}`);
+        }
         if (noble._peripherals[bleDevice.uuid]) {
           schedulePeripheralTask(bleDevice.uuid, characteristicsTask, RED);
         }
@@ -301,8 +309,8 @@ function onDiscoverFunc(RED) {
       return;
     } else if (peripheral.connectable) {
       bleDevices.set(addressOrUUID, peripheral);
-      if (false && DEBUG) {
-        RED.log.debug('[GenericBLE:DEBUG] ', peripheral);
+      if (false && TRACE) {
+        RED.log.info('[GenericBLE:TRACE] ', peripheral);
       }
       if (configBleDevices[addressOrUUID]) {
         schedulePeripheralTask(peripheral.uuid, characteristicsTask, RED);
@@ -438,6 +446,9 @@ export default function(RED) {
         },
         read: () => {
           let readables = this.characteristics.filter(c => c.readable);
+          if (TRACE) {
+            RED.log.info(`[GenericBLE] readables.length => ${readables.length}`);
+          }
           if (readables.length === 0) {
             return false;
           }
@@ -476,6 +487,9 @@ export default function(RED) {
           });
         });
         this.on('input', () => {
+          if (TRACE) {
+            RED.log.info(`[GenericBLEIn] input arrived!`);
+          }
           this.genericBleNode.operations.read();
         });
       }
@@ -496,7 +510,9 @@ export default function(RED) {
             RED.log.error(`[GenericBLE] <${uuid}> write: ${err}`);
             return;
           }
-          RED.log.debug(`[GenericBLE] <${uuid}> write: OK`);
+          if (TRACE) {
+            RED.log.debug(`[GenericBLE] <${uuid}> write: OK`);
+          }
         });
         this.on('input', (msg) => {
           this.genericBleNode.operations.write(msg);
@@ -512,9 +528,13 @@ export default function(RED) {
   resetQueue(RED);
 
   RED.events.on('runtime-event', (ev) => {
-    RED.log.debug(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
+    if (TRACE) {
+      RED.log.info(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
+    }
     if (ev.id === 'runtime-state') {
-      RED.log.debug(`[GenericBLE] Queue started`);
+      if (TRACE) {
+        RED.log.info(`[GenericBLE] Queue started`);
+      }
       q.start();
     }
   });
@@ -528,7 +548,7 @@ export default function(RED) {
       promises = bleDevices.keys().map(k => toApiObject(bleDevices.get(k)));
     } catch (_) {}
     Promise.all(promises).then(body => {
-      if (DEBUG) {
+      if (TRACE) {
         console.log('/__bledevlist', JSON.stringify(body, null, 2));
       }
       res.json(body);
@@ -568,7 +588,9 @@ export default function(RED) {
           return;
         }
         clearTimeout(timeout);
-        RED.log.debug(`[GenericBLE] <${address}> Searching services in the peripheral...`);
+        if (TRACE) {
+          RED.log.info(`[GenericBLE] <${address}> Searching services in the peripheral...`);
+        }
         peripheral.discoverAllServicesAndCharacteristics(
             (err, services, characteristics) => {
           if (err) {
@@ -577,7 +599,7 @@ export default function(RED) {
             return;
           }
           toDetailedObject(peripheral).then(bleDevice => {
-            if (DEBUG) {
+            if (TRACE) {
               console.log(`services.length=${services.length}, characteristics.length=${characteristics.length}`);
               console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
             }
@@ -603,7 +625,9 @@ export default function(RED) {
         return onConnected();
       }
       peripheral.once('connect', onConnected);
-      RED.log.debug(`[GenericBLE] <${address}> Connecting peripheral...`);
+      if (TRACE) {
+        RED.log.info(`[GenericBLE] <${address}> Connecting peripheral...`);
+      }
       peripheral.connect();
     }).catch(err => {
       RED.log.error(`${err}\n${err.stack}`);
