@@ -62,7 +62,6 @@
     "noble": "^1.8.1",
     "node-cache": "^4.1.0",
     "queue": "^4.2.1",
-    "semaphore": "^1.0.5",
     "source-map-support": "^0.4.2"
   },
   "node-red": {

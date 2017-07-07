@@ -3,7 +3,6 @@
 import 'source-map-support/register';
 import noble from 'noble';
 import NodeCache from 'node-cache';
-import semaphore from 'semaphore';
 import queue from 'queue';
 
 const DEBUG = false;
@@ -16,9 +15,6 @@ const bleDevices = new NodeCache({
   checkperiod : 60 * 1000
 });
 const configBleDevices = {};
-const Semaphores = {
-  BLE_SCANNING: semaphore(1)
-};
 const q = queue({
   concurrency: BLE_CONCURRENT_CONNECTIONS,
   autostart: true
@@ -258,21 +254,16 @@ function schedulePeripheralTask(uuid, task, RED) {
 
     function tearDown() {
       peripheral.disconnect();
-      Semaphores.BLE_SCANNING.leave();
-      noble.startScanning([], true);
     }
 
-    Semaphores.BLE_SCANNING.take(() => {
-      noble.stopScanning();
-      connectToPeripheral(peripheral).then((result) => {
-        return task(/* characteristics */result[1], /* bleDevice */ result[2], RED);
-      }).then(() => {
-        tearDown();
-        done();
-      }).catch((err) => {
-        tearDown();
-        done(err);
-      });
+    connectToPeripheral(peripheral).then((result) => {
+      return task(/* characteristics */result[1], /* bleDevice */ result[2], RED);
+    }).then(() => {
+      tearDown();
+      done();
+    }).catch((err) => {
+      tearDown();
+      done(err);
     });
   });
 }
@@ -566,8 +557,6 @@ export default function(RED) {
           if (err) {
             RED.log.error(`${err}\n${err.stack}`);
             peripheral.disconnect();
-            Semaphores.BLE_SCANNING.leave();
-            noble.startScanning([], true);
             return;
           }
           if (!timeout) {
@@ -581,8 +570,6 @@ export default function(RED) {
             if (err) {
               RED.log.error(`${err}\n${err.stack}`);
               peripheral.disconnect();
-              Semaphores.BLE_SCANNING.leave();
-              noble.startScanning([], true);
               return;
             }
             toDetailedObject(peripheral).then(bleDevice => {
@@ -591,14 +578,10 @@ export default function(RED) {
                 console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
               }
               peripheral.disconnect();
-              Semaphores.BLE_SCANNING.leave();
-              noble.startScanning([], true);
               return res.json(bleDevice);
             }).catch(err => {
               RED.log.error(`${err}\n${err.stack}`);
               peripheral.disconnect();
-              Semaphores.BLE_SCANNING.leave();
-              noble.startScanning([], true);
               return res.status(500).send(err.toString()).end();
             });
           });
@@ -608,17 +591,12 @@ export default function(RED) {
           res.status(500).send({status:500, message:'Connection Timeout'}).end();
           peripheral.removeListener('connect', onConnected);
           peripheral.disconnect();
-          Semaphores.BLE_SCANNING.leave();
-          noble.startScanning([], true);
           deleteBleDevice(address);
           timeout = null;
           onConnected = null;
         }, BLE_CONNECTION_TIMEOUT_MS);
-        Semaphores.BLE_SCANNING.take(() => {
-          noble.stopScanning();
-          peripheral.once('connect', onConnected);
-          peripheral.connect();
-        });
+        peripheral.once('connect', onConnected);
+        peripheral.connect();
       } else {
         if (DEBUG) {
           console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
