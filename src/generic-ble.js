@@ -237,6 +237,9 @@ function connectToPeripheral(peripheral) {
       onConnected = null;
       reject('Connection Timeout');
     }, BLE_CONNECTION_TIMEOUT_MS);
+    if (peripheral.state === 'connected') {
+      return onConnected();
+    }
     peripheral.once('connect', onConnected);
     peripheral.connect();
   });
