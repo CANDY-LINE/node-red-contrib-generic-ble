@@ -422,7 +422,7 @@ function toDetailedObject(peripheral) {
     if (peripheral.services) {
       obj.characteristics = [];
       peripheral.services.map((s) => {
-        obj.characteristics = obj.characteristics.concat(s.characteristics.map((c) => {
+        obj.characteristics = obj.characteristics.concat((s.characteristics || []).map((c) => {
           if (!c.type) {
             return null;
           }
