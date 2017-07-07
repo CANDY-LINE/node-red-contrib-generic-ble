@@ -165,13 +165,20 @@ function characteristicsTask(services, bleDevice, RED) {
     let timeout = setTimeout(() => {
       loop = null;
       timeout = null;
-      if (TRACE) {
-        RED.log.info(`<characteristicsTask> END`);
-      }
-      Promise.all(characteristics.map((c) => {
-        c.removeAllListeners('data');
+      Promise.all(bleDevice.characteristics.filter(c => c.notifiable).map((c) => {
         return new Promise((resolve) => {
-          c.unsubscribe(() => resolve());
+          let characteristic = characteristics.filter(chr => chr.uuid === c.uuid)[0];
+          if (!characteristic) {
+            RED.log.warn(`[GenericBLE] Characteristic(${c.uuid}) is missing`);
+            return resolve();
+          }
+          characteristic.removeAllListeners('data');
+          characteristic.unsubscribe(() => {
+            if (TRACE) {
+              RED.log.info(`<characteristicsTask> UNSUBSCRIBED`);
+            }
+            return resolve();
+          });
         });
       })).then(() => {
         if (TRACE) {
@@ -263,6 +270,7 @@ function connectToPeripheral(peripheral) {
     timeout = setTimeout(() => {
       peripheral.removeListener('connect', onConnected);
       peripheral.disconnect();
+      delete peripheral.services;
       timeout = null;
       onConnected = null;
       reject('Connection Timeout');
@@ -294,18 +302,22 @@ function schedulePeripheralTask(uuid, task, RED) {
       return done();
     }
 
-    function tearDown() {
-      peripheral.disconnect();
+    function tearDown(err) {
+      peripheral.disconnect(() => {
+        delete peripheral.services;
+        if (TRACE) {
+          RED.log.info(`<schedulePeripheralTask> END 01,${err}`);
+        }
+        done(err);
+      });
     }
 
     connectToPeripheral(peripheral).then((result) => {
       return task(/* services */result[0], /* bleDevice */ result[1], RED);
     }).then(() => {
       tearDown();
-      done();
     }).catch((err) => {
-      tearDown();
-      done(err);
+      tearDown(err);
     });
   });
 }
@@ -622,6 +634,17 @@ export default function(RED) {
       return res.status(404).send({status:404, message:'missing peripheral'}).end();
     }
     toApiObject(peripheral).then(bleDevice => {
+      if (peripheral.services) {
+        return toDetailedObject(peripheral).then(bleDevice => {
+          if (TRACE) {
+            console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
+          }
+          return res.json(bleDevice);
+        }).catch(err => {
+          RED.log.error(`${err}\n${err.stack}`);
+          return res.status(500).send(err.toString()).end();
+        });
+      }
       let timeout;
       let onConnected = (err) => {
         if (!onConnected) {
@@ -653,10 +676,12 @@ export default function(RED) {
               console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
             }
             peripheral.disconnect();
+            delete peripheral.services;
             return res.json(bleDevice);
           }).catch(err => {
             RED.log.error(`${err}\n${err.stack}`);
             peripheral.disconnect();
+            delete peripheral.services;
             return res.status(500).send(err.toString()).end();
           });
         });
@@ -666,6 +691,7 @@ export default function(RED) {
         res.status(500).send({status:500, message:'Connection Timeout'}).end();
         peripheral.removeListener('connect', onConnected);
         peripheral.disconnect();
+        delete peripheral.services;
         deleteBleDevice(address);
         timeout = null;
         onConnected = null;
