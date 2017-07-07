@@ -265,7 +265,7 @@ function schedulePeripheralTask(uuid, task, RED) {
     Semaphores.BLE_SCANNING.take(() => {
       noble.stopScanning();
       connectToPeripheral(peripheral).then((result) => {
-        return task(result[1], result[2], RED);
+        return task(/* characteristics */result[1], /* bleDevice */ result[2], RED);
       }).then(() => {
         tearDown();
         done();
