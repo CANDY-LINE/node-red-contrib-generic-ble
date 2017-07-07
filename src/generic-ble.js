@@ -553,62 +553,58 @@ export default function(RED) {
       return res.status(404).send({status:404, message:'missing peripheral'}).end();
     }
     toApiObject(peripheral).then(bleDevice => {
-      if (peripheral.state !== 'connected') {
-        RED.log.debug(`[GenericBLE] <${address}> Connecting peripheral...`);
-        let timeout;
-        let onConnected = (err) => {
-          if (!onConnected) {
-            return;
-          }
+      let timeout;
+      let onConnected = (err) => {
+        if (!onConnected) {
+          return;
+        }
+        if (err) {
+          RED.log.error(`${err}\n${err.stack}`);
+          peripheral.disconnect();
+          return;
+        }
+        if (!timeout) {
+          // timeout is already performed
+          return;
+        }
+        clearTimeout(timeout);
+        RED.log.debug(`[GenericBLE] <${address}> Searching services in the peripheral...`);
+        peripheral.discoverAllServicesAndCharacteristics(
+            (err, services, characteristics) => {
           if (err) {
             RED.log.error(`${err}\n${err.stack}`);
             peripheral.disconnect();
             return;
           }
-          if (!timeout) {
-            // timeout is already performed
-            return;
-          }
-          clearTimeout(timeout);
-          RED.log.debug(`[GenericBLE] <${address}> Searching services in the peripheral...`);
-          peripheral.discoverAllServicesAndCharacteristics(
-              (err, services, characteristics) => {
-            if (err) {
-              RED.log.error(`${err}\n${err.stack}`);
-              peripheral.disconnect();
-              return;
+          toDetailedObject(peripheral).then(bleDevice => {
+            if (DEBUG) {
+              console.log(`services.length=${services.length}, characteristics.length=${characteristics.length}`);
+              console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
             }
-            toDetailedObject(peripheral).then(bleDevice => {
-              if (DEBUG) {
-                console.log(`services.length=${services.length}, characteristics.length=${characteristics.length}`);
-                console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
-              }
-              peripheral.disconnect();
-              return res.json(bleDevice);
-            }).catch(err => {
-              RED.log.error(`${err}\n${err.stack}`);
-              peripheral.disconnect();
-              return res.status(500).send(err.toString()).end();
-            });
+            peripheral.disconnect();
+            return res.json(bleDevice);
+          }).catch(err => {
+            RED.log.error(`${err}\n${err.stack}`);
+            peripheral.disconnect();
+            return res.status(500).send(err.toString()).end();
           });
-        };
-        timeout = setTimeout(() => {
-          RED.log.error(`[GenericBLE] <${address}> BLE Connection Timeout: ${bleDevice.localName} (${bleDevice.rssi})`);
-          res.status(500).send({status:500, message:'Connection Timeout'}).end();
-          peripheral.removeListener('connect', onConnected);
-          peripheral.disconnect();
-          deleteBleDevice(address);
-          timeout = null;
-          onConnected = null;
-        }, BLE_CONNECTION_TIMEOUT_MS);
-        peripheral.once('connect', onConnected);
-        peripheral.connect();
-      } else {
-        if (DEBUG) {
-          console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
-        }
-        return res.json(bleDevice);
+        });
+      };
+      timeout = setTimeout(() => {
+        RED.log.error(`[GenericBLE] <${address}> BLE Connection Timeout: ${bleDevice.localName} (${bleDevice.rssi})`);
+        res.status(500).send({status:500, message:'Connection Timeout'}).end();
+        peripheral.removeListener('connect', onConnected);
+        peripheral.disconnect();
+        deleteBleDevice(address);
+        timeout = null;
+        onConnected = null;
+      }, BLE_CONNECTION_TIMEOUT_MS);
+      if (peripheral.state === 'connected') {
+        return onConnected();
       }
+      peripheral.once('connect', onConnected);
+      RED.log.debug(`[GenericBLE] <${address}> Connecting peripheral...`);
+      peripheral.connect();
     }).catch(err => {
       RED.log.error(`${err}\n${err.stack}`);
       return res.status(500).send(err.toString()).end();
