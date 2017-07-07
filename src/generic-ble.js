@@ -174,8 +174,14 @@ function characteristicsTask(services, bleDevice, RED) {
           c.unsubscribe(() => resolve());
         });
       })).then(() => {
+        if (TRACE) {
+          RED.log.info(`<characteristicsTask> END`);
+        }
         resolve();
       }).catch((err) => {
+        if (TRACE) {
+          RED.log.info(`<characteristicsTask> END`);
+        }
         reject(err);
       });
     }, bleDevice.listeningPeriod || BLE_NOTIFY_WAIT_MS);
@@ -209,6 +215,8 @@ function characteristicsTask(services, bleDevice, RED) {
           timeout = null;
           characteristics.forEach(c => c.removeAllListeners('data'));
           return reject(err);
+        } else if (TRACE) {
+          RED.log.info(`<characteristicsTask> SUBSCRIBED`);
         }
       });
     });
@@ -259,6 +267,9 @@ function connectToPeripheral(peripheral) {
       onConnected = null;
       reject('Connection Timeout');
     }, BLE_CONNECTION_TIMEOUT_MS);
+    if (TRACE) {
+      console.log(`<connectToPeripheral> peripheral.state=>${peripheral.state}`);
+    }
     if (peripheral.state === 'connected') {
       return onConnected();
     }
@@ -272,8 +283,14 @@ function schedulePeripheralTask(uuid, task, RED) {
     return;
   }
   q.push((done) => {
+    if (TRACE) {
+      RED.log.info(`<schedulePeripheralTask> START`);
+    }
     let peripheral = noble._peripherals[uuid];
     if (!peripheral) {
+      if (TRACE) {
+        RED.log.info(`<schedulePeripheralTask> END 00`);
+      }
       return done();
     }
 
@@ -310,7 +327,6 @@ function addDoneListenerToQueue(RED) {
         let bleDevice = configBleDevices[k];
         if (TRACE) {
           RED.log.info(`[GenericBLE] k=>${k}, bleDevice.uuid=>${bleDevice.uuid}`);
-          RED.log.info(`[GenericBLE] noble._peripherals => ${Object.keys(noble._peripherals)}`);
         }
         if (noble._peripherals[bleDevice.uuid]) {
           schedulePeripheralTask(bleDevice.uuid, characteristicsTask, RED);
@@ -467,6 +483,7 @@ export default function(RED) {
         read: () => {
           let readables = this.characteristics.filter(c => c.readable);
           if (TRACE) {
+            RED.log.info(`[GenericBLE] characteristics => ${JSON.stringify(this.characteristics)}`);
             RED.log.info(`[GenericBLE] readables.length => ${readables.length}`);
           }
           if (readables.length === 0) {
