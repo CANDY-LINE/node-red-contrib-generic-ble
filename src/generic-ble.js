@@ -380,7 +380,9 @@ function toDetailedObject(peripheral) {
             writable: c.properties.indexOf('write') >= 0,
             writeWithoutResponse: c.properties.indexOf('writeWithoutResponse') >= 0,
           };
-          if (c.type === 'org.bluetooth.characteristic.gap.device_name') {
+          if (!peripheral.advertisement.localName &&
+              peripheral.state === 'connected' &&
+              c.type === 'org.bluetooth.characteristic.gap.device_name') {
             p = new Promise((resolve) => {
               c.read((err, data) => {
                 if (err) {
