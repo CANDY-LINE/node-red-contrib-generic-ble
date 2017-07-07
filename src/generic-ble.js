@@ -520,6 +520,7 @@ export default function(RED) {
         stopScanning(RED);
         Object.keys(configBleDevices).forEach(k => delete configBleDevices[k]);
         resetQueue(RED);
+        startScanning(RED);
       });
     }
   }
@@ -593,10 +594,6 @@ export default function(RED) {
   }
   RED.nodes.registerType('Generic BLE out', GenericBLEOutNode);
 
-  bleDevices.flushAll();
-  startScanning(RED);
-  resetQueue(RED);
-
   RED.events.on('runtime-event', (ev) => {
     if (TRACE) {
       RED.log.info(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
@@ -605,6 +602,9 @@ export default function(RED) {
       if (TRACE) {
         RED.log.info(`[GenericBLE] Queue started`);
       }
+      bleDevices.flushAll();
+      startScanning(RED);
+      resetQueue(RED);
       q.start();
     }
   });
