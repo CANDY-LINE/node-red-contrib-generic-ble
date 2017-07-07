@@ -523,7 +523,10 @@ export default function(RED) {
   RED.httpAdmin.get(
       '/__bledevlist',
       RED.auth.needsPermission('generic-ble.read'), (req, res) => {
-    let promises = bleDevices.keys().map(k => toApiObject(bleDevices.get(k)));
+    let promises = [];
+    try {
+      promises = bleDevices.keys().map(k => toApiObject(bleDevices.get(k)));
+    } catch (_) {}
     Promise.all(promises).then(body => {
       if (DEBUG) {
         console.log('/__bledevlist', JSON.stringify(body, null, 2));
