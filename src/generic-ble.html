@@ -255,7 +255,7 @@
           var option = $('<option></option>').attr('value', JSON.stringify(v)).text(label);
           $('#node-config-input-bleDevices').append(option);
         });
-        function changeOrBlur() {
+        function change() {
           if (!$('#node-config-input-selectable').prop('checked')) {
             return;
           }
@@ -303,7 +303,7 @@
             }
           });
         }
-        $('#node-config-input-bleDevices').change(changeOrBlur).blur(changeOrBlur);
+        $('#node-config-input-bleDevices').change(change);
         $('#node-config-input-selectable').val(false);
         if (bleDevices.length > 0) {
           $('#node-config-input-selectable')
