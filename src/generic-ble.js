@@ -172,7 +172,7 @@ function characteristicsTask(services, bleDevice, RED) {
         return new Promise((resolve) => {
           let characteristic = characteristics.filter(chr => chr.uuid === c.uuid)[0];
           if (!characteristic) {
-            RED.log.warn(`[GenericBLE] Characteristic(${c.uuid}) is missing`);
+            RED.log.warn(`[GenericBLE] <${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
             return resolve();
           }
           characteristic.removeAllListeners('data');
@@ -180,7 +180,7 @@ function characteristicsTask(services, bleDevice, RED) {
             delete characteristic._subscribed;
             characteristic.unsubscribe(() => {
               if (TRACE) {
-                RED.log.info(`<characteristicsTask> UNSUBSCRIBED`);
+                RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> UNSUBSCRIBED`);
               }
               return resolve();
             });
@@ -190,26 +190,26 @@ function characteristicsTask(services, bleDevice, RED) {
         });
       })).then(() => {
         if (TRACE) {
-          RED.log.info(`<characteristicsTask> END`);
+          RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> END`);
         }
         resolve();
       }).catch((err) => {
         if (TRACE) {
-          RED.log.info(`<characteristicsTask> END`);
+          RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> END`);
         }
         reject(err);
       });
     }, bleDevice.listeningPeriod || BLE_NOTIFY_WAIT_MS);
 
     if (TRACE) {
-      RED.log.info(`<characteristicsTask> START`);
+      RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> START`);
     }
     process.nextTick(loop);
 
     bleDevice.characteristics.filter(c => c.notifiable).forEach(c => {
       let characteristic = characteristics.filter(chr => chr.uuid === c.uuid)[0];
       if (!characteristic) {
-        RED.log.warn(`[GenericBLE] Characteristic(${c.uuid}) is missing`);
+        RED.log.warn(`[GenericBLE] <${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
         return;
       }
       characteristic.removeAllListeners('data');
@@ -234,7 +234,7 @@ function characteristicsTask(services, bleDevice, RED) {
           characteristics.forEach(c => c.removeAllListeners('data'));
           return reject(err);
         } else if (TRACE) {
-          RED.log.info(`<characteristicsTask> SUBSCRIBED`);
+          RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIBED`);
         }
         characteristic._subscribed = true;
       });
@@ -245,7 +245,7 @@ function characteristicsTask(services, bleDevice, RED) {
 function disconnectPeripheral(peripheral, done) {
   let count = peripheral._accesses || 0;
   if (TRACE) {
-    console.log(`<disconnectPeripheral> count:${count} => ${count - 1}`);
+    console.log(`<disconnectPeripheral> <${peripheral.uuid}> count:${count} => ${count - 1}`);
   }
   --count;
   peripheral._accesses = count;
@@ -253,7 +253,7 @@ function disconnectPeripheral(peripheral, done) {
     delete peripheral._accesses;
     if (peripheral.state === 'disconnected' || peripheral.state === 'disconnecting') {
       if (TRACE) {
-        console.log(`<disconnectPeripheral> Skipped to disconnect`);
+        console.log(`<disconnectPeripheral> <${peripheral.uuid}> Skipped to disconnect`);
       }
       if (done) {
         return done();
@@ -283,11 +283,11 @@ function connectToPeripheral(peripheral) {
       timeout = null;
       let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
       if (TRACE) {
-        console.log(`<connectToPeripheral> discovering all services and characteristics...`);
+        console.log(`<connectToPeripheral> <${peripheral.uuid}> discovering all services and characteristics...`);
       }
       if (peripheral.services) {
         if (TRACE) {
-          console.log(`<connectToPeripheral> discovered 00`);
+          console.log(`<connectToPeripheral> <${peripheral.uuid}> discovered 00`);
         }
         return resolve([peripheral.services, bleDevice]);
       }
@@ -295,39 +295,39 @@ function connectToPeripheral(peripheral) {
         setTimeout(() => {
           if (peripheral.services) {
             if (TRACE) {
-              console.log(`<connectToPeripheral> discovered 00`);
+              console.log(`<connectToPeripheral> <${peripheral.uuid}> discovered 00`);
             }
             return resolve([peripheral.services, bleDevice]);
           }
-          return reject(`Cannot discover`);
+          return reject(`<${peripheral.uuid}> Cannot discover`);
         }, 1000);
         return;
       }
-      console.log(`<connectToPeripheral> Setting up discoveryTimeout`);
+      console.log(`<connectToPeripheral> <${peripheral.uuid}> Setting up discoveryTimeout`);
       let discoveryTimeout = setTimeout(() => {
-        console.log(`<connectToPeripheral> discoveryTimeout fired`);
+        console.log(`<connectToPeripheral> <${peripheral.uuid}> discoveryTimeout fired`);
         peripheral._discovering = false;
         peripheral.removeListener('connect', onConnected);
         disconnectPeripheral(peripheral);
         discoveryTimeout = null;
         onConnected = null;
-        reject('Discovery Timeout');
+        reject(`<${peripheral.uuid}> Discovery Timeout`);
       }, BLE_CONNECTION_TIMEOUT_MS);
       peripheral._discovering = true;
       peripheral.discoverAllServicesAndCharacteristics(
           (err, services) => {
         peripheral._discovering = false;
-        console.log(`<connectToPeripheral> discoverAllServicesAndCharacteristics OK`);
+        console.log(`<connectToPeripheral> <${peripheral.uuid}> discoverAllServicesAndCharacteristics OK`);
         clearTimeout(discoveryTimeout);
         discoveryTimeout = null;
         if (err) {
           if (TRACE) {
-            console.log(`<connectToPeripheral> err`, err);
+            console.log(`<connectToPeripheral> <${peripheral.uuid}> err`, err);
           }
-          return reject(`${err}\n${err.stack}`);
+          return reject(`<${peripheral.uuid}> ${err}\n=>${err.stack}`);
         }
         if (TRACE) {
-          console.log(`<connectToPeripheral> discovered 01`);
+          console.log(`<connectToPeripheral> <${peripheral.uuid}> discovered 01`);
         }
         return resolve([services, bleDevice]);
       });
@@ -337,10 +337,10 @@ function connectToPeripheral(peripheral) {
       disconnectPeripheral(peripheral);
       timeout = null;
       onConnected = null;
-      reject('Connection Timeout');
+      reject(`<${peripheral.uuid}> Connection Timeout`);
     }, BLE_CONNECTION_TIMEOUT_MS);
     if (TRACE) {
-      console.log(`<connectToPeripheral> peripheral.state=>${peripheral.state}`);
+      console.log(`<connectToPeripheral> <${peripheral.uuid}> peripheral.state=>${peripheral.state}`);
     }
     if (peripheral.state === 'connected') {
       return onConnected();
@@ -353,12 +353,12 @@ function connectToPeripheral(peripheral) {
 function peripheralTask(uuid, task, RED) {
   return (done) => {
     if (TRACE) {
-      RED.log.info(`<schedulePeripheralTask> START`);
+      RED.log.info(`<schedulePeripheralTask> <${uuid}> START`);
     }
     let peripheral = noble._peripherals[uuid];
     if (!peripheral) {
       if (TRACE) {
-        RED.log.info(`<schedulePeripheralTask> END 00`);
+        RED.log.info(`<schedulePeripheralTask> <${uuid}> END 00`);
       }
       return done();
     }
@@ -367,7 +367,7 @@ function peripheralTask(uuid, task, RED) {
       disconnectPeripheral(peripheral, () => {
         delete peripheral.services;
         if (TRACE) {
-          RED.log.info(`<schedulePeripheralTask> END 01,${err}`);
+          RED.log.info(`<schedulePeripheralTask> <${uuid}> END 01,${err}`);
         }
         done(err);
       });
@@ -678,7 +678,7 @@ export default function(RED) {
     } catch (_) {}
     Promise.all(promises).then(body => {
       if (TRACE) {
-        console.log('/__bledevlist', JSON.stringify(body, null, 2));
+        RED.log.info('/__bledevlist', JSON.stringify(body, null, 2));
       }
       res.json(body);
     });
