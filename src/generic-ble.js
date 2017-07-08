@@ -243,35 +243,43 @@ function characteristicsTask(services, bleDevice, RED) {
 }
 
 function disconnectPeripheral(peripheral, done) {
-  let count = peripheral._accesses || 0;
-  if (TRACE) {
-    console.log(`<disconnectPeripheral> <${peripheral.uuid}> count:${count} => ${count - 1}`);
-  }
-  --count;
-  peripheral._accesses = count;
-  if (count <= 0) {
-    delete peripheral._accesses;
-    if (peripheral.state === 'disconnected' || peripheral.state === 'disconnecting') {
-      if (TRACE) {
-        console.log(`<disconnectPeripheral> <${peripheral.uuid}> Skipped to disconnect`);
-      }
-      if (done) {
-        return done();
-      }
-      return;
+  if (peripheral.state === 'disconnected' || peripheral.state === 'disconnecting') {
+    delete peripheral._lock;
+    if (TRACE) {
+      console.log(`<disconnectPeripheral> <${peripheral.uuid}> Skipped to disconnect`);
     }
-    peripheral.disconnect(done);
-    delete peripheral.services;
+    if (done) {
+      return done();
+    }
+    return;
   }
+  if (peripheral._skipDisconnect) {
+    delete peripheral._skipDisconnect;
+    if (TRACE) {
+      console.log(`<disconnectPeripheral> <${peripheral.uuid}> Skipped to disconnect <LOCKED>`);
+    }
+    if (done) {
+      return done();
+    }
+    return;
+  }
+  peripheral.disconnect(done);
+  delete peripheral.services;
+  delete peripheral._lock;
 }
 
 function connectToPeripheral(peripheral) {
+  if (peripheral._lock) {
+    if (TRACE) {
+      console.log(`<connectToPeripheral> <${peripheral.uuid}> Gave up to connect`);
+    }
+    peripheral._skipDisconnect = true;
+    return Promise.reject(`<${peripheral.uuid}> Try again`);
+  }
   return new Promise((resolve, reject) => {
     let timeout;
     let onConnected = (err) => {
-      let count = peripheral._accesses || 0;
-      ++count;
-      peripheral._accesses = count;
+      peripheral._lock = true;
       if (err) {
         return reject(`${err}\n${err.stack}`);
       }
@@ -365,7 +373,6 @@ function peripheralTask(uuid, task, RED) {
 
     function tearDown(err) {
       disconnectPeripheral(peripheral, () => {
-        delete peripheral.services;
         if (TRACE) {
           RED.log.info(`<schedulePeripheralTask> <${uuid}> END 01,${err}`);
         }
@@ -714,7 +721,6 @@ export default function(RED) {
     return task((err) => {
       if (TRACE) {
         RED.log.info(`/__bledev/${address} END err:${err}`);
-        console.log(peripheral);
       }
       if (err) {
         RED.log.error(`${err}\n=>${err.stack}`);
