@@ -230,6 +230,11 @@ function characteristicsTask(services, bleDevice, RED) {
   });
 }
 
+function disconnectPeripheral(peripheral, done) {
+  peripheral.disconnect(done);
+  delete peripheral.services;
+}
+
 function connectToPeripheral(peripheral) {
   return new Promise((resolve, reject) => {
     let timeout;
@@ -256,8 +261,8 @@ function connectToPeripheral(peripheral) {
       console.log(`<connectToPeripheral> Setting up discoveryTimeout`);
       let discoveryTimeout = setTimeout(() => {
         console.log(`<connectToPeripheral> discoveryTimeout fired`);
-        peripheral.disconnect();
-        delete peripheral.services;
+        peripheral.removeListener('connect', onConnected);
+        disconnectPeripheral(peripheral);
         discoveryTimeout = null;
         onConnected = null;
         reject('Discovery Timeout');
@@ -281,8 +286,7 @@ function connectToPeripheral(peripheral) {
     };
     timeout = setTimeout(() => {
       peripheral.removeListener('connect', onConnected);
-      peripheral.disconnect();
-      delete peripheral.services;
+      disconnectPeripheral(peripheral);
       timeout = null;
       onConnected = null;
       reject('Connection Timeout');
@@ -312,7 +316,7 @@ function peripheralTask(uuid, task, RED) {
     }
 
     function tearDown(err) {
-      peripheral.disconnect(() => {
+      disconnectPeripheral(peripheral, () => {
         delete peripheral.services;
         if (TRACE) {
           RED.log.info(`<schedulePeripheralTask> END 01,${err}`);
