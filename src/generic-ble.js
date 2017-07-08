@@ -249,11 +249,13 @@ function connectToPeripheral(peripheral) {
       }
       if (peripheral.services) {
         if (TRACE) {
-          console.log(`<connectToPeripheral> discovered`);
+          console.log(`<connectToPeripheral> discovered 00`);
         }
         return resolve([peripheral.services, bleDevice]);
       }
+      console.log(`<connectToPeripheral> Setting up discoveryTimeout`);
       let discoveryTimeout = setTimeout(() => {
+        console.log(`<connectToPeripheral> discoveryTimeout fired`);
         peripheral.disconnect();
         delete peripheral.services;
         discoveryTimeout = null;
@@ -262,6 +264,7 @@ function connectToPeripheral(peripheral) {
       }, BLE_CONNECTION_TIMEOUT_MS);
       peripheral.discoverAllServicesAndCharacteristics(
           (err, services) => {
+        console.log(`<connectToPeripheral> discoverAllServicesAndCharacteristics OK`);
         clearTimeout(discoveryTimeout);
         discoveryTimeout = null;
         if (err) {
@@ -271,7 +274,7 @@ function connectToPeripheral(peripheral) {
           return reject(`${err}\n${err.stack}`);
         }
         if (TRACE) {
-          console.log(`<connectToPeripheral> discovered`);
+          console.log(`<connectToPeripheral> discovered 01`);
         }
         return resolve([services, bleDevice]);
       });
