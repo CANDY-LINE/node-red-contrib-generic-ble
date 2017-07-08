@@ -311,9 +311,13 @@ function connectToPeripheral(peripheral) {
         }, 1000);
         return;
       }
-      console.log(`<connectToPeripheral> <${peripheral.uuid}> Setting up discoveryTimeout`);
+      if (TRACE) {
+        console.log(`<connectToPeripheral> <${peripheral.uuid}> Setting up discoveryTimeout`);
+      }
       let discoveryTimeout = setTimeout(() => {
-        console.log(`<connectToPeripheral> <${peripheral.uuid}> discoveryTimeout fired`);
+        if (TRACE) {
+          console.log(`<connectToPeripheral> <${peripheral.uuid}> discoveryTimeout fired`);
+        }
         peripheral._discovering = false;
         peripheral.removeListener('connect', onConnected);
         disconnectPeripheral(peripheral);
@@ -325,7 +329,9 @@ function connectToPeripheral(peripheral) {
       peripheral.discoverAllServicesAndCharacteristics(
           (err, services) => {
         peripheral._discovering = false;
-        console.log(`<connectToPeripheral> <${peripheral.uuid}> discoverAllServicesAndCharacteristics OK`);
+        if (TRACE) {
+          console.log(`<connectToPeripheral> <${peripheral.uuid}> discoverAllServicesAndCharacteristics OK`);
+        }
         clearTimeout(discoveryTimeout);
         discoveryTimeout = null;
         if (err) {
