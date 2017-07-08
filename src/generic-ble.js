@@ -163,6 +163,9 @@ function characteristicsTask(services, bleDevice, RED) {
     };
 
     let timeout = setTimeout(() => {
+      if (TRACE) {
+        RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIPTION TIMEOUT`);
+      }
       loop = null;
       timeout = null;
       Promise.all(bleDevice.characteristics.filter(c => c.notifiable).map((c) => {
@@ -220,6 +223,9 @@ function characteristicsTask(services, bleDevice, RED) {
           bleDevice.emit('ble-notify', bleDevice.uuid, readObj);
         }
       });
+      if (TRACE) {
+        RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> START SUBSCRIBING`);
+      }
       characteristic.subscribe((err) => {
         if (err && timeout) {
           clearTimeout(timeout);
