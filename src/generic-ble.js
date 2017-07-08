@@ -462,15 +462,7 @@ function startScanning(RED) {
   }
 }
 
-function stopScanning(RED) {
-  RED.log.info(`[GenericBLE] Stop BLE scanning`);
-  noble.stopScanning();
-  noble.removeListener('stateChange', onStateChange);
-  noble.removeListener('discover', onDiscover);
-  Object.keys(bleDevices).forEach(k => delete bleDevices[k]);
-}
-
-function resetQueue(RED) {
+function setupQueue(RED) {
   q.end();
   addDoneListenerToQueue(RED);
   addErrorListenerToQueue(RED);
@@ -589,10 +581,7 @@ export default function(RED) {
         }
       };
       this.on('close', () => {
-        stopScanning(RED);
         Object.keys(configBleDevices).forEach(k => delete configBleDevices[k]);
-        resetQueue(RED);
-        startScanning(RED);
       });
     }
   }
@@ -674,9 +663,15 @@ export default function(RED) {
       if (TRACE) {
         RED.log.info(`[GenericBLE] Queue started`);
       }
+      if (noble._peripherals) {
+        Object.keys(noble._peripherals).forEach((k) => {
+          delete noble._peripherals[k]._lock;
+          delete noble._peripherals[k]._skipDisconnect;
+        });
+      }
       bleDevices.flushAll();
       startScanning(RED);
-      resetQueue(RED);
+      setupQueue(RED);
       q.start();
     }
   });
