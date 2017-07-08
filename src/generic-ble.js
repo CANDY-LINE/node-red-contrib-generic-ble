@@ -173,12 +173,17 @@ function characteristicsTask(services, bleDevice, RED) {
             return resolve();
           }
           characteristic.removeAllListeners('data');
-          characteristic.unsubscribe(() => {
-            if (TRACE) {
-              RED.log.info(`<characteristicsTask> UNSUBSCRIBED`);
-            }
+          if (characteristic._subscribed) {
+            delete characteristic._subscribed;
+            characteristic.unsubscribe(() => {
+              if (TRACE) {
+                RED.log.info(`<characteristicsTask> UNSUBSCRIBED`);
+              }
+              return resolve();
+            });
+          } else {
             return resolve();
-          });
+          }
         });
       })).then(() => {
         if (TRACE) {
@@ -225,6 +230,7 @@ function characteristicsTask(services, bleDevice, RED) {
         } else if (TRACE) {
           RED.log.info(`<characteristicsTask> SUBSCRIBED`);
         }
+        characteristic._subscribed = true;
       });
     });
   });
