@@ -133,6 +133,7 @@
 
 <script type='text/javascript'>
   'use strict';
+  const MAX_MILLIS = 30 * 1000;
   function getAddressOrUUID(peripheral) {
     if (!peripheral) {
       return null;
@@ -172,6 +173,16 @@
       var uuid = $('#node-config-input-uuid').val();
       if (uuid) {
         $('#node-config-input-uuid').val(uuid.toLowerCase());
+      }
+      var listeningPeriod = $('node-config-input-listeningPeriod').val();
+      if (listeningPeriod) {
+        listeningPeriod = parseInt(listeningPeriod);
+        if (listeningPeriod < 0) {
+          listeningPeriod = '';
+        } else if (listeningPeriod > MAX_MILLIS) {
+          listeningPeriod = MAX_MILLIS;
+        }
+        $('node-config-input-listeningPeriod').val(listeningPeriod);
       }
     },
     oneditprepare: function() {
