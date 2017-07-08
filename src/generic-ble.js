@@ -295,11 +295,8 @@ function connectToPeripheral(peripheral) {
   });
 }
 
-function schedulePeripheralTask(uuid, task, RED) {
-  if (!task) {
-    return;
-  }
-  q.push((done) => {
+function peripheralTask(uuid, task, RED) {
+  return (done) => {
     if (TRACE) {
       RED.log.info(`<schedulePeripheralTask> START`);
     }
@@ -328,7 +325,14 @@ function schedulePeripheralTask(uuid, task, RED) {
     }).catch((err) => {
       tearDown(err);
     });
-  });
+  };
+}
+
+function schedulePeripheralTask(uuid, task, RED) {
+  if (!task) {
+    return;
+  }
+  q.push(peripheralTask(uuid, task, RED));
 }
 
 function addErrorListenerToQueue(RED) {
@@ -643,7 +647,7 @@ export default function(RED) {
       return res.status(404).send({status:404, message:'missing peripheral'}).end();
     }
     toApiObject(peripheral).then(bleDevice => {
-      if (peripheral.services) {
+      let task = peripheralTask(bleDevice.uuid, () => {
         return toDetailedObject(peripheral).then(bleDevice => {
           if (TRACE) {
             console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
@@ -653,73 +657,13 @@ export default function(RED) {
           RED.log.error(`${err}\n${err.stack}`);
           return res.status(500).send(err.toString()).end();
         });
-      }
-      let timeout;
-      let onConnected = (err) => {
-        if (!onConnected) {
-          return;
-        }
+      }, RED);
+      return task((err) => {
         if (err) {
-          RED.log.error(`${err}\n${err.stack}`);
-          peripheral.disconnect();
-          return;
+          return Promise.reject(err);
         }
-        if (!timeout) {
-          // timeout is already performed
-          return;
-        }
-        clearTimeout(timeout);
-        if (TRACE) {
-          RED.log.info(`[GenericBLE] <${address}> Searching services in the peripheral...`);
-        }
-        let promise;
-        if (peripheral.services) {
-          promise = Promise.resolve(peripheral);
-        } else {
-          promise = new Promise((resolve, reject) => {
-            peripheral.discoverAllServicesAndCharacteristics(
-                (err) => {
-              if (err) {
-                return reject(err);
-              }
-              return resolve(peripheral);
-            });
-          });
-        }
-        promise.then(() => {
-          return toDetailedObject(peripheral);
-        }).then(bleDevice => {
-          if (TRACE) {
-            RED.log.info(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
-          }
-          peripheral.disconnect();
-          delete peripheral.services;
-          return res.json(bleDevice);
-        }).catch(err => {
-          RED.log.error(`${err}\n${err.stack}`);
-          peripheral.disconnect();
-          delete peripheral.services;
-          return res.status(500).send(err.toString()).end();
-        });
-      };
-      timeout = setTimeout(() => {
-        RED.log.error(`[GenericBLE] <${address}> BLE Connection Timeout: ${bleDevice.localName} (${bleDevice.rssi})`);
-        res.status(500).send({status:500, message:'Connection Timeout'}).end();
-        peripheral.removeListener('connect', onConnected);
-        peripheral.disconnect();
-        delete peripheral.services;
-        deleteBleDevice(address);
-        timeout = null;
-        onConnected = null;
-      }, BLE_CONNECTION_TIMEOUT_MS);
-      if (peripheral.state === 'connected') {
-        return onConnected();
-      }
-      peripheral.once('connect', onConnected);
-      if (TRACE) {
-        RED.log.info(`[GenericBLE] <${address}> Connecting peripheral...`);
-      }
-      peripheral.connect();
+        return Promise.resolve();
+      });
     }).catch(err => {
       RED.log.error(`${err}\n${err.stack}`);
       return res.status(500).send(err.toString()).end();
