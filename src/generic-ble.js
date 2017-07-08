@@ -237,14 +237,35 @@ function characteristicsTask(services, bleDevice, RED) {
 }
 
 function disconnectPeripheral(peripheral, done) {
-  peripheral.disconnect(done);
-  delete peripheral.services;
+  let count = peripheral._accesses || 0;
+  if (TRACE) {
+    console.log(`<disconnectPeripheral> count:${count} => ${count - 1}`);
+  }
+  --count;
+  peripheral._accesses = count;
+  if (count <= 0) {
+    delete peripheral._accesses;
+    if (peripheral.state === 'disconnected' || peripheral.state === 'disconnecting') {
+      if (TRACE) {
+        console.log(`<disconnectPeripheral> Skipped to disconnect`);
+      }
+      if (done) {
+        return done();
+      }
+      return;
+    }
+    peripheral.disconnect(done);
+    delete peripheral.services;
+  }
 }
 
 function connectToPeripheral(peripheral) {
   return new Promise((resolve, reject) => {
     let timeout;
     let onConnected = (err) => {
+      let count = peripheral._accesses || 0;
+      ++count;
+      peripheral._accesses = count;
       if (err) {
         return reject(`${err}\n${err.stack}`);
       }
