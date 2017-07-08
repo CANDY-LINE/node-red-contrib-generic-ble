@@ -701,27 +701,26 @@ export default function(RED) {
     if (!peripheral) {
       return res.status(404).send({status:404, message:'missing peripheral'}).end();
     }
-    toApiObject(peripheral).then(bleDevice => {
-      let task = peripheralTask(bleDevice.uuid, () => {
-        return toDetailedObject(peripheral).then(bleDevice => {
-          if (TRACE) {
-            console.log(`/__bledev/${address}`, JSON.stringify(bleDevice, null, 2));
-          }
-          return res.json(bleDevice);
-        }).catch(err => {
-          RED.log.error(`${err}\n${err.stack}`);
-          return res.status(500).send(err.toString()).end();
-        });
-      }, RED);
-      return task((err) => {
-        if (err) {
-          return Promise.reject(err);
+
+    let task = peripheralTask(peripheral.uuid, () => {
+      return toDetailedObject(peripheral).then(bleDevice => {
+        if (TRACE) {
+          RED.log.info(`/__bledev/${address} OUTPUT`, JSON.stringify(bleDevice, null, 2));
         }
+        res.json(bleDevice);
         return Promise.resolve();
       });
-    }).catch(err => {
-      RED.log.error(`${err}\n${err.stack}`);
-      return res.status(500).send(err.toString()).end();
+    }, RED);
+    return task((err) => {
+      if (TRACE) {
+        RED.log.info(`/__bledev/${address} END err:${err}`);
+        console.log(peripheral);
+      }
+      if (err) {
+        RED.log.error(`${err}\n=>${err.stack}`);
+        return res.status(500).send(err.toString()).end();
+      }
+      return Promise.resolve();
     });
   });
 }
