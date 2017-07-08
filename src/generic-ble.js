@@ -216,7 +216,6 @@ function characteristicsTask(services, bleDevice, RED) {
       characteristic.on('data', (data, isNotification) => {
         if (isNotification) {
           let readObj = {
-            uuid: bleDevice.uuid,
             notification: true
           };
           readObj[c.uuid] = data;
