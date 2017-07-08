@@ -358,25 +358,31 @@ function connectToPeripheral(peripheral) {
   });
 }
 
-function peripheralTask(uuid, task, RED) {
-  return (done) => {
+function peripheralTask(uuid, task, done, RED) {
+  return (next) => {
     if (TRACE) {
-      RED.log.info(`<schedulePeripheralTask> <${uuid}> START`);
+      RED.log.info(`<peripheralTask> <${uuid}> START`);
     }
     let peripheral = noble._peripherals[uuid];
     if (!peripheral) {
       if (TRACE) {
-        RED.log.info(`<schedulePeripheralTask> <${uuid}> END 00`);
+        RED.log.info(`<peripheralTask> <${uuid}> Missing peripheral END`);
       }
-      return done();
+      if (done) {
+        done(`<${uuid}> Missing peripheral`);
+      }
+      return next(`<${uuid}> Missing peripheral`);
     }
 
     function tearDown(err) {
       disconnectPeripheral(peripheral, () => {
         if (TRACE) {
-          RED.log.info(`<schedulePeripheralTask> <${uuid}> END 01,${err}`);
+          RED.log.info(`<peripheralTask> <${uuid}> END 01,${err}`);
         }
-        done(err);
+        if (done) {
+          done(err);
+        }
+        next(err);
       });
     }
 
@@ -390,11 +396,11 @@ function peripheralTask(uuid, task, RED) {
   };
 }
 
-function schedulePeripheralTask(uuid, task, RED) {
+function schedulePeripheralTask(uuid, task, done, RED) {
   if (!task) {
     return;
   }
-  q.push(peripheralTask(uuid, task, RED));
+  q.push(peripheralTask(uuid, task, done, RED));
 }
 
 function addErrorListenerToQueue(RED) {
@@ -416,7 +422,7 @@ function addDoneListenerToQueue(RED) {
           RED.log.info(`[GenericBLE] k=>${k}, bleDevice.uuid=>${bleDevice.uuid}`);
         }
         if (noble._peripherals[bleDevice.uuid]) {
-          schedulePeripheralTask(bleDevice.uuid, characteristicsTask, RED);
+          schedulePeripheralTask(bleDevice.uuid, characteristicsTask, null, RED);
         }
       });
     });
@@ -434,7 +440,7 @@ function onDiscoverFunc(RED) {
         RED.log.info('[GenericBLE:TRACE] ', peripheral);
       }
       if (configBleDevices[addressOrUUID]) {
-        schedulePeripheralTask(peripheral.uuid, characteristicsTask, RED);
+        schedulePeripheralTask(peripheral.uuid, characteristicsTask, null, RED);
       }
     } else {
       deleteBleDevice(addressOrUUID);
@@ -709,7 +715,7 @@ export default function(RED) {
       return res.status(404).send({status:404, message:'missing peripheral'}).end();
     }
 
-    let task = peripheralTask(peripheral.uuid, () => {
+    let task = () => {
       return toDetailedObject(peripheral).then(bleDevice => {
         if (TRACE) {
           RED.log.info(`/__bledev/${address} OUTPUT`, JSON.stringify(bleDevice, null, 2));
@@ -717,8 +723,8 @@ export default function(RED) {
         res.json(bleDevice);
         return Promise.resolve();
       });
-    }, RED);
-    return task((err) => {
+    };
+    schedulePeripheralTask(peripheral.uuid, task, (err) => {
       if (TRACE) {
         RED.log.info(`/__bledev/${address} END err:${err}`);
       }
@@ -726,7 +732,6 @@ export default function(RED) {
         RED.log.error(`${err}\n=>${err.stack}`);
         return res.status(500).send(err.toString()).end();
       }
-      return Promise.resolve();
-    });
+    }, RED);
   });
 }
