@@ -287,9 +287,12 @@ function disconnectPeripheral(peripheral, done) {
   };
   timeout = setTimeout(() => {
     if (TRACE) {
-      console.log(`<disconnectPeripheral> <${peripheral.uuid}> SUBSCRIPTION TIMEOUT`);
+      console.log(`<disconnectPeripheral> <${peripheral.uuid}> DISCONNECT TIMEOUT`);
     }
     timeout = null;
+    if (bleDevice) {
+      bleDevice.emit('timeout');
+    }
     if (done) {
       done();
     }
