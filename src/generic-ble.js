@@ -410,9 +410,12 @@ function peripheralTask(uuid, task, done, RED) {
     }
 
     function tearDown(err) {
+      if (TRACE) {
+        RED.log.info(`<peripheralTask> <${uuid}> Trying to disconnect,${err}`);
+      }
       disconnectPeripheral(peripheral, () => {
         if (TRACE) {
-          RED.log.info(`<peripheralTask> <${uuid}> END 01,${err}`);
+          RED.log.info(`<peripheralTask> <${uuid}> END`);
         }
         if (done) {
           done(err);
