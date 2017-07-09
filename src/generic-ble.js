@@ -855,7 +855,9 @@ export default function(RED) {
       }
       if (err) {
         RED.log.error(`/__bledev/${address} ${err}\n=>${err.stack || err.message}`);
-        return res.status(500).send({ status: 500, message: (err.message || err) }).end();
+        if (!res._headerSent) {
+          return res.status(500).send({ status: 500, message: (err.message || err) }).end();
+        }
       }
     }, RED);
   });
