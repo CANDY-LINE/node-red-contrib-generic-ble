@@ -274,10 +274,11 @@ function disconnectPeripheral(peripheral, done) {
   let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
   let timeout;
   let onDisconnected = () => {
-    if (timeout) {
-      if (bleDevice) {
-        bleDevice.emit('disconnected');
-      }
+    if (TRACE) {
+      console.log(`<disconnectPeripheral> <${peripheral.uuid}> DISCONNECTED`);
+    }
+    if (timeout && bleDevice) {
+      bleDevice.emit('disconnected');
     }
     timeout = null;
     if (done) {
