@@ -135,6 +135,7 @@
   'use strict';
   const MAX_MILLIS = 5 * 1000;
   const MIN_MILLIS = 300;
+  var charBuff = [];
   function getAddressOrUUID(peripheral) {
     if (!peripheral) {
       return null;
@@ -187,6 +188,7 @@
         }
         $('#node-config-input-listeningPeriod').val(listeningPeriod);
       }
+      this.characteristics = (charBuff.length === 0 ? this.characteristics : charBuff);
     },
     oneditprepare: function() {
       var that = this;
@@ -248,7 +250,7 @@
         for (var i = 0; i < len; i++) {
           children[0].remove();
         }
-        that.characteristics = [];
+        charBuff = [];
       }
 
       function getBleDeviceKey() {
@@ -302,8 +304,8 @@
                   $('#node-config-input-characteristics-container')
                     .editableList('addItem', characteristics[i]);
                 }
-                that.characteristics = characteristics;
-                if (that.characteristics.length === 0) {
+                charBuff = characteristics;
+                if (charBuff.length === 0) {
                   $('#node-config-input-characteristics-container').editableList('addItem');
                 }
               }
