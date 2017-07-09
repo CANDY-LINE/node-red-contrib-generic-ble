@@ -303,13 +303,6 @@ function connectToPeripheral(peripheral) {
     peripheral._skipDisconnect = true;
     return Promise.reject(`<${peripheral.uuid}> Try again`);
   }
-  if (peripheral.state === 'disconnecting') {
-    if (TRACE) {
-      console.log(`<connectToPeripheral> <${peripheral.uuid}> Gave up to connect`);
-    }
-    peripheral._skipDisconnect = true;
-    return Promise.reject(`<${peripheral.uuid}> Waiting for being disconnected`);
-  }
   let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
   return new Promise((resolve, reject) => {
     let timeout;
