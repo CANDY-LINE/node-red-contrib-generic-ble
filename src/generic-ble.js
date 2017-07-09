@@ -20,7 +20,6 @@ const q = queue({
   autostart: true
 });
 let onDiscover;
-let notification = true;
 
 function onStateChange(state) {
   if (state === 'poweredOn') {
@@ -210,44 +209,42 @@ function characteristicsTask(services, bleDevice, RED) {
     }
     process.nextTick(loop);
 
-    if (notification) {
-      bleDevice.characteristics.filter(c => c.notifiable).forEach(c => {
-        let characteristic = characteristics.filter(chr => chr.uuid === c.uuid)[0];
-        if (!characteristic) {
-          RED.log.warn(`[GenericBLE] <${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
-          return;
+    bleDevice.characteristics.filter(c => c.notifiable).forEach(c => {
+      let characteristic = characteristics.filter(chr => chr.uuid === c.uuid)[0];
+      if (!characteristic) {
+        RED.log.warn(`[GenericBLE] <${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
+        return;
+      }
+      characteristic.removeAllListeners('data');
+      characteristic.on('data', (data, isNotification) => {
+        if (isNotification) {
+          let readObj = {
+            notification: true
+          };
+          readObj[c.uuid] = data;
+          bleDevice.emit('ble-notify', bleDevice.uuid, readObj);
         }
-        characteristic.removeAllListeners('data');
-        characteristic.on('data', (data, isNotification) => {
-          if (isNotification) {
-            let readObj = {
-              notification: true
-            };
-            readObj[c.uuid] = data;
-            bleDevice.emit('ble-notify', bleDevice.uuid, readObj);
-          }
-        });
-        if (TRACE) {
-          RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> START SUBSCRIBING`);
-        }
-        characteristic.subscribe((err) => {
-          if (err) {
-            if (timeout) {
-              clearTimeout(timeout);
-              bleDevice.emit('error');
-            }
-            loop = null;
-            timeout = null;
-            characteristics.forEach(c => c.removeAllListeners('data'));
-            return reject(err);
-          } else if (TRACE) {
-            RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIBED`);
-          }
-          bleDevice.emit('subscribed');
-          characteristic._subscribed = true;
-        });
       });
-    }
+      if (TRACE) {
+        RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> START SUBSCRIBING`);
+      }
+      characteristic.subscribe((err) => {
+        if (err) {
+          if (timeout) {
+            clearTimeout(timeout);
+            bleDevice.emit('error');
+          }
+          loop = null;
+          timeout = null;
+          characteristics.forEach(c => c.removeAllListeners('data'));
+          return reject(err);
+        } else if (TRACE) {
+          RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIBED`);
+        }
+        bleDevice.emit('subscribed');
+        characteristic._subscribed = true;
+      });
+    });
   });
 }
 
