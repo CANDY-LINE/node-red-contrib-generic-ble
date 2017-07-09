@@ -854,8 +854,8 @@ export default function(RED) {
         RED.log.info(`/__bledev/${address} END err:${err}`);
       }
       if (err) {
-        RED.log.error(`${err}\n=>${err.stack}`);
-        return res.status(500).send(err.toString()).end();
+        RED.log.error(`/__bledev/${address} ${err}\n=>${err.stack || err.message}`);
+        return res.status(500).send({ status: 500, message: (err.message || err) }).end();
       }
     }, RED);
   });
