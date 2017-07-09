@@ -179,6 +179,7 @@ function characteristicsTask(services, bleDevice, RED) {
           if (characteristic._subscribed) {
             delete characteristic._subscribed;
             characteristic.unsubscribe(() => {
+              bleDevice.emit('unsubscribed');
               if (TRACE) {
                 RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> UNSUBSCRIBED`);
               }
@@ -226,8 +227,11 @@ function characteristicsTask(services, bleDevice, RED) {
         RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> START SUBSCRIBING`);
       }
       characteristic.subscribe((err) => {
-        if (err && timeout) {
-          clearTimeout(timeout);
+        if (err) {
+          if (timeout) {
+            clearTimeout(timeout);
+            bleDevice.emit('error');
+          }
           loop = null;
           timeout = null;
           characteristics.forEach(c => c.removeAllListeners('data'));
@@ -235,6 +239,7 @@ function characteristicsTask(services, bleDevice, RED) {
         } else if (TRACE) {
           RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIBED`);
         }
+        bleDevice.emit('subscribed');
         characteristic._subscribed = true;
       });
     });
@@ -262,7 +267,15 @@ function disconnectPeripheral(peripheral, done) {
     }
     return;
   }
-  peripheral.disconnect(done);
+  peripheral.disconnect(() => {
+    let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
+    if (bleDevice) {
+      bleDevice.emit('disconnected');
+    }
+    if (done) {
+      done();
+    }
+  });
   delete peripheral.services;
   delete peripheral._lock;
 }
@@ -275,9 +288,20 @@ function connectToPeripheral(peripheral) {
     peripheral._skipDisconnect = true;
     return Promise.reject(`<${peripheral.uuid}> Try again`);
   }
+  if (peripheral.state === 'disconnecting') {
+    if (TRACE) {
+      console.log(`<connectToPeripheral> <${peripheral.uuid}> Gave up to connect`);
+    }
+    peripheral._skipDisconnect = true;
+    return Promise.reject(`<${peripheral.uuid}> Waiting for being disconnected`);
+  }
+  let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
   return new Promise((resolve, reject) => {
     let timeout;
     let onConnected = (err) => {
+      if (bleDevice) {
+        bleDevice.emit('connected');
+      }
       peripheral._lock = true;
       if (err) {
         return reject(`${err}\n${err.stack}`);
@@ -288,7 +312,6 @@ function connectToPeripheral(peripheral) {
       }
       clearTimeout(timeout);
       timeout = null;
-      let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
       if (TRACE) {
         console.log(`<connectToPeripheral> <${peripheral.uuid}> discovering all services and characteristics...`);
       }
@@ -317,9 +340,11 @@ function connectToPeripheral(peripheral) {
         if (TRACE) {
           console.log(`<connectToPeripheral> <${peripheral.uuid}> discoveryTimeout fired`);
         }
+        if (bleDevice) {
+          bleDevice.emit('timeout');
+        }
         peripheral._discovering = false;
         peripheral.removeListener('connect', onConnected);
-        disconnectPeripheral(peripheral);
         discoveryTimeout = null;
         onConnected = null;
         reject(`<${peripheral.uuid}> Discovery Timeout`);
@@ -346,11 +371,16 @@ function connectToPeripheral(peripheral) {
       });
     };
     timeout = setTimeout(() => {
+      if (bleDevice) {
+        bleDevice.emit('timeout');
+      }
       peripheral.removeListener('connect', onConnected);
-      disconnectPeripheral(peripheral);
       timeout = null;
       onConnected = null;
       reject(`<${peripheral.uuid}> Connection Timeout`);
+      if (TRACE) {
+        console.log(`<connectToPeripheral> <${peripheral.uuid}> Connection Timeout`);
+      }
     }, BLE_CONNECTION_TIMEOUT_MS);
     if (TRACE) {
       console.log(`<connectToPeripheral> <${peripheral.uuid}> peripheral.state=>${peripheral.state}`);
@@ -540,9 +570,16 @@ export default function(RED) {
       if (key) {
         configBleDevices[key] = this;
       }
+      this.nodes = {};
       this._writeRequests = []; // {uuid:'characteristic-uuid-to-write', data:Buffer()}
       this._readRequests = []; // {uuid:'characteristic-uuid-to-read'}
       this.operations = {
+        register: (node) => {
+          this.nodes[node.id] = node;
+        },
+        remove: (node) => {
+          delete this.nodes[node.id];
+        },
         // dataObj = {
         //   'uuid-to-write-1': Buffer(),
         //   'uuid-to-write-2': Buffer(),
@@ -585,6 +622,17 @@ export default function(RED) {
           return true;
         }
       };
+      ['connected', 'disconnected', 'subscribed', 'unsubscribed', 'error', 'timeout'].forEach(ev => {
+        this.on(ev, () => {
+          try {
+            Object.keys(this.nodes).forEach(id => {
+              this.nodes[id].emit(ev);
+            });
+          } catch (e) {
+            RED.log.error(e);
+          }
+        });
+      });
       this.on('close', () => {
         Object.keys(configBleDevices).forEach(k => delete configBleDevices[k]);
       });
@@ -623,11 +671,29 @@ export default function(RED) {
             }
           });
         });
+
+        ['connected', 'subscribed'].forEach(ev => {
+          this.on(ev, () => {
+            this.status({fill:'green',shape:'dot',text:`generic-ble.status.${ev}`});
+          });
+        });
+        ['disconnected', 'unsubscribed', 'error', 'timeout'].forEach(ev => {
+          this.on(ev, () => {
+            this.status({fill:'red',shape:'ring',text:`generic-ble.status.${ev}`});
+          });
+        });
+        this.genericBleNode.operations.register(this);
+
         this.on('input', () => {
           if (TRACE) {
             RED.log.info(`[GenericBLEIn] input arrived!`);
           }
           this.genericBleNode.operations.read();
+        });
+        this.on('close', () => {
+          if (this.genericBleNode) {
+            this.genericBleNode.operations.remove(this);
+          }
         });
       }
       this.name = n.name;
@@ -651,8 +717,24 @@ export default function(RED) {
             RED.log.debug(`[GenericBLE] <${uuid}> write: OK`);
           }
         });
+        ['connected'].forEach(ev => {
+          this.on(ev, () => {
+            this.status({fill:'green',shape:'dot',text:`generic-ble.status.${ev}`});
+          });
+        });
+        ['disconnected', 'error', 'timeout'].forEach(ev => {
+          this.on(ev, () => {
+            this.status({fill:'red',shape:'ring',text:`generic-ble.status.${ev}`});
+          });
+        });
+        this.genericBleNode.operations.register(this);
         this.on('input', (msg) => {
           this.genericBleNode.operations.write(msg);
+        });
+        this.on('close', () => {
+          if (this.genericBleNode) {
+            this.genericBleNode.operations.remove(this);
+          }
         });
       }
       this.name = n.name;

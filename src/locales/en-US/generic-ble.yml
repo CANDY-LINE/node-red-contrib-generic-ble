@@ -17,3 +17,10 @@ generic-ble:
     address: aa:11:bb:22:cc:33 (case insensitive)
     uuid: (optional, e.g. 46788f85-c8a9-4f57-a9b1-f1df906c1ad6)
     listeningPeriod: (milliseconds, up to 30000 millisecs)
+  status:
+    connected: connected
+    disconnected: disconnected
+    subscribed: subscribed
+    unsubscribed: unsubscribed
+    error: error
+    timeout: timeout
