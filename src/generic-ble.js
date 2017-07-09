@@ -171,6 +171,7 @@ function characteristicsTask(services, bleDevice, RED) {
       }
       loop = null;
       timeout = null;
+      bleDevice.emit('timeout');
       Promise.all(bleDevice.characteristics.filter(c => c.notifiable).map((c) => {
         return new Promise((resolve) => {
           let characteristic = characteristics.filter(chr => chr.uuid === c.uuid)[0];
