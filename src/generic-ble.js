@@ -90,11 +90,13 @@ function characteristicsTask(services, bleDevice, RED) {
       let writeChars = writeRequest.length > 0 ?
         characteristics.filter(c => writeUuidList.indexOf(c.uuid) >= 0) : [];
       let writePromises = writeChars.map((c) => {
+        if (!writeRequest.data) {
+          return null;
+        }
         return new Promise((resolve, reject) => {
-          let write = writeRequest[c.uuid];
           c.write(
-            valToBuffer(write.data),
-            write.writeWithoutResponse,
+            valToBuffer(writeRequest.data),
+            writeRequest.writeWithoutResponse,
             (err) => {
               if (err) {
                 return reject(err);
@@ -103,7 +105,7 @@ function characteristicsTask(services, bleDevice, RED) {
             }
           );
         });
-      });
+      }).filter(p => p);
 
       let readObj = {};
       let readRequest = bleDevice._readRequests.shift() || [];
@@ -605,19 +607,27 @@ export default function(RED) {
             return false;
           }
           let writables = this.characteristics.filter(c => c.writable || c.writeWithoutResponse);
+          if (TRACE) {
+            RED.log.info(`[GenericBLE] characteristics => ${JSON.stringify(this.characteristics)}`);
+            RED.log.info(`[GenericBLE] writables.length => ${writables.length}`);
+          }
           if (writables.length === 0) {
             return false;
           }
           let uuidList = Object.keys(dataObj);
           writables = writables.filter(c => uuidList.indexOf(c.uuid) >= 0);
+          if (TRACE) {
+            RED.log.info(`[GenericBLE] UUIDs to write => ${uuidList}`);
+            RED.log.info(`[GenericBLE] writables.length => ${writables.length}`);
+          }
           if (writables.length === 0) {
             return false;
           }
-          this._writeRequests.push(writables.map(c => {
+          this._writeRequests.push(writables.map(w => {
             return {
-              uuid: c.uuid,
-              data: dataObj[c.uuid],
-              writeWithoutResponse: c.writeWithoutResponse
+              uuid: w.uuid,
+              data: dataObj[w.uuid],
+              writeWithoutResponse: w.writeWithoutResponse
             };
           }));
           return true;
@@ -738,10 +748,8 @@ export default function(RED) {
             RED.log.debug(`[GenericBLE] <${uuid}> write: OK`);
           }
         });
-        ['connected'].forEach(ev => {
-          this.on(ev, () => {
-            this.status({fill:'green',shape:'dot',text:`generic-ble.status.${ev}`});
-          });
+        this.on('connected', () => {
+          this.status({fill:'green',shape:'dot',text:`generic-ble.status.connected`});
         });
         ['disconnected', 'error', 'timeout'].forEach(ev => {
           this.on(ev, () => {
@@ -750,7 +758,7 @@ export default function(RED) {
         });
         this.genericBleNode.operations.register(this);
         this.on('input', (msg) => {
-          this.genericBleNode.operations.write(msg);
+          this.genericBleNode.operations.write(msg.payload);
         });
         this.on('close', () => {
           if (this.genericBleNode) {
