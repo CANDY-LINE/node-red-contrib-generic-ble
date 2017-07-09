@@ -267,15 +267,30 @@ function disconnectPeripheral(peripheral, done) {
     }
     return;
   }
-  peripheral.disconnect(() => {
-    let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
-    if (bleDevice) {
-      bleDevice.emit('disconnected');
+  let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
+  let timeout;
+  let onDisconnected = () => {
+    if (timeout) {
+      if (bleDevice) {
+        bleDevice.emit('disconnected');
+      }
     }
+    timeout = null;
     if (done) {
       done();
     }
-  });
+  };
+  timeout = setTimeout(() => {
+    if (TRACE) {
+      console.log(`<disconnectPeripheral> <${peripheral.uuid}> SUBSCRIPTION TIMEOUT`);
+    }
+    timeout = null;
+    if (done) {
+      done();
+    }
+  }, BLE_CONNECTION_TIMEOUT_MS);
+  peripheral.once('disconnect', onDisconnected);
+  peripheral.disconnect();
   delete peripheral.services;
   delete peripheral._lock;
 }
