@@ -17,10 +17,10 @@
     <input type="checkbox" id="node-input-notification" style="display: inline-block; width: auto; vertical-align: top;">
     <label for="node-input-notification" style="width: 70%;" data-i18n="generic-ble.label.notification"></label>
   </div>
-  <div class="form-row" id="node-toString">
+  <div class="form-row" id="node-useString">
     <label>&nbsp;</label>
-    <input type="checkbox" id="node-input-toString" style="display: inline-block; width: auto; vertical-align: top;">
-    <label for="node-input-toString" style="width: 70%;" data-i18n="generic-ble.label.toString"></label>
+    <input type="checkbox" id="node-input-useString" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-input-useString" style="width: 70%;" data-i18n="generic-ble.label.useString"></label>
   </div>
 </script>
 
@@ -31,7 +31,7 @@
     defaults: {
       name: { value: '' },
       genericBle: { type: 'Generic BLE', required: true },
-      toString: { value: false, required: false },
+      useString: { value: false, required: false },
       notification: { value: true }
     },
     inputs: 1,
@@ -60,11 +60,6 @@
       <span data-i18n="generic-ble.label.genericBle"></span></label>
     <input type="text" id="node-input-genericBle">
   </div>
-  <div class="form-row" id="node-toString">
-    <label>&nbsp;</label>
-    <input type="checkbox" id="node-input-toString" style="display: inline-block; width: auto; vertical-align: top;">
-    <label for="node-input-toString" style="width: 70%;" data-i18n="generic-ble.label.toString"></label>
-  </div>
 </script>
 
 <script type="text/javascript">
@@ -73,8 +68,7 @@
     color: '#4d94ff',
     defaults: {
       name: { value: '' },
-      genericBle: { type: 'Generic BLE', required: true },
-      toString: { value: false, required: false }
+      genericBle: { type: 'Generic BLE', required: true }
     },
     inputs: 1,
     outputs: 0,
@@ -188,7 +182,7 @@
           listeningPeriod = MIN_MILLIS;
         } else if (listeningPeriod > MAX_MILLIS) {
           listeningPeriod = MAX_MILLIS;
-        } else {
+        } else if (isNaN(listeningPeriod)){
           listeningPeriod = '';
         }
         $('#node-config-input-listeningPeriod').val(listeningPeriod);

@@ -665,7 +665,7 @@ export default function(RED) {
   class GenericBLEInNode {
     constructor(n) {
       RED.nodes.createNode(this, n);
-      this.toString = n.toString;
+      this.useString = n.useString;
       this.notification = n.notification;
       this.genericBleNodeId = n.genericBle;
       this.genericBleNode = RED.nodes.getNode(this.genericBleNodeId);
@@ -675,11 +675,20 @@ export default function(RED) {
             RED.log.error(`[GenericBLE] <${uuid}> read: ${err}`);
             return;
           }
-          this.send({
-            payload: {
-              uuid: uuid,
-              characteristics: readObj
+          let payload = {
+            uuid: uuid,
+            characteristics: readObj
+          };
+          if (this.useString) {
+            try {
+              payload = JSON.stringify(payload);
+            } catch(err) {
+              RED.log.warn(`[GenericBLE] <${uuid}> read: ${err}`);
+              return;
             }
+          }
+          this.send({
+            payload: payload
           });
         });
         if (this.notification) {
@@ -688,11 +697,20 @@ export default function(RED) {
               RED.log.error(`[GenericBLE] <${uuid}> notify: ${err}`);
               return;
             }
-            this.send({
-              payload: {
-                uuid: uuid,
-                characteristics: readObj
+            let payload = {
+              uuid: uuid,
+              characteristics: readObj
+            };
+            if (this.useString) {
+              try {
+                payload = JSON.stringify(payload);
+              } catch(err) {
+                RED.log.warn(`[GenericBLE] <${uuid}> read: ${err}`);
+                return;
               }
+            }
+            this.send({
+              payload: payload
             });
           });
           this.on('subscribed', () => {
@@ -732,7 +750,6 @@ export default function(RED) {
   class GenericBLEOutNode {
     constructor(n) {
       RED.nodes.createNode(this, n);
-      this.toString = n.toString;
       this.genericBleNodeId = n.genericBle;
       this.genericBleNode = RED.nodes.getNode(this.genericBleNodeId);
       if (this.genericBleNode) {
