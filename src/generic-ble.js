@@ -396,6 +396,7 @@ function connectToPeripheral(peripheral) {
     if (peripheral.state === 'connected') {
       return onConnected();
     }
+    peripheral.removeAllListeners('disconnect');
     peripheral.once('connect', onConnected);
     peripheral.connect();
   });
