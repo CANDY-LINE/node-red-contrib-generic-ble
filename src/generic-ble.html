@@ -12,6 +12,11 @@
       <span data-i18n="generic-ble.label.genericBle"></span></label>
     <input type="text" id="node-input-genericBle">
   </div>
+  <div class="form-row" id="node-notification">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-notification" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-input-notification" style="width: 70%;" data-i18n="generic-ble.label.notification"></label>
+  </div>
   <div class="form-row" id="node-toString">
     <label>&nbsp;</label>
     <input type="checkbox" id="node-input-toString" style="display: inline-block; width: auto; vertical-align: top;">
@@ -26,7 +31,8 @@
     defaults: {
       name: { value: '' },
       genericBle: { type: 'Generic BLE', required: true },
-      toString: { value: false, required: false }
+      toString: { value: false, required: false },
+      notification: { value: true }
     },
     inputs: 1,
     outputs: 1,

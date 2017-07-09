@@ -12,6 +12,7 @@ generic-ble:
     listeningPeriod: Listening Period
     characteristics: GATT Characteristics
     notAvailable: (not available)
+    notification: Emit notify events
   placeholder:
     localName: BLE device name
     address: aa:11:bb:22:cc:33 (case insensitive)
