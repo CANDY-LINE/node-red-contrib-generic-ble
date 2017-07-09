@@ -10,6 +10,7 @@ const BLE_CONNECTION_TIMEOUT_MS = parseInt(process.env.BLE_CONNECTION_TIMEOUT_MS
 const BLE_CONCURRENT_CONNECTIONS = parseInt(process.env.BLE_CONCURRENT_CONNECTIONS || 1);
 const BLE_READ_WRITE_INTERVAL_MS = parseInt(process.env.BLE_READ_WRITE_INTERVAL_MS || 50);
 const BLE_NOTIFY_WAIT_MS = parseInt(process.env.BLE_NOTIFY_WAIT_MS || 5000);
+const MAX_REQUESTS = parseInt(process.env.MAX_REQUESTS || 10);
 const bleDevices = new NodeCache({
   stdTTL : 10 * 60 * 1000,
   checkperiod : 60 * 1000
@@ -620,6 +621,9 @@ export default function(RED) {
           if (writables.length === 0) {
             return false;
           }
+          if (this._writeRequests.length >= MAX_REQUESTS) {
+            return false;
+          }
           this._writeRequests.push(writables.map(w => {
             return {
               uuid: w.uuid,
@@ -636,6 +640,9 @@ export default function(RED) {
             RED.log.info(`[GenericBLE] readables.length => ${readables.length}`);
           }
           if (readables.length === 0) {
+            return false;
+          }
+          if (this._readRequests.length >= MAX_REQUESTS) {
             return false;
           }
           this._readRequests.push(readables.map((r) => {
