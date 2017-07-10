@@ -5,7 +5,7 @@ import noble from 'noble';
 import NodeCache from 'node-cache';
 import queue from 'queue';
 
-const TRACE = false;
+const TRACE = (process.env.GENERIC_BLE_TRACE === 'true');
 const BLE_CONNECTION_TIMEOUT_MS = parseInt(process.env.BLE_CONNECTION_TIMEOUT_MS || 5000);
 const BLE_CONCURRENT_CONNECTIONS = parseInt(process.env.BLE_CONCURRENT_CONNECTIONS || 1);
 const BLE_READ_WRITE_INTERVAL_MS = parseInt(process.env.BLE_READ_WRITE_INTERVAL_MS || 50);
