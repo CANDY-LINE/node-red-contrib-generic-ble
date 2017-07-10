@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-generic-ble",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Node-RED nodes for generic BLE devices",
   "license": "MIT",
   "repository": {
@@ -19,7 +19,6 @@
   },
   "homepage": "https://github.com/CANDY-LINE/node-red-contrib-generic-ble#readme",
   "keywords": [
-    "node-red",
     "bluetooth",
     "BLE",
     "bluetooth low energy",
