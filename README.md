@@ -7,12 +7,23 @@ A Node-RED node for providing access to generic BLE devices via GATT.
 
 # How to install
 
+This will take approx. 3 minutes on Raspberry Pi 3.
+
+## Node-RED
+
 ```
 cd ~/.node-red
 sudo npm install --unsafe-perm node-red-contrib-generic-ble
 ```
 
-# HCI Dump Debugging
+## CANDY RED
+
+```
+cd /opt/candy-red/.node-red
+sudo npm install --unsafe-perm node-red-contrib-generic-ble
+```
+
+# HCI Dump Debugging (Raspbian/Ubuntu/Debian)
 
 ```
 sudo apt-get update
