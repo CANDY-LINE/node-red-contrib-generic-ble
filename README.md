@@ -9,7 +9,7 @@ A Node-RED node for providing access to generic BLE devices via GATT.
 
 ```
 cd ~/.node-red
-npm install node-red-contrib-generic-ble
+sudo npm install --unsafe-perm node-red-contrib-generic-ble
 ```
 
 # HCI Dump Debugging
