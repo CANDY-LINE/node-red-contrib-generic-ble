@@ -1,0 +1,338 @@
+<script type="text/x-red" data-template-name="Generic BLE in">
+  <div class='form-row'>
+    <label for='node-input-name'>
+      <i class='fa fa-tag'></i>
+      <span data-i18n='node-red:common.label.name'></span>
+    </label>
+    <input type='text' id='node-input-name' data-i18n='[placeholder]node-red:common.label.name'>
+  </div>
+  <div class="form-row node-input-genericBle">
+    <label for="node-input-bleenv">
+      <i class="fa fa-random"></i>
+      <span data-i18n="generic-ble.label.genericBle"></span></label>
+    <input type="text" id="node-input-genericBle">
+  </div>
+  <div class="form-row" id="node-notification">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-notification" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-input-notification" style="width: 70%;" data-i18n="generic-ble.label.notification"></label>
+  </div>
+  <div class="form-row" id="node-useString">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-input-useString" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-input-useString" style="width: 70%;" data-i18n="generic-ble.label.useString"></label>
+  </div>
+</script>
+
+<script type="text/javascript">
+  RED.nodes.registerType('Generic BLE in', {
+    category: 'input',
+    color: '#4d94ff',
+    defaults: {
+      name: { value: '' },
+      genericBle: { type: 'Generic BLE', required: true },
+      useString: { value: false, required: false },
+      notification: { value: true }
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: 'bluetooth.png',
+    label: function() {
+      return this.name || 'Generic BLE';
+    },
+    labelStyle: function() {
+      return this.name ? 'node_label_italic' : '';
+    }
+  });
+</script>
+
+<script type="text/x-red" data-template-name="Generic BLE out">
+  <div class='form-row'>
+    <label for='node-input-name'>
+      <i class='fa fa-tag'></i>
+      <span data-i18n='node-red:common.label.name'></span>
+    </label>
+    <input type='text' id='node-input-name' data-i18n='[placeholder]node-red:common.label.name'>
+  </div>
+  <div class="form-row node-input-genericBle">
+    <label for="node-input-bleenv">
+      <i class="fa fa-random"></i>
+      <span data-i18n="generic-ble.label.genericBle"></span></label>
+    <input type="text" id="node-input-genericBle">
+  </div>
+</script>
+
+<script type="text/javascript">
+  RED.nodes.registerType('Generic BLE out', {
+    category: 'output',
+    color: '#4d94ff',
+    defaults: {
+      name: { value: '' },
+      genericBle: { type: 'Generic BLE', required: true }
+    },
+    inputs: 1,
+    outputs: 0,
+    icon: 'bluetooth.png',
+    align: 'right',
+    label: function() {
+      return this.name || 'Generic BLE';
+    },
+    labelStyle: function() {
+      return this.name ? 'node_label_italic' : '';
+    }
+  });
+</script>
+
+<script type="text/x-red" data-template-name="Generic BLE">
+  <div class='form-row'>
+    <label for='node-config-input-bleDevices'>
+      <i class='fa fa-tag'></i>
+      <span data-i18n='generic-ble.label.bleDevices'></span>
+    </label>
+    <select type='text' id='node-config-input-bleDevices'>
+    </select>
+  </div>
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-config-input-selectable" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-config-input-selectable" style="width: 70%;" data-i18n="generic-ble.label.selectable"></label>
+  </div>
+  <div class='form-row'>
+    <label for='node-config-input-localName'>
+      <i class='fa fa-tag'></i>
+      <span data-i18n='generic-ble.label.localName'></span>
+    </label>
+    <input type='text' id='node-config-input-localName' data-i18n='[placeholder]generic-ble.placeholder.localName'>
+  </div>
+  <div class='form-row'>
+    <label for='node-config-input-address'>
+      <i class='fa fa-random'></i>
+      <span data-i18n='generic-ble.label.address'></span>
+    </label>
+    <input type='text' id='node-config-input-address' data-i18n='[placeholder]generic-ble.placeholder.address'>
+  </div>
+  <div class='form-row'>
+    <label for='node-config-input-uuid'>
+      <i class='fa fa-random'></i>
+      <span data-i18n='generic-ble.label.uuid'></span>
+    </label>
+    <input type='text' id='node-config-input-uuid' data-i18n='[placeholder]generic-ble.placeholder.uuid'>
+  </div>
+  <div class='form-row'>
+    <label for='node-config-input-listeningPeriod'>
+      <i class='fa fa-tag'></i>
+      <span data-i18n='generic-ble.label.listeningPeriod'></span>
+    </label>
+    <input type='text' id='node-config-input-listeningPeriod' data-i18n='[placeholder]generic-ble.placeholder.listeningPeriod'>
+  </div>
+  <div class='form-row node-config-input-characteristics-container-row'>
+    <i class='fa fa-gear'></i> <span data-i18n='generic-ble.label.characteristics'></span>
+    <ol id='node-config-input-characteristics-container'></ol>
+  </div>
+</script>
+
+<script type='text/javascript'>
+  'use strict';
+  const MAX_MILLIS = 5 * 1000;
+  const MIN_MILLIS = 300;
+  var charBuff = [];
+  function getAddressOrUUID(peripheral) {
+    if (!peripheral) {
+      return null;
+    }
+    if (!peripheral.address || peripheral.address === 'unknown') {
+      return peripheral.uuid;
+    }
+    return peripheral.address;
+  }
+  RED.nodes.registerType('Generic BLE',{
+    category: 'config',
+    defaults: {
+      localName: { value: '', required: false },
+      address: { value: '', required: false },
+      uuid: { value: '', required: false },
+      listeningPeriod: { value: '', required: false },
+      // characteristic
+      // {
+      //   "uuid": "2a19",
+      //   "name": "Battery Level",
+      //   "type": "org.bluetooth.characteristic.battery_level",
+      //   "notifiable": true,
+      //   "readable": true,
+      //   "writable": true,
+      //   "writeWithoutResponse": true
+      // },
+      characteristics: { value: [] },
+    },
+    label: function() {
+      return this.localName;
+    },
+    oneditsave: function() {
+      var address = $('#node-config-input-address').val();
+      if (address) {
+        $('#node-config-input-address').val(address.toLowerCase());
+      }
+      var uuid = $('#node-config-input-uuid').val();
+      if (uuid) {
+        $('#node-config-input-uuid').val(uuid.toLowerCase());
+      }
+      var listeningPeriod = $('#node-config-input-listeningPeriod').val();
+      if (listeningPeriod) {
+        listeningPeriod = parseInt(listeningPeriod);
+        if (listeningPeriod < MIN_MILLIS) {
+          listeningPeriod = MIN_MILLIS;
+        } else if (listeningPeriod > MAX_MILLIS) {
+          listeningPeriod = MAX_MILLIS;
+        } else if (isNaN(listeningPeriod)){
+          listeningPeriod = '';
+        }
+        $('#node-config-input-listeningPeriod').val(listeningPeriod);
+      }
+      this.characteristics = (charBuff.length === 0 ? this.characteristics : charBuff);
+    },
+    oneditprepare: function() {
+      var that = this;
+
+      $('#node-config-input-characteristics-container').css('min-height','250px').css('min-width','450px').editableList({
+        addItem: function(container, i, opt) {
+          var characteristic = opt;
+          var row = $('<div/>').appendTo(container);
+          var row2 = $('<div/>').appendTo(container);
+
+          if (!characteristic.type) {
+            var na = $('<span/>',{style:'margin-left: 5px;'}).text(that._('generic-ble.label.notAvailable')).appendTo(row);
+            return;
+          }
+
+          var name = $('<span/>',{style:'margin-left: 5px;'}).text(characteristic.name).appendTo(row);
+          var uuid = $('<span/>',{style:'margin-left: 5px;'}).text(' (' + characteristic.uuid + ')').appendTo(row);
+
+          if (characteristic.readable) {
+            $('<span/>',{
+                style:'float: right; color: red; font-weight: bold; margin-right:0.4em;',
+                class:'debug-message-element'
+              }).text('Read').appendTo(row);
+          }
+          if (characteristic.writable) {
+            $('<span/>',{
+                style:'float: right; color: green; font-weight: bold; margin-right:0.4em;',
+                class:'debug-message-element'
+              }).text('Write').appendTo(row);
+          }
+          if (characteristic.writeWithoutResponse) {
+            $('<span/>',{
+                style:'float: right; color: green; font-weight: bold; margin-right:0.4em;',
+                class:'debug-message-element'
+              }).text('WriteWithoutResp').appendTo(row);
+          }
+          if (characteristic.notifiable) {
+            $('<span/>',{
+                style:'float: right; color: blue; font-weight: bold; margin-right:0.4em;',
+                class:'debug-message-element'
+              }).text('Notify').appendTo(row);
+          }
+
+          var type = $('<span/>',{style:'margin-left: 5px;'}).text(characteristic.type).appendTo(row2);
+        },
+        sortable: false,
+        removable: false,
+        addButton: false
+      });
+
+      for (var i = 0; i < that.characteristics.length; i++) {
+        var characteristic = that.characteristics[i];
+        $('#node-config-input-characteristics-container').editableList('addItem', characteristic);
+      }
+
+      function clearCharacteristics() {
+        var children = $('#node-config-input-characteristics-container')[0].children;
+        var len = children.length;
+        for (var i = 0; i < len; i++) {
+          children[0].remove();
+        }
+        charBuff = [];
+      }
+
+      function getBleDeviceKey() {
+        try {
+          var current = JSON.parse($('#node-config-input-bleDevices').val());
+          var currentId = current.localName + ':' + current.address + ':' + current.uuid;
+          return currentId;
+        } catch (_) {
+          return '';
+        }
+      }
+
+      $('#node-config-input-bleDevices').prop('disabled', true);
+      $('#node-config-input-selectable').prop('disabled', true);
+      $.getJSON('__bledevlist', function(bleDevices) {
+        $.each(bleDevices, function(i, v) {
+          var label = (v.localName || that._('generic-ble.label.unnamed')) + ' (' + v.rssi + ' dBm)';
+          var option = $('<option></option>').attr('value', JSON.stringify(v)).text(label);
+          $('#node-config-input-bleDevices').append(option);
+        });
+        function change() {
+          if (!$('#node-config-input-selectable').prop('checked')) {
+            return;
+          }
+          var selected = JSON.parse($(this).val());
+          var selectedId = selected.localName + ':' + selected.address + ':' + selected.uuid;
+          $('#node-config-input-localName').val(selected.localName);
+          $('#node-config-input-address').val(selected.address);
+          $('#node-config-input-uuid').val(selected.uuid);
+
+          clearCharacteristics();
+          var spin = $('<img src="red/images/spin.svg"/>',
+            {style:'display:block; margin-left:auto; margin-right:auto;'})
+            .appendTo($('#node-config-input-characteristics-container'));
+
+          $.ajax({
+            cache: false,
+            url: '__bledev/' + encodeURIComponent(getAddressOrUUID(selected)),
+            dataType: 'json',
+            success: function(bleDevice) {
+              spin.remove();
+              if (getBleDeviceKey() === selectedId) {
+                clearCharacteristics();
+
+                $('#node-config-input-localName').val(bleDevice.localName);
+                $('#node-config-input-address').val(bleDevice.address);
+                $('#node-config-input-uuid').val(bleDevice.uuid);
+
+                var characteristics = bleDevice.characteristics || [];
+                for (var i = 0; i < characteristics.length; i++) {
+                  $('#node-config-input-characteristics-container')
+                    .editableList('addItem', characteristics[i]);
+                }
+                charBuff = characteristics;
+                if (charBuff.length === 0) {
+                  $('#node-config-input-characteristics-container').editableList('addItem');
+                }
+              }
+            },
+            error: function () {
+              spin.remove();
+              if (getBleDeviceKey() === selectedId) {
+                clearCharacteristics();
+                $('#node-config-input-characteristics-container').editableList('addItem');
+              }
+            }
+          });
+        }
+        $('#node-config-input-bleDevices').change(change);
+        $('#node-config-input-selectable').val(false);
+        if (bleDevices.length > 0) {
+          $('#node-config-input-selectable')
+            .prop('disabled', false)
+            .click(function() {
+              let checked = $(this).prop('checked');
+              $('#node-config-input-bleDevices').prop('disabled', !checked);
+              if (checked) {
+                $('#node-config-input-bleDevices').trigger('change');
+              }
+            });
+        }
+      });
+    }
+  });
+</script>

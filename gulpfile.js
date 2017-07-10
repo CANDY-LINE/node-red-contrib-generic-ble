@@ -1,12 +1,8 @@
 const gulp        = require('gulp');
 const util        = require("gulp-util");
 const babel       = require('gulp-babel');
-const browserify  = require('browserify');
-const babelify    = require('babelify');
 const uglify      = require('gulp-uglify');
 const del         = require('del');
-const source      = require('vinyl-source-stream');
-const buffer      = require('vinyl-buffer');
 const jshint      = require('gulp-jshint');
 const mocha       = require('gulp-mocha');
 const sourcemaps  = require('gulp-sourcemaps');
@@ -15,7 +11,6 @@ const htmlmin     = require('gulp-htmlmin');
 const cleancss    = require('gulp-clean-css');
 const less        = require('gulp-less');
 const manifest    = require('gulp-manifest');
-const shim        = require('browserify-shim');
 const yaml        = require('gulp-yaml');
 
 const minified = process.env.NODE_ENV === 'production';
@@ -40,6 +35,12 @@ gulp.task('clean', () => {
   ]);
 });
 
+gulp.task('cleanTestJs', () => {
+  return del([
+    'dist/**/*.test.js',
+  ]);
+});
+
 gulp.task('i18n', () => {
   return gulp.src([
       './src/locales/**/*.{yaml,yml}'
@@ -57,25 +58,15 @@ gulp.task('assets', ['i18n'], () => {
 });
 
 gulp.task('js', ['assets'], () => {
-  return browserify({
-      entries: './src/generic-ble.js',
-      debug: true
-    })
-    .transform(babelify, {
+  return gulp.src('./src/**/*.js')
+    .pipe(gulpif(sourcemapEnabled, sourcemaps.init(), util.noop()))
+    .pipe(babel({
       minified: minified,
       compact: minified,
       presets: ["es2015"],
-      plugins: ['add-module-exports'],
-      sourceMaps: sourcemapEnabled,
-    }).on('error', util.log)
-    .transform(shim, {
-      global: true
-    }).on('error', util.log)
-    .bundle()
-    .pipe(source('generic-ble.js'))
-    .pipe(buffer())
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.init({loadMaps: true}), util.noop()))
-    .pipe(uglify({
+      plugins: ['add-module-exports']
+    }))
+    .pipe(gulpif(!sourcemapEnabled, uglify({
       mangle: minified,
       compress: {
         dead_code: true,
@@ -84,12 +75,12 @@ gulp.task('js', ['assets'], () => {
         unused: true,
         toplevel: true,
         if_return: true,
-        drop_console: !sourcemapEnabled,
+        drop_console: true,
         conditionals: true,
         unsafe_math: true,
         unsafe: true
       },
-    }))
+    }), util.noop()))
     .pipe(gulpif(sourcemapEnabled, sourcemaps.write(), util.noop()))
     .pipe(gulp.dest('./dist'));
 });
@@ -119,7 +110,7 @@ gulp.task('testAssets', () => {
   .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('testJs', ['build'], () => {
+gulp.task('testJs', ['cleanTestJs', 'build'], () => {
   return gulp.src('./tests/**/*.js')
     .pipe(sourcemaps.init())
     .pipe(babel({
