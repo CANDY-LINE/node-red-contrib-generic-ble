@@ -827,7 +827,12 @@ export default function(RED) {
       RED.auth.needsPermission('generic-ble.read'), (req, res) => {
     let promises = [];
     try {
-      promises = bleDevices.keys().map(k => toApiObject(bleDevices.get(k)));
+      promises = bleDevices.keys().map(k => {
+        // load the live object for invoking functions
+        // as cached object is disconnected from noble context
+        let peripheral = bleDevices.get(k);
+        return toApiObject(noble._peripherals[peripheral.uuid]);
+      });
     } catch (_) {}
     Promise.all(promises).then(body => {
       if (TRACE) {
