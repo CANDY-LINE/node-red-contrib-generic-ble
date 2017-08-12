@@ -359,6 +359,9 @@ function connectToPeripheral(peripheral) {
       if (TRACE) {
         console.log(`<connectToPeripheral> <${peripheral.uuid}> discovering all services and characteristics...`);
       }
+      if (onDiscover) {
+        onDiscover(peripheral);
+      }
       if (peripheral.services) {
         if (TRACE) {
           console.log(`<connectToPeripheral> <${peripheral.uuid}> discovered 00`);
