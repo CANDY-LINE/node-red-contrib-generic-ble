@@ -18,8 +18,10 @@ These are environmental variables for systemwidely configuring this node:
 |----------|-------------|
 | `GENERIC_BLE_CONNECTION_TIMEOUT_MS`  | Connection Timeout in milliseconds. 5s by default |
 | `GENERIC_BLE_CONCURRENT_CONNECTIONS` | Number of Concurrent BLE connections. 1 by default |
-| `GENERIC_BLE_READ_WRITE_INTERVAL_MS` | Read/Write operation interval in milliseconds. 50 by default | `GENERIC_BLE_NOTIFY_WAIT_MS`         | Default waiting time for listening notify events. 300 by default |
+| `GENERIC_BLE_READ_WRITE_INTERVAL_MS` | Read/Write operation interval in milliseconds. 50ms by default | `GENERIC_BLE_NOTIFY_WAIT_MS`         | Default waiting time for listening notify events. 300 by default |
 | `GENERIC_BLE_MAX_REQUESTS`           | The length of Read/Write operation queues. 10 by default |
+
+You can easily get started by importing the example flow shown below.
 
 # How to install
 
@@ -27,6 +29,7 @@ This will take approx. 3 minutes on Raspberry Pi 3.
 
 ## Node-RED
 
+Run the following commands:
 ```
 cd ~/.node-red
 sudo npm install --unsafe-perm node-red-contrib-generic-ble
@@ -37,13 +40,14 @@ Then restart Node-RED process.
 When you have trouble with connecting your BLE devices, reset your HCI socket by the following command.
 
 ```
-# stop Node-RED first then run the following command:
+# STOP Node-RED first!!
 sudo hciconfig hci0 reset
 ```
 And restart Node-RED.
 
 ## CANDY RED
 
+Run the following commands:
 ```
 cd /opt/candy-red/.node-red
 sudo npm install --unsafe-perm node-red-contrib-generic-ble
