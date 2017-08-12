@@ -236,7 +236,7 @@ function characteristicsTask(services, bleDevice, RED) {
     process.nextTick(loop);
 
     bleDevice.characteristics.filter(c => c.notifiable).forEach(c => {
-      let characteristic = characteristics.filter(chr => chr.uuid === c.uuid)[0];
+      let characteristic = characteristics.filter(chr => chr && (chr.uuid === c.uuid))[0];
       if (!characteristic) {
         RED.log.warn(`[GenericBLE] <${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
         return;
