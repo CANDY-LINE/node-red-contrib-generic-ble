@@ -495,7 +495,7 @@ function onDiscoverFunc(RED) {
     } else if (peripheral.connectable) {
       bleDevices.set(addressOrUUID, peripheral);
       if (false && TRACE) {
-        RED.log.info('[GenericBLE:TRACE] ', peripheral);
+        RED.log.info(`[GenericBLE:DISCOVER:TRACE] <${addressOrUUID}> ${peripheral.advertisement.localName}`);
       }
       if (configBleDevices[addressOrUUID]) {
         schedulePeripheralTask(peripheral.uuid, characteristicsTask, null, RED);
