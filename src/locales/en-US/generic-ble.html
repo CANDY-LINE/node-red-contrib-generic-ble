@@ -1,7 +1,56 @@
 <script type="text/x-red" data-help-name="Generic BLE in">
+<p>Emits read characteristic values and/or notified characteristic values.</p>
+<h3>Outputs</h3>
+<p>
+The output object is contained in <code>msg.payload</code> property. Its structure is as follows:
+</p>
+<pre>
+{
+  "uuid": "[device UUID placed here]",
+  "characteristics":
+    "notification": true or false, // true for notified data
+    "[readable characteristics UUID 1]": (Buffer object),
+    "[readable characteristics UUID 2]": (Buffer object),
+                    :
+                    :
+}
+</pre>
+<p>
+You can access each <code>Buffer object</code> data in the same form as array element accessing like <code>[0]</code>.
+</p>
+<h3>Inputs</h3>
+<p>
+Expects a message used for triggering <code>Read</code> operations.
+This node will read all readable characteristics. These operaions are performed asynchrounsly.
+The content of the message paylaod is always <b>IGNORED</b>.
+</p>
 </script>
 
 <script type="text/x-red" data-help-name="Generic BLE out">
+<p>
+Writes a characteristic value associated with a given characteristic UUID.
+</p>
+<h3>Inputs</h3>
+<p>
+In order to write a characteristic value,
+the following structure object is required in <code>msg.payload</code> property.
+</p>
+<pre>
+{
+  "[writable characteristics UUID]": (value),
+  "writeWithoutResponse": true or false // true for writeWithoutResponse characteristic
+}
+</pre>
+<p>
+The acceptable writable <code>value</code> type is one of:
+<ul>
+  <li><code>Buffer object</code></li>
+  <li><code>int</code> array</li>
+  <li>hex string</li>
+  <li><code>int</code> value</li>
+</ul>
+This node translates these values into a Buffer object.
+</p>
 </script>
 
 <script type="text/x-red" data-help-name="Generic BLE">
