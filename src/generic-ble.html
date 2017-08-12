@@ -131,7 +131,7 @@
   </div>
 </script>
 
-<script type='text/javascript'>
+<script type="text/javascript">
   'use strict';
   const MAX_MILLIS = 5 * 1000;
   const MIN_MILLIS = 300;
@@ -256,71 +256,91 @@
       function getBleDeviceKey() {
         try {
           var current = JSON.parse($('#node-config-input-bleDevices').val());
-          var currentId = current.localName + ':' + current.address + ':' + current.uuid;
+          var currentId = current.localName + '_' + current.address + '_' + current.uuid;
           return currentId;
         } catch (_) {
           return '';
         }
       }
 
-      $('#node-config-input-bleDevices').prop('disabled', true);
-      $('#node-config-input-selectable').prop('disabled', true);
-      $.getJSON('__bledevlist', function(bleDevices) {
-        $.each(bleDevices, function(i, v) {
-          var label = (v.localName || that._('generic-ble.label.unnamed')) + ' (' + v.rssi + ' dBm)';
-          var option = $('<option></option>').attr('value', JSON.stringify(v)).text(label);
-          $('#node-config-input-bleDevices').append(option);
-        });
-        function change() {
-          if (!$('#node-config-input-selectable').prop('checked')) {
-            return;
-          }
-          var selected = JSON.parse($(this).val());
-          var selectedId = selected.localName + ':' + selected.address + ':' + selected.uuid;
-          $('#node-config-input-localName').val(selected.localName);
-          $('#node-config-input-address').val(selected.address);
-          $('#node-config-input-uuid').val(selected.uuid);
+      function change() {
+        if (!$('#node-config-input-selectable').prop('checked')) {
+          return;
+        }
+        var selected = JSON.parse($(this).val());
+        var selectedId = selected.localName + '_' + selected.address + '_' + selected.uuid;
+        $('#node-config-input-localName').val(selected.localName);
+        $('#node-config-input-address').val(selected.address);
+        $('#node-config-input-uuid').val(selected.uuid);
 
-          clearCharacteristics();
-          var spin = $('<img src="red/images/spin.svg"/>',
-            {style:'display:block; margin-left:auto; margin-right:auto;'})
-            .appendTo($('#node-config-input-characteristics-container'));
+        clearCharacteristics();
+        var spin = $('<img src="red/images/spin.svg"/>',
+          {style:'display:block; margin-left:auto; margin-right:auto;'})
+          .appendTo($('#node-config-input-characteristics-container'));
 
-          $.ajax({
-            cache: false,
-            url: '__bledev/' + encodeURIComponent(getAddressOrUUID(selected)),
-            dataType: 'json',
-            success: function(bleDevice) {
-              spin.remove();
-              if (getBleDeviceKey() === selectedId) {
-                clearCharacteristics();
+        $.ajax({
+          cache: false,
+          url: '__bledev/' + encodeURIComponent(getAddressOrUUID(selected)),
+          dataType: 'json',
+          success: function(bleDevice) {
+            spin.remove();
+            if (getBleDeviceKey() === selectedId) {
+              clearCharacteristics();
 
-                $('#node-config-input-localName').val(bleDevice.localName);
-                $('#node-config-input-address').val(bleDevice.address);
-                $('#node-config-input-uuid').val(bleDevice.uuid);
-
-                var characteristics = bleDevice.characteristics || [];
-                for (var i = 0; i < characteristics.length; i++) {
-                  $('#node-config-input-characteristics-container')
-                    .editableList('addItem', characteristics[i]);
-                }
-                charBuff = characteristics;
-                if (charBuff.length === 0) {
-                  $('#node-config-input-characteristics-container').editableList('addItem');
-                }
+              if (!selected.localName && bleDevice.localName) {
+                getBleDevices(selected);
               }
-            },
-            error: function () {
-              spin.remove();
-              if (getBleDeviceKey() === selectedId) {
-                clearCharacteristics();
+
+              $('#node-config-input-localName').val(bleDevice.localName);
+              $('#node-config-input-address').val(bleDevice.address);
+              $('#node-config-input-uuid').val(bleDevice.uuid);
+
+              var characteristics = bleDevice.characteristics || [];
+              for (var i = 0; i < characteristics.length; i++) {
+                $('#node-config-input-characteristics-container')
+                  .editableList('addItem', characteristics[i]);
+              }
+              charBuff = characteristics;
+              if (charBuff.length === 0) {
                 $('#node-config-input-characteristics-container').editableList('addItem');
               }
             }
+          },
+          error: function () {
+            spin.remove();
+            if (getBleDeviceKey() === selectedId) {
+              clearCharacteristics();
+              $('#node-config-input-characteristics-container').editableList('addItem');
+            }
+          }
+        });
+      }
+
+      function getBleDevices(/* bleDevice */ selected, /* function(bleDevices) */ callback) {
+        selected = selected || {};
+        $.getJSON('__bledevlist', function(bleDevices) {
+          $('#node-config-input-bleDevices').off('change', '**');
+          $('#node-config-input-bleDevices option').remove();
+          $.each(bleDevices, function(i, v) {
+            var label = (v.localName || that._('generic-ble.label.unnamed')) + ' (' + v.rssi + ' dBm)';
+            var val = JSON.stringify(v);
+            var option = $('<option></option>').attr('value', val).text(label);
+            $('#node-config-input-bleDevices').append(option);
+            if ((v.address + '_' + v.uuid) === (selected.address + '_' + selected.uuid)) {
+              $('#node-config-input-bleDevices').val(val);
+            }
           });
-        }
-        $('#node-config-input-bleDevices').change(change);
-        $('#node-config-input-selectable').val(false);
+          $('#node-config-input-bleDevices').change(change);
+          if (callback) {
+            callback(bleDevices);
+          }
+        });
+      }
+
+      $('#node-config-input-bleDevices').prop('disabled', true);
+      $('#node-config-input-selectable').prop('disabled', true);
+      $('#node-config-input-selectable').val(false);
+      getBleDevices(null, function(bleDevices) {
         if (bleDevices.length > 0) {
           $('#node-config-input-selectable')
             .prop('disabled', false)
