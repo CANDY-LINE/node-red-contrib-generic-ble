@@ -95,15 +95,20 @@ gulp.task('less', () => {
 });
 
 gulp.task('html', () => {
-  return gulp.src('./src/**/*.html')
-    .pipe(htmlmin({collapseWhitespace:true, conservativeCollapse:true}))
+  return gulp.src([
+      './src/**/*.html',
+      '!./src/nodes/*/node_modules/**/*.html',
+    ])
+    .pipe(htmlmin({
+      collapseWhitespace: true,
+      conservativeCollapse: true,
+      minifyJS: true, minifyCSS: true,
+      removeComments: true
+    }))
     .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('build', ['lint', 'js', 'less', 'html', 'assets'], () => {
-  gulp.src(['./dist/*'], { base: './dist' })
-    .pipe(gulp.dest('./dist'));
-});
+gulp.task('build', ['lint', 'js', 'less', 'html', 'assets']);
 
 gulp.task('testAssets', () => {
   return gulp.src('./tests/**/*.{css,less,ico,png,html,json,yaml,yml}')
