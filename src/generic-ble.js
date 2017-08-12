@@ -21,6 +21,29 @@ const q = queue({
   autostart: true
 });
 let onDiscover;
+let timeouts = [];
+
+function addTimeout(fn, ms) {
+  let timeout = setTimeout(fn, ms);
+  timeouts.push(timeout);
+  return timeout;
+}
+
+function deleteTimeout(t) {
+  clearTimeout(t);
+  let i = timeouts.indexOf(t);
+  if (i < 0) {
+    return t;
+  }
+  timeouts.splice(i, 1);
+}
+
+function deleteAllTimeouts() {
+  timeouts.forEach((t) => {
+    clearTimeout(t);
+  });
+  timeouts = [];
+}
 
 function onStateChange(state) {
   if (state === 'poweredOn') {
@@ -165,10 +188,11 @@ function characteristicsTask(services, bleDevice, RED) {
       });
     };
 
-    let timeout = setTimeout(() => {
+    let timeout = addTimeout(() => {
       if (TRACE) {
         RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIPTION TIMEOUT`);
       }
+      deleteTimeout(timeout);
       loop = null;
       timeout = null;
       bleDevice.emit('timeout');
@@ -233,7 +257,7 @@ function characteristicsTask(services, bleDevice, RED) {
       characteristic.subscribe((err) => {
         if (err) {
           if (timeout) {
-            clearTimeout(timeout);
+            deleteTimeout(timeout);
             bleDevice.emit('error');
           }
           loop = null;
@@ -278,7 +302,7 @@ function disconnectPeripheral(peripheral, done) {
       console.log(`<disconnectPeripheral> <${peripheral.uuid}> DISCONNECTED`);
     }
     if (timeout) {
-      clearTimeout(timeout);
+      deleteTimeout(timeout);
       if (bleDevice) {
         bleDevice.emit('disconnected');
       }
@@ -288,10 +312,11 @@ function disconnectPeripheral(peripheral, done) {
       done();
     }
   };
-  timeout = setTimeout(() => {
+  timeout = addTimeout(() => {
     if (TRACE) {
       console.log(`<disconnectPeripheral> <${peripheral.uuid}> DISCONNECT TIMEOUT`);
     }
+    deleteTimeout(timeout);
     timeout = null;
     if (bleDevice) {
       bleDevice.emit('timeout');
@@ -329,7 +354,7 @@ function connectToPeripheral(peripheral) {
         // timeout is already performed
         return reject(`Already Timed Out`);
       }
-      clearTimeout(timeout);
+      deleteTimeout(timeout);
       timeout = null;
       if (TRACE) {
         console.log(`<connectToPeripheral> <${peripheral.uuid}> discovering all services and characteristics...`);
@@ -341,7 +366,8 @@ function connectToPeripheral(peripheral) {
         return resolve([peripheral.services, bleDevice]);
       }
       if (peripheral._discovering) {
-        setTimeout(() => {
+        let discoveryTimeout = addTimeout(() => {
+          deleteTimeout(discoveryTimeout);
           if (peripheral.services) {
             if (TRACE) {
               console.log(`<connectToPeripheral> <${peripheral.uuid}> discovered 00`);
@@ -355,7 +381,7 @@ function connectToPeripheral(peripheral) {
       if (TRACE) {
         console.log(`<connectToPeripheral> <${peripheral.uuid}> Setting up discoveryTimeout`);
       }
-      let discoveryTimeout = setTimeout(() => {
+      let discoveryTimeout = addTimeout(() => {
         if (TRACE) {
           console.log(`<connectToPeripheral> <${peripheral.uuid}> discoveryTimeout fired`);
         }
@@ -364,6 +390,7 @@ function connectToPeripheral(peripheral) {
         }
         peripheral._discovering = false;
         peripheral.removeListener('connect', onConnected);
+        deleteTimeout(discoveryTimeout);
         discoveryTimeout = null;
         onConnected = null;
         reject(`<${peripheral.uuid}> Discovery Timeout`);
@@ -375,7 +402,7 @@ function connectToPeripheral(peripheral) {
         if (TRACE) {
           console.log(`<connectToPeripheral> <${peripheral.uuid}> discoverAllServicesAndCharacteristics OK`);
         }
-        clearTimeout(discoveryTimeout);
+        deleteTimeout(discoveryTimeout);
         discoveryTimeout = null;
         if (err) {
           if (TRACE) {
@@ -389,11 +416,12 @@ function connectToPeripheral(peripheral) {
         return resolve([services, bleDevice]);
       });
     };
-    timeout = setTimeout(() => {
+    timeout = addTimeout(() => {
       if (bleDevice) {
         bleDevice.emit('timeout');
       }
       peripheral.removeListener('connect', onConnected);
+      deleteTimeout(timeout);
       timeout = null;
       onConnected = null;
       reject(`<${peripheral.uuid}> Connection Timeout`);
@@ -814,6 +842,8 @@ export default function(RED) {
           delete noble._peripherals[k]._skipDisconnect;
         });
       }
+      noble.stopScanning();
+      deleteAllTimeouts();
       bleDevices.flushAll();
       startScanning(RED);
       setupQueue(RED);
