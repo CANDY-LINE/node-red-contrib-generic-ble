@@ -449,6 +449,12 @@ function peripheralTask(uuid, task, done, RED) {
     if (TRACE) {
       RED.log.info(`<peripheralTask> <${uuid}> START`);
     }
+    if (!noble._peripherals) {
+      if (done) {
+        done(`<${uuid}> No valid peripherals`);
+      }
+      return next(`<${uuid}> No valid peripherals`);
+    }
     let peripheral = noble._peripherals[uuid];
     if (!peripheral) {
       if (TRACE) {
@@ -496,7 +502,7 @@ function addErrorListenerToQueue(RED) {
   q.removeAllListeners('error');
   q.on('error', (err) => {
     if (TRACE) {
-      RED.log.error(`[GenericBLE] ${err}`);
+      RED.log.error(`[GenericBLE] ${err} => ${err.stack}`);
     }
   });
 }
