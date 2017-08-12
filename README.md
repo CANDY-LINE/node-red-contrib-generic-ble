@@ -62,6 +62,8 @@ The above command performs `hciconfig hci0 reset` as well. So you don't have to 
 
 # Example Flow
 
+You can import this flow on Node-RED UI. You need to change Generic BLE config node named `nRF5x` or add a new config node for your device.
+
 ```
 [
     {
