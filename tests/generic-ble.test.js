@@ -38,6 +38,8 @@ describe('generic-ble node', () => {
     it('should have valid Node-RED plugin classes', () => {
       assert.isNotNull(RED);
       genericBLEModule(RED);
+      assert.isTrue(RED.nodes.registerType.withArgs('Generic BLE', sinon.match.any).calledOnce);
+      assert.isTrue(RED.nodes.registerType.withArgs('Generic BLE in', sinon.match.any).calledOnce);
       assert.isTrue(RED.nodes.registerType.withArgs('Generic BLE out', sinon.match.any).calledOnce);
     });
   });
