@@ -16,12 +16,29 @@ cd ~/.node-red
 sudo npm install --unsafe-perm node-red-contrib-generic-ble
 ```
 
+Then restart Node-RED process.
+
+When you have trouble with connecting your BLE devices, reset your HCI socket by the following command.
+
+```
+# stop Node-RED first then run the following command:
+sudo hciconfig hci0 reset
+```
+And restart Node-RED.
+
 ## CANDY RED
 
 ```
 cd /opt/candy-red/.node-red
 sudo npm install --unsafe-perm node-red-contrib-generic-ble
 ```
+
+Then restart `candy-red` service.
+
+```
+sudo systemctl restart candy-red
+```
+The above command performs `hciconfig hci0 reset` as well. So you don't have to run `hciconfig` command separately.
 
 # HCI Dump Debugging (Raspbian/Ubuntu/Debian)
 
@@ -39,10 +56,6 @@ sudo hcidump -t -x
 # Enabling trace log
 
 Set `GENERIC_BLE_TRACE=true` on starting Node-RED.
-
-# Known Issues
-
-Connecting to peripherals keeps failing in some cases after selecting a BLE peripheral from the scan result select box in the Generic BLE node configuration dialog. If you get stuck in that case, stop Node-RED and run `sudo hciconfig hci0 reset` (replace `hci0` with a proper interface if necessary) then start Node-RED again.
 
 # Revision History
 
