@@ -346,7 +346,7 @@
       $('#node-config-input-bleDevices').prop('disabled', true);
       $('#node-config-input-selectable').prop('disabled', true);
       $('#node-config-input-selectable').val(false);
-      getBleDevices(null, function(bleDevices) {
+      getBleDevices(that, function(bleDevices) {
         if (bleDevices.length > 0) {
           $('#node-config-input-selectable')
             .prop('disabled', false)
