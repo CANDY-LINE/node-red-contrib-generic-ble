@@ -1,8 +1,89 @@
 <script type="text/x-red" data-help-name="Generic BLE in">
+<p>Emits read characteristic values and/or notified characteristic values.</p>
+<h3>Outputs</h3>
+<p>
+The output object is contained in <code>msg.payload</code> property. Its structure is as follows:
+</p>
+<pre>
+{
+  "uuid": "[device UUID placed here]",
+  "characteristics":
+    "notification": true or false, // true for notified data
+    "[readable characteristics UUID 1]": (Buffer object),
+    "[readable characteristics UUID 2]": (Buffer object),
+                    :
+                    :
+}
+</pre>
+<p>
+You can access each <code>Buffer object</code> data in the same form as array element accessing like <code>[0]</code>.
+</p>
+<h3>Inputs</h3>
+<p>
+Expects a message used for triggering <code>Read</code> operations.
+This node will read all readable characteristics. These operaions are performed asynchrounsly.
+The content of the message paylaod is always <b>IGNORED</b>.
+</p>
 </script>
 
 <script type="text/x-red" data-help-name="Generic BLE out">
+<p>
+Writes characteristic values associated with given characteristic UUIDs.
+</p>
+<h3>Inputs</h3>
+<p>
+In order to write characteristic values,
+the following structure object is required in <code>msg.payload</code> property.
+</p>
+<pre>
+{
+  "[writable characteristics UUID 1]": (value),
+  "[writable characteristics UUID 2]": (value),
+  "writeWithoutResponse": true or false // true for writeWithoutResponse characteristic
+}
+</pre>
+<p>
+As <code>writeWithoutResponse</code> property is associated with a whole paylaod,
+all characteristics contained in the payload are assumed to have
+the same <code>writeWithoutResponse</code> property.
+</p>
+<p>
+The acceptable writable <code>value</code> type is one of:
+<ul>
+  <li><code>Buffer object</code></li>
+  <li><code>int</code> array</li>
+  <li>hex string</li>
+  <li><code>int</code> value</li>
+</ul>
+This node translates these values into a Buffer object.
+</p>
 </script>
 
 <script type="text/x-red" data-help-name="Generic BLE">
+<p>
+By default, you can register your BLE device by providing its MAC address.
+If you don't have the address, you can use <code>Scan Result</code> select box in the dialog to find your device.
+</p>
+<p>
+In order to use the widget, enable <code>Select from scan result</code> checkbox.
+And you can see the list of BLE devices around the machine where Node-RED runs.
+</p>
+<p>
+This node looks for advertised names and show them on the list.
+However, some of devices don't have the name.
+In that case, you will see <code>(Unnamed)</code> label.
+</p>
+<p>
+The node will try to update the device name when the device has <code>Device Name (2a00)</code> characteristic.
+This can be done when you choose a device from the list.
+</p>
+<p>
+<code>Listening Period</code> means the period of the device connection to receive notify events.
+Since the node sequentially accesses each BLE device, the longer period delays the following operations.
+</p>
+<p>
+<code>GATT Characteristics</code> just shows the info provided by the device itself.
+The info contains characteristic UUID, which will help you to compose or parse messages
+on writing/reading characteristics.
+</p>
 </script>

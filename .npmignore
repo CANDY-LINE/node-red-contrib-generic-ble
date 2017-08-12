@@ -14,3 +14,5 @@ gulpfile.js
 *.log
 .dockerignore
 .node-version
+*.test.js
+*.test.js.map

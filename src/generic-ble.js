@@ -1,3 +1,20 @@
+/**
+ * @license
+ * Copyright (c) 2017 CANDY LINE INC.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 'use strict';
 
 import 'source-map-support/register';
@@ -6,11 +23,11 @@ import NodeCache from 'node-cache';
 import queue from 'queue';
 
 const TRACE = (process.env.GENERIC_BLE_TRACE === 'true');
-const BLE_CONNECTION_TIMEOUT_MS = parseInt(process.env.BLE_CONNECTION_TIMEOUT_MS || 5000);
-const BLE_CONCURRENT_CONNECTIONS = parseInt(process.env.BLE_CONCURRENT_CONNECTIONS || 1);
-const BLE_READ_WRITE_INTERVAL_MS = parseInt(process.env.BLE_READ_WRITE_INTERVAL_MS || 50);
-const BLE_NOTIFY_WAIT_MS = parseInt(process.env.BLE_NOTIFY_WAIT_MS || 5000);
-const MAX_REQUESTS = parseInt(process.env.MAX_REQUESTS || 10);
+const BLE_CONNECTION_TIMEOUT_MS = parseInt(process.env.GENERIC_BLE_CONNECTION_TIMEOUT_MS || 5000);
+const BLE_CONCURRENT_CONNECTIONS = parseInt(process.env.GENERIC_BLE_CONCURRENT_CONNECTIONS || 1);
+const BLE_READ_WRITE_INTERVAL_MS = parseInt(process.env.GENERIC_BLE_READ_WRITE_INTERVAL_MS || 50);
+const BLE_NOTIFY_WAIT_MS = parseInt(process.env.GENERIC_BLE_NOTIFY_WAIT_MS || 300);
+const MAX_REQUESTS = parseInt(process.env.GENERIC_BLE_MAX_REQUESTS || 10);
 const bleDevices = new NodeCache({
   stdTTL : 10 * 60 * 1000,
   checkperiod : 60 * 1000
@@ -21,6 +38,29 @@ const q = queue({
   autostart: true
 });
 let onDiscover;
+let timeouts = [];
+
+function addTimeout(fn, ms) {
+  let timeout = setTimeout(fn, ms);
+  timeouts.push(timeout);
+  return timeout;
+}
+
+function deleteTimeout(t) {
+  clearTimeout(t);
+  let i = timeouts.indexOf(t);
+  if (i < 0) {
+    return t;
+  }
+  timeouts.splice(i, 1);
+}
+
+function deleteAllTimeouts() {
+  timeouts.forEach((t) => {
+    clearTimeout(t);
+  });
+  timeouts = [];
+}
 
 function onStateChange(state) {
   if (state === 'poweredOn') {
@@ -165,10 +205,11 @@ function characteristicsTask(services, bleDevice, RED) {
       });
     };
 
-    let timeout = setTimeout(() => {
+    let timeout = addTimeout(() => {
       if (TRACE) {
         RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIPTION TIMEOUT`);
       }
+      deleteTimeout(timeout);
       loop = null;
       timeout = null;
       bleDevice.emit('timeout');
@@ -212,7 +253,7 @@ function characteristicsTask(services, bleDevice, RED) {
     process.nextTick(loop);
 
     bleDevice.characteristics.filter(c => c.notifiable).forEach(c => {
-      let characteristic = characteristics.filter(chr => chr.uuid === c.uuid)[0];
+      let characteristic = characteristics.filter(chr => chr && (chr.uuid === c.uuid))[0];
       if (!characteristic) {
         RED.log.warn(`[GenericBLE] <${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
         return;
@@ -233,7 +274,7 @@ function characteristicsTask(services, bleDevice, RED) {
       characteristic.subscribe((err) => {
         if (err) {
           if (timeout) {
-            clearTimeout(timeout);
+            deleteTimeout(timeout);
             bleDevice.emit('error');
           }
           loop = null;
@@ -278,7 +319,7 @@ function disconnectPeripheral(peripheral, done) {
       console.log(`<disconnectPeripheral> <${peripheral.uuid}> DISCONNECTED`);
     }
     if (timeout) {
-      clearTimeout(timeout);
+      deleteTimeout(timeout);
       if (bleDevice) {
         bleDevice.emit('disconnected');
       }
@@ -288,10 +329,11 @@ function disconnectPeripheral(peripheral, done) {
       done();
     }
   };
-  timeout = setTimeout(() => {
+  timeout = addTimeout(() => {
     if (TRACE) {
       console.log(`<disconnectPeripheral> <${peripheral.uuid}> DISCONNECT TIMEOUT`);
     }
+    deleteTimeout(timeout);
     timeout = null;
     if (bleDevice) {
       bleDevice.emit('timeout');
@@ -329,10 +371,13 @@ function connectToPeripheral(peripheral) {
         // timeout is already performed
         return reject(`Already Timed Out`);
       }
-      clearTimeout(timeout);
+      deleteTimeout(timeout);
       timeout = null;
       if (TRACE) {
         console.log(`<connectToPeripheral> <${peripheral.uuid}> discovering all services and characteristics...`);
+      }
+      if (onDiscover) {
+        onDiscover(peripheral);
       }
       if (peripheral.services) {
         if (TRACE) {
@@ -341,7 +386,8 @@ function connectToPeripheral(peripheral) {
         return resolve([peripheral.services, bleDevice]);
       }
       if (peripheral._discovering) {
-        setTimeout(() => {
+        let discoveryTimeout = addTimeout(() => {
+          deleteTimeout(discoveryTimeout);
           if (peripheral.services) {
             if (TRACE) {
               console.log(`<connectToPeripheral> <${peripheral.uuid}> discovered 00`);
@@ -355,7 +401,7 @@ function connectToPeripheral(peripheral) {
       if (TRACE) {
         console.log(`<connectToPeripheral> <${peripheral.uuid}> Setting up discoveryTimeout`);
       }
-      let discoveryTimeout = setTimeout(() => {
+      let discoveryTimeout = addTimeout(() => {
         if (TRACE) {
           console.log(`<connectToPeripheral> <${peripheral.uuid}> discoveryTimeout fired`);
         }
@@ -364,6 +410,7 @@ function connectToPeripheral(peripheral) {
         }
         peripheral._discovering = false;
         peripheral.removeListener('connect', onConnected);
+        deleteTimeout(discoveryTimeout);
         discoveryTimeout = null;
         onConnected = null;
         reject(`<${peripheral.uuid}> Discovery Timeout`);
@@ -375,7 +422,7 @@ function connectToPeripheral(peripheral) {
         if (TRACE) {
           console.log(`<connectToPeripheral> <${peripheral.uuid}> discoverAllServicesAndCharacteristics OK`);
         }
-        clearTimeout(discoveryTimeout);
+        deleteTimeout(discoveryTimeout);
         discoveryTimeout = null;
         if (err) {
           if (TRACE) {
@@ -389,11 +436,12 @@ function connectToPeripheral(peripheral) {
         return resolve([services, bleDevice]);
       });
     };
-    timeout = setTimeout(() => {
+    timeout = addTimeout(() => {
       if (bleDevice) {
         bleDevice.emit('timeout');
       }
       peripheral.removeListener('connect', onConnected);
+      deleteTimeout(timeout);
       timeout = null;
       onConnected = null;
       reject(`<${peripheral.uuid}> Connection Timeout`);
@@ -417,6 +465,12 @@ function peripheralTask(uuid, task, done, RED) {
   return (next) => {
     if (TRACE) {
       RED.log.info(`<peripheralTask> <${uuid}> START`);
+    }
+    if (!noble._peripherals) {
+      if (done) {
+        done(`<${uuid}> No valid peripherals`);
+      }
+      return next(`<${uuid}> No valid peripherals`);
     }
     let peripheral = noble._peripherals[uuid];
     if (!peripheral) {
@@ -465,7 +519,7 @@ function addErrorListenerToQueue(RED) {
   q.removeAllListeners('error');
   q.on('error', (err) => {
     if (TRACE) {
-      RED.log.error(`[GenericBLE] ${err}`);
+      RED.log.error(`[GenericBLE] ${err} :: ${err.stack || 'N/A'}`);
     }
   });
 }
@@ -495,7 +549,7 @@ function onDiscoverFunc(RED) {
     } else if (peripheral.connectable) {
       bleDevices.set(addressOrUUID, peripheral);
       if (false && TRACE) {
-        RED.log.info('[GenericBLE:TRACE] ', peripheral);
+        RED.log.info(`[GenericBLE:DISCOVER:TRACE] <${addressOrUUID}> ${peripheral.advertisement.localName}`);
       }
       if (configBleDevices[addressOrUUID]) {
         schedulePeripheralTask(peripheral.uuid, characteristicsTask, null, RED);
@@ -812,8 +866,11 @@ export default function(RED) {
         Object.keys(noble._peripherals).forEach((k) => {
           delete noble._peripherals[k]._lock;
           delete noble._peripherals[k]._skipDisconnect;
+          delete noble._peripherals[k]._discovering;
         });
       }
+      noble.stopScanning();
+      deleteAllTimeouts();
       bleDevices.flushAll();
       startScanning(RED);
       setupQueue(RED);
@@ -827,7 +884,12 @@ export default function(RED) {
       RED.auth.needsPermission('generic-ble.read'), (req, res) => {
     let promises = [];
     try {
-      promises = bleDevices.keys().map(k => toApiObject(bleDevices.get(k)));
+      promises = bleDevices.keys().map(k => {
+        // load the live object for invoking functions
+        // as cached object is disconnected from noble context
+        let peripheral = bleDevices.get(k);
+        return toApiObject(noble._peripherals[peripheral.uuid]);
+      });
     } catch (_) {}
     Promise.all(promises).then(body => {
       if (TRACE) {
