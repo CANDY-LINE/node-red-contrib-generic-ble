@@ -55,7 +55,7 @@ sudo hcidump -t -x
 
 # Enabling trace log
 
-Set `GENERIC_BLE_TRACE=true` on starting Node-RED.
+Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise log in `/var/log/syslog`.
 
 # Revision History
 
