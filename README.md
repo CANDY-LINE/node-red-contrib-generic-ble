@@ -251,6 +251,11 @@ sudo hcidump -t -x
 Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise log in `/var/log/syslog`.
 
 # Revision History
+* 1.0.0
+  - Fix an issue where some devices cannot be discovered within a specific time window even after they can be connected
+  - Fix an issue where the Scan Result select widget didn't show the same item as the stored device info
+  - Update Scan Result option list whenever Local Name is resolved
+  - Improve stability by fixing minor bugs
 
 * 0.1.0
   - Initial Release (alpha)
