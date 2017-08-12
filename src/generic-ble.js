@@ -840,6 +840,7 @@ export default function(RED) {
         Object.keys(noble._peripherals).forEach((k) => {
           delete noble._peripherals[k]._lock;
           delete noble._peripherals[k]._skipDisconnect;
+          delete noble._peripherals[k]._discovering;
         });
       }
       noble.stopScanning();
