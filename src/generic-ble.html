@@ -253,11 +253,17 @@
         charBuff = [];
       }
 
+      function toDeviceKey(obj) {
+        if (!obj) {
+          return '';
+        }
+        return obj.address + '_' + obj.uuid;
+      }
+
       function getBleDeviceKey() {
         try {
           var current = JSON.parse($('#node-config-input-bleDevices').val());
-          var currentId = current.localName + '_' + current.address + '_' + current.uuid;
-          return currentId;
+          return toDeviceKey(current);
         } catch (_) {
           return '';
         }
@@ -268,7 +274,7 @@
           return;
         }
         var selected = JSON.parse($(this).val());
-        var selectedId = selected.localName + '_' + selected.address + '_' + selected.uuid;
+        var selectedId = toDeviceKey(selected);
         $('#node-config-input-localName').val(selected.localName);
         $('#node-config-input-address').val(selected.address);
         $('#node-config-input-uuid').val(selected.uuid);
@@ -326,7 +332,7 @@
             var val = JSON.stringify(v);
             var option = $('<option></option>').attr('value', val).text(label);
             $('#node-config-input-bleDevices').append(option);
-            if ((v.address + '_' + v.uuid) === (selected.address + '_' + selected.uuid)) {
+            if (toDeviceKey(v) === toDeviceKey(selected)) {
               $('#node-config-input-bleDevices').val(val);
             }
           });
