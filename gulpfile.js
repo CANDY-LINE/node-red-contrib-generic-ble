@@ -13,8 +13,8 @@ const less        = require('gulp-less');
 const manifest    = require('gulp-manifest');
 const yaml        = require('gulp-yaml');
 
-const minified = process.env.NODE_ENV === 'production';
-const sourcemapEnabled = process.env.NODE_ENV !== 'production';
+const minified = process.env.NODE_ENV !== 'development';
+const sourcemapEnabled = !minified;
 
 gulp.task('lint', () => {
   return gulp.src([

@@ -235,7 +235,18 @@ The above command performs `hciconfig hci0 reset` as well. So you don't have to 
 ]
 ```
 
-# HCI Dump Debugging (Raspbian/Ubuntu/Debian)
+# Appendix
+
+## How to build
+
+```
+# build
+$ NODE_ENV=development npm run build
+# package
+$ NODE_ENV=development npm pack
+```
+
+## HCI Dump Debugging (Raspbian/Ubuntu/Debian)
 
 ```
 sudo apt-get update
@@ -248,7 +259,7 @@ then
 sudo hcidump -t -x
 ```
 
-# Enabling trace log
+## Enabling trace log
 
 Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise log in `/var/log/syslog`.
 
