@@ -21,8 +21,6 @@ These are environmental variables for systemwidely configuring this node:
 | `GENERIC_BLE_READ_WRITE_INTERVAL_MS` | Read/Write operation interval in milliseconds. 50 by default | `GENERIC_BLE_NOTIFY_WAIT_MS`         | Default waiting time for listening notify events. 300 by default |
 | `GENERIC_BLE_MAX_REQUESTS`           | The length of Read/Write operation queues. 10 by default |
 
-**ALPHA RELEASE** : not yet available in [flows.nodered.org](https://flows.nodered.org)
-
 # How to install
 
 This will take approx. 3 minutes on Raspberry Pi 3.
