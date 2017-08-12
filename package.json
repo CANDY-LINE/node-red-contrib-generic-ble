@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/CANDY-LINE/node-red-contrib-generic-ble#readme",
   "keywords": [
+    "node-red",
     "bluetooth",
     "BLE",
     "bluetooth low energy",
