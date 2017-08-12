@@ -27,7 +27,7 @@ You can easily get started by importing the example flow shown below.
 
 This will take approx. 3 minutes on Raspberry Pi 3.
 
-## Node-RED
+## Node-RED users
 
 Run the following commands:
 ```
@@ -45,7 +45,7 @@ sudo hciconfig hci0 reset
 ```
 And restart Node-RED.
 
-## CANDY RED
+## CANDY RED users
 
 Run the following commands:
 ```
