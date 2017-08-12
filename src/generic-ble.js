@@ -502,7 +502,7 @@ function addErrorListenerToQueue(RED) {
   q.removeAllListeners('error');
   q.on('error', (err) => {
     if (TRACE) {
-      RED.log.error(`[GenericBLE] ${err} => ${err.stack}`);
+      RED.log.error(`[GenericBLE] ${err} :: ${err.stack || 'N/A'}`);
     }
   });
 }
