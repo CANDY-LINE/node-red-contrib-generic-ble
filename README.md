@@ -49,7 +49,7 @@ And restart Node-RED.
 
 Run the following commands:
 ```
-cd /opt/candy-red/.node-red
+cd $(npm -g root)/candy-red
 sudo npm install --unsafe-perm node-red-contrib-generic-ble
 ```
 
