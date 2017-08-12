@@ -28,19 +28,25 @@ The content of the message paylaod is always <b>IGNORED</b>.
 
 <script type="text/x-red" data-help-name="Generic BLE out">
 <p>
-Writes a characteristic value associated with a given characteristic UUID.
+Writes characteristic values associated with given characteristic UUIDs.
 </p>
 <h3>Inputs</h3>
 <p>
-In order to write a characteristic value,
+In order to write characteristic values,
 the following structure object is required in <code>msg.payload</code> property.
 </p>
 <pre>
 {
-  "[writable characteristics UUID]": (value),
+  "[writable characteristics UUID 1]": (value),
+  "[writable characteristics UUID 2]": (value),
   "writeWithoutResponse": true or false // true for writeWithoutResponse characteristic
 }
 </pre>
+<p>
+As <code>writeWithoutResponse</code> property is associated with a whole paylaod,
+all characteristics contained in the payload are assumed to have
+the same <code>writeWithoutResponse</code> property.
+</p>
 <p>
 The acceptable writable <code>value</code> type is one of:
 <ul>
