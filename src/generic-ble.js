@@ -592,20 +592,17 @@ function toApiObject(peripheral) {
   });
 }
 
-function toDetailedObject(peripheral) {
+function toDetailedObject(peripheral, RED) {
   let p = Promise.resolve();
   return toApiObject(peripheral).then(obj => {
     if (peripheral.services) {
       obj.characteristics = [];
       peripheral.services.map((s) => {
         obj.characteristics = obj.characteristics.concat((s.characteristics || []).map((c) => {
-          if (!c.type) {
-            return null;
-          }
           let characteristic = {
             uuid: c.uuid,
-            name: c.name,
-            type: c.type,
+            name: c.name || RED._('generic-ble.label.unnamedChr'),
+            type: c.type || RED._('generic-ble.label.customType'),
             notifiable: c.properties.indexOf('notify') >= 0,
             readable: c.properties.indexOf('read') >= 0,
             writable: c.properties.indexOf('write') >= 0,
@@ -918,7 +915,7 @@ export default function(RED) {
     }
 
     let task = () => {
-      return toDetailedObject(peripheral).then(bleDevice => {
+      return toDetailedObject(peripheral, RED).then(bleDevice => {
         if (TRACE) {
           RED.log.info(`/__bledev/${address} OUTPUT`, JSON.stringify(bleDevice, null, 2));
         }
