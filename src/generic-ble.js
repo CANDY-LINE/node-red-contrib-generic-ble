@@ -780,7 +780,7 @@ export default function(RED) {
             });
           });
           this.on('subscribed', () => {
-            this.status({fill:'green',shape:'dot',text:`generic-ble.status.connected`});
+            this.status({fill:'green',shape:'dot',text:`generic-ble.status.subscribed`});
           });
           this.on('unsubscribed', () => {
             this.status({fill:'red',shape:'ring',text:`generic-ble.status.unsubscribed`});
