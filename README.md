@@ -18,10 +18,11 @@ These are environmental variables for systemwidely configuring this node:
 |----------|-------------|
 | `GENERIC_BLE_CONNECTION_TIMEOUT_MS`  | Connection Timeout in milliseconds. 5s by default |
 | `GENERIC_BLE_CONCURRENT_CONNECTIONS` | Number of Concurrent BLE connections. 1 by default |
-| `GENERIC_BLE_READ_WRITE_INTERVAL_MS` | Read/Write operation interval in milliseconds. 50ms by default | `GENERIC_BLE_NOTIFY_WAIT_MS`         | Default waiting time for listening notify events. 300 by default |
+| `GENERIC_BLE_READ_WRITE_INTERVAL_MS` | Read/Write operation interval in milliseconds. 50ms by default |
+| `GENERIC_BLE_NOTIFY_WAIT_MS`         | Default waiting time for listening notify events. 300 by default |
 | `GENERIC_BLE_MAX_REQUESTS`           | The length of Read/Write operation queues. 10 by default |
 
-You can easily get started by importing the example flow shown below.
+You can easily get started with importing the example flow from the menu icon > `Import` > `Examples` > `generic ble`.
 
 # How to install
 
@@ -60,8 +61,39 @@ sudo systemctl restart candy-red
 ```
 The above command performs `hciconfig hci0 reset` as well. So you don't have to run `hciconfig` command separately.
 
+# How to use
 
+## How to configure a new BLE peripheral
 
+At first, drag either a `generic ble in` node or a `generic ble out` node to the workspace from the node palette and double-click the node. And you can find the following dialog. Here, click the pencil icon (`1`) to add a new BLE peripheral or edit the existing one.
+
+![ble in node](images/ble1.png)
+
+Then the new config node dialog appears like this.
+
+![ble config node](images/ble2.png)
+
+The `Scan Result` shows the scanned BLE peripherals. It can be empty when no peripherals are found.
+
+In order for the dialog to list your device, turn BLE on prior to open the dialog. Close the dialog then re-open it if you'd like to get the latest scan result.
+
+By default, you have to enter either MAC address or UUID manually to configure your BLE peripheral. However, by checking `Select from scan result`(`2`), you can choose the peripheral if it exists in the scan result.
+
+![ble config node](images/ble3.png)
+
+When you choose the peripheral, `GATT Characteristics` shows all characteristics discovered in it, and `Local Name`, `MAC` and `UUID` are automatically resolved as well.
+
+If you cannot find your peripheral in the `Scan Result`, you can reload the result by closing this dialog and re-opening it as described above.
+
+Click `Add` (`3`) when the information on the dialog looks good.
+
+![ble config node](images/ble4.png)
+
+Click `Done` (`4`) to finish the `ble in` node settings.
+
+# Example Flow
+
+You can import [the example flow](examples/01.read-write.json) on Node-RED UI. You need to change Generic BLE config node named `nRF5x` or add a new config node for your device.
 
 # Appendix
 
