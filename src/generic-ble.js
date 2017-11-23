@@ -151,7 +151,7 @@ function characteristicsTask(services, bleDevice, RED) {
       let readRequest = bleDevice._readRequests.shift() || [];
       let readUuidList = readRequest.map(c => c.uuid);
       let readChars = readUuidList.length > 0 ?
-        characteristics.filter(c => readUuidList.indexOf(c.uuid) >= 0) : [];
+        characteristics.filter(c => c && readUuidList.indexOf(c.uuid) >= 0) : [];
       let readPromises = readChars.map((c) => {
         return new Promise((resolve, reject) => {
           c.read(
