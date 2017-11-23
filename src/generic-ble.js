@@ -123,7 +123,7 @@ function characteristicsTask(services, bleDevice, RED) {
   let characteristics = services.reduce((prev, curr) => {
     return prev.concat(curr.characteristics);
   }, []);
-  return new Promise((resolve, reject) => {
+  return new Promise((taskResolve, taskReject) => {
     let loop = () => {
       let writeRequest = bleDevice._writeRequests.shift() || [];
       let writeUuidList = writeRequest.map(c => c.uuid);
@@ -238,12 +238,12 @@ function characteristicsTask(services, bleDevice, RED) {
         if (TRACE) {
           RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> END`);
         }
-        resolve();
+        taskResolve();
       }).catch((err) => {
         if (TRACE) {
           RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> END`);
         }
-        reject(err);
+        taskReject(err);
       });
     }, bleDevice.listeningPeriod || BLE_NOTIFY_WAIT_MS);
 
@@ -280,7 +280,7 @@ function characteristicsTask(services, bleDevice, RED) {
           loop = null;
           timeout = null;
           characteristics.forEach(c => c.removeAllListeners('data'));
-          return reject(err);
+          return taskReject(err);
         } else if (TRACE) {
           RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIBED`);
         }
