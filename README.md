@@ -73,7 +73,7 @@ This will take approx. 3 minutes on Raspberry Pi 3.
 Run the following commands:
 ```
 cd ~/.node-red
-sudo npm install --unsafe-perm node-red-contrib-generic-ble
+npm install node-red-contrib-generic-ble
 ```
 
 Then restart Node-RED process.
