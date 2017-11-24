@@ -119,6 +119,19 @@ function valToBuffer(hexOrIntArray, len=1) {
   return new Buffer(0);
 }
 
+function hasPendingOperations(bleDevice) {
+  if (!bleDevice) {
+    return false;
+  }
+  if ((bleDevice._writeRequests.length > 0) || (bleDevice._readRequests.length > 0)) {
+    return true;
+  }
+  if (bleDevice.muteNotifyEvents) {
+    return false;
+  }
+  return bleDevice.characteristics.filter(c => c.notifiable).length > 0;
+}
+
 function characteristicsTask(services, bleDevice) {
   let characteristics = services.reduce((prev, curr) => {
     return prev.concat(curr.characteristics);
@@ -391,6 +404,12 @@ function connectToPeripheral(peripheral) {
     return Promise.reject(`<${peripheral.uuid}> Try again`);
   }
   let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
+  if (!hasPendingOperations(bleDevice)) {
+    if (TRACE) {
+      console.log(`<connectToPeripheral> <${peripheral.uuid}> Skip to connect as there's nothing to do`);
+    }
+    return Promise.resolve();
+  }
   return new Promise((resolve, reject) => {
     let timeout;
     let onConnected = (err) => {
@@ -533,6 +552,13 @@ function peripheralTask(uuid, task, done, RED) {
     }
 
     connectToPeripheral(peripheral).then((result) => {
+      if (!result) {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            return resolve();
+          }, 100);
+        });
+      }
       return task(/* services */result[0], /* bleDevice */ result[1], RED);
     }).then(() => {
       tearDown();
