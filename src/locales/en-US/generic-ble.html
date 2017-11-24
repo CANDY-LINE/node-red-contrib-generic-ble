@@ -78,8 +78,9 @@ The node will try to update the device name when the device has <code>Device Nam
 This can be done when you choose a device from the list.
 </p>
 <p>
-<code>Listening Period</code> means the period of the device connection to receive notify events.
-Since the node sequentially accesses each BLE device, the longer period delays the following operations.
+<code>Operation Timeout</code> is the timeout period of Read/Write/Notify response <b>per attribute</b>.
+300ms per attribute by default.
+Since the node sequentially accesses each BLE device, the longer timeout delays the following operations.
 </p>
 <p>
 <code>GATT Characteristics</code> just shows the info provided by the device itself.

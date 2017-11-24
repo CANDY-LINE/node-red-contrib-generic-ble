@@ -119,11 +119,11 @@
     <input type='text' id='node-config-input-uuid' data-i18n='[placeholder]generic-ble.placeholder.uuid'>
   </div>
   <div class='form-row'>
-    <label for='node-config-input-listeningPeriod'>
+    <label for='node-config-input-operationTimeout'>
       <i class='fa fa-tag'></i>
-      <span data-i18n='generic-ble.label.listeningPeriod'></span>
+      <span data-i18n='generic-ble.label.operationTimeout'></span>
     </label>
-    <input type='text' id='node-config-input-listeningPeriod' data-i18n='[placeholder]generic-ble.placeholder.listeningPeriod'>
+    <input type='text' id='node-config-input-operationTimeout' data-i18n='[placeholder]generic-ble.placeholder.operationTimeout'>
   </div>
   <div class='form-row node-config-input-characteristics-container-row'>
     <i class='fa fa-gear'></i> <span data-i18n='generic-ble.label.characteristics'></span>
@@ -151,7 +151,7 @@
       localName: { value: '', required: false },
       address: { value: '', required: false },
       uuid: { value: '', required: false },
-      listeningPeriod: { value: '', required: false },
+      operationTimeout: { value: '', required: false },
       // characteristic
       // {
       //   "uuid": "2a19",
@@ -176,17 +176,17 @@
       if (uuid) {
         $('#node-config-input-uuid').val(uuid.toLowerCase());
       }
-      var listeningPeriod = $('#node-config-input-listeningPeriod').val();
-      if (listeningPeriod) {
-        listeningPeriod = parseInt(listeningPeriod);
-        if (listeningPeriod < MIN_MILLIS) {
-          listeningPeriod = MIN_MILLIS;
-        } else if (listeningPeriod > MAX_MILLIS) {
-          listeningPeriod = MAX_MILLIS;
-        } else if (isNaN(listeningPeriod)){
-          listeningPeriod = '';
+      var operationTimeout = $('#node-config-input-operationTimeout').val();
+      if (operationTimeout) {
+        operationTimeout = parseInt(operationTimeout);
+        if (operationTimeout < MIN_MILLIS) {
+          operationTimeout = MIN_MILLIS;
+        } else if (operationTimeout > MAX_MILLIS) {
+          operationTimeout = MAX_MILLIS;
+        } else if (isNaN(operationTimeout)){
+          operationTimeout = '';
         }
-        $('#node-config-input-listeningPeriod').val(listeningPeriod);
+        $('#node-config-input-operationTimeout').val(operationTimeout);
       }
       this.characteristics = (charBuff.length === 0 ? this.characteristics : charBuff);
     },

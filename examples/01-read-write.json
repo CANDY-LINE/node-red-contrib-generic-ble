@@ -118,7 +118,7 @@
         "localName": "nRF5x",
         "address": "f9:00:99:99:99:99",
         "uuid": "f90099999999",
-        "listeningPeriod": "1000",
+        "operationTimeout": "1000",
         "characteristics": [
             {
                 "uuid": "2a00",
