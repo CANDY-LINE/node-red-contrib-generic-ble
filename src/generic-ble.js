@@ -142,7 +142,13 @@ function characteristicsTask(services, bleDevice) {
             writeRequest.writeWithoutResponse,
             (err) => {
               if (err) {
+                if (TRACE) {
+                  bleDevice.log(`<Write> ${c.uuid} => FAIL`);
+                }
                 return reject(err);
+              }
+              if (TRACE) {
+                bleDevice.log(`<Write> ${c.uuid} => OK`);
               }
               resolve();
             }
@@ -161,7 +167,13 @@ function characteristicsTask(services, bleDevice) {
           c.read(
             (err, data) => {
               if (err) {
+                if (TRACE) {
+                  bleDevice.log(`<Read> ${c.uuid} => FAIL`);
+                }
                 return reject(err);
+              }
+              if (TRACE) {
+                bleDevice.log(`<Read> ${c.uuid} => ${data}`);
               }
               readObj[c.uuid] = data;
               resolve();
@@ -688,8 +700,8 @@ export default function(RED) {
           }
           let writables = this.characteristics.filter(c => c.writable || c.writeWithoutResponse);
           if (TRACE) {
-            RED.log.info(`[GenericBLE] characteristics => ${JSON.stringify(this.characteristics)}`);
-            RED.log.info(`[GenericBLE] writables.length => ${writables.length}`);
+            this.log(`characteristics => ${JSON.stringify(this.characteristics)}`);
+            this.log(`writables.length => ${writables.length}`);
           }
           if (writables.length === 0) {
             return false;
@@ -697,8 +709,8 @@ export default function(RED) {
           let uuidList = Object.keys(dataObj);
           writables = writables.filter(c => uuidList.indexOf(c.uuid) >= 0);
           if (TRACE) {
-            RED.log.info(`[GenericBLE] UUIDs to write => ${uuidList}`);
-            RED.log.info(`[GenericBLE] writables.length => ${writables.length}`);
+            this.log(`UUIDs to write => ${uuidList}`);
+            this.log(`writables.length => ${writables.length}`);
           }
           if (writables.length === 0) {
             return false;
@@ -718,8 +730,8 @@ export default function(RED) {
         read: () => {
           let readables = this.characteristics.filter(c => c.readable);
           if (TRACE) {
-            RED.log.info(`[GenericBLE] characteristics => ${JSON.stringify(this.characteristics)}`);
-            RED.log.info(`[GenericBLE] readables.length => ${readables.length}`);
+            this.log(`characteristics => ${JSON.stringify(this.characteristics)}`);
+            this.log(`readables.length => ${readables.length}`);
           }
           if (readables.length === 0) {
             return false;
@@ -740,7 +752,7 @@ export default function(RED) {
               this.nodes[id].emit(ev);
             });
           } catch (e) {
-            RED.log.error(e);
+            this.error(e);
           }
         });
       });
@@ -761,7 +773,7 @@ export default function(RED) {
       if (this.genericBleNode) {
         this.genericBleNode.on('ble-read', (uuid, readObj, err) => {
           if (err) {
-            RED.log.error(`[GenericBLE] <${uuid}> read: ${err}`);
+            this.error(`<${uuid}> read: ${err}`);
             return;
           }
           let payload = {
@@ -772,7 +784,7 @@ export default function(RED) {
             try {
               payload = JSON.stringify(payload);
             } catch(err) {
-              RED.log.warn(`[GenericBLE] <${uuid}> read: ${err}`);
+              this.warn(`<${uuid}> read: ${err}`);
               return;
             }
           }
@@ -783,7 +795,7 @@ export default function(RED) {
         if (this.notification) {
           this.genericBleNode.on('ble-notify', (uuid, readObj, err) => {
             if (err) {
-              RED.log.error(`[GenericBLE] <${uuid}> notify: ${err}`);
+              this.error(`<${uuid}> notify: ${err}`);
               return;
             }
             let payload = {
@@ -794,7 +806,7 @@ export default function(RED) {
               try {
                 payload = JSON.stringify(payload);
               } catch(err) {
-                RED.log.warn(`[GenericBLE] <${uuid}> read: ${err}`);
+                this.warn(`<${uuid}> read: ${err}`);
                 return;
               }
             }
@@ -821,7 +833,7 @@ export default function(RED) {
 
         this.on('input', () => {
           if (TRACE) {
-            RED.log.info(`[GenericBLEIn] input arrived!`);
+            this.log(`input arrived!`);
           }
           this.genericBleNode.operations.read();
         });
@@ -844,11 +856,11 @@ export default function(RED) {
       if (this.genericBleNode) {
         this.genericBleNode.on('ble-write', (uuid, err) => {
           if (err) {
-            RED.log.error(`[GenericBLE] <${uuid}> write: ${err}`);
+            this.error(`<${uuid}> write: ${err}`);
             return;
           }
           if (TRACE) {
-            RED.log.debug(`[GenericBLE] <${uuid}> write: OK`);
+            this.log(`<${uuid}> write: OK`);
           }
         });
         this.on('connected', () => {
