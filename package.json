@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-generic-ble",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Node-RED nodes for generic BLE devices",
   "license": "Apache-2.0",
   "repository": {
