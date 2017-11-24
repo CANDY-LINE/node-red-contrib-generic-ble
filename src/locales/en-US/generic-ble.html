@@ -21,7 +21,8 @@ You can access each <code>Buffer object</code> data in the same form as array el
 <h3>Inputs</h3>
 <p>
 Expects a message used for triggering <code>Read</code> operations.
-This node will read all readable characteristics. These operaions are performed asynchrounsly.
+You can set one or more characteristic uuids separated by comma (CSV) to query to <code>msg.topic</code>.
+However, leave <code>msg.topic</code> empty if you want to query all readable characteristics.
 The content of the message paylaod is always <b>IGNORED</b>.
 </p>
 </script>

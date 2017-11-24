@@ -753,8 +753,16 @@ export default function(RED) {
           }));
           return true;
         },
-        read: () => {
-          let readables = this.characteristics.filter(c => c.readable);
+        read: (uuids='') => {
+          uuids = uuids.split(',').map((uuid) => uuid.trim()).filter((uuid) => uuid);
+          let readables = this.characteristics.filter(c => {
+            if (c.readable) {
+              if (uuids.length === 0) {
+                return true;
+              }
+              return uuids.indexOf(c.uuid) >= 0;
+            }
+          });
           if (TRACE) {
             this.log(`characteristics => ${JSON.stringify(this.characteristics)}`);
             this.log(`readables.length => ${readables.length}`);
@@ -857,11 +865,11 @@ export default function(RED) {
         });
         this.genericBleNode.operations.register(this);
 
-        this.on('input', () => {
+        this.on('input', (msg) => {
           if (TRACE) {
             this.log(`input arrived!`);
           }
-          this.genericBleNode.operations.read();
+          this.genericBleNode.operations.read(msg.topic);
         });
         this.on('close', () => {
           if (this.genericBleNode) {
