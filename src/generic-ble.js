@@ -266,8 +266,8 @@ function characteristicsTask(services, bleDevice) {
 
         Promise.all(notifiables.map((c) => {
           return new Promise((resolve) => {
-            let characteristic = characteristics.filter(chr => chr && (chr.uuid === c.uuid)[0]);
-            if (characteristic.length === 0) {
+            let characteristic = characteristics.filter(chr => chr && (chr.uuid === c.uuid))[0];
+            if (!characteristic) {
               bleDevice.warn(`<${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
               return resolve();
             }
