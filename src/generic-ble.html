@@ -118,6 +118,11 @@
     </label>
     <input type='text' id='node-config-input-uuid' data-i18n='[placeholder]generic-ble.placeholder.uuid'>
   </div>
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-config-input-muteNotifyEvents" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-config-input-muteNotifyEvents" style="width: 70%;" data-i18n="generic-ble.label.muteNotifyEvents"></label>
+  </div>
   <div class='form-row'>
     <label for='node-config-input-operationTimeout'>
       <i class='fa fa-tag'></i>
@@ -151,6 +156,7 @@
       localName: { value: '', required: false },
       address: { value: '', required: false },
       uuid: { value: '', required: false },
+      muteNotifyEvents: { value: false, required: false },
       operationTimeout: { value: '', required: false },
       // characteristic
       // {

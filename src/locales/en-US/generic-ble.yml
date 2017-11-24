@@ -15,6 +15,7 @@ generic-ble:
     notification: Emit notify events
     customType: (Custom Type)
     unnamedChr: <Unnamed>
+    muteNotifyEvents: Mute notify events
   placeholder:
     localName: BLE device name
     address: aa:11:bb:22:cc:33 (case insensitive)
