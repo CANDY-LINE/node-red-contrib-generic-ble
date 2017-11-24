@@ -131,6 +131,7 @@ Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise l
 
 # Revision History
 * ?.?.?
+  - Support characteristic query by one or more uuids
   - Add `Mute Notify Events` to `Generic BLE` config node for this node to avoid unnecessary device connection for event subscription
   - Replace `RED.log` functions with node logging functions as possible to offer precise logging control via UI
   - Add `Operation Timeout` to `Generic BLE` config node to set the waiting time for Read/Write/Notify response **per characteristic** rather than per device
