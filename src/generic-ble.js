@@ -123,7 +123,7 @@ function hasPendingOperations(bleDevice) {
   if (!bleDevice) {
     return false;
   }
-  if ((bleDevice._writeRequests.length > 0) || (bleDevice._readRequests.length > 0)) {
+  if ((bleDevice._writeRequests.length > 0) || (bleDevice._readRequests.length > 0) || (bleDevice._notifyRequests.length > 0)) {
     return true;
   }
   if (bleDevice.muteNotifyEvents) {
@@ -246,14 +246,26 @@ function characteristicsTask(services, bleDevice) {
     }
     process.nextTick(loop);
   }).then(() => {
-    if (bleDevice.muteNotifyEvents) {
-      return Promise.resolve();
+    let notifiables = [];
+    let notifyRequest = bleDevice._notifyRequests.shift() || [];
+    let notifyUuidList = notifyRequest.map(c => {
+      operationTimeoutMs += c.period;
+      return c.uuid;
+    });
+    notifiables = notifyUuidList.length > 0 ?
+      characteristics.filter(c => c && notifyUuidList.indexOf(c.uuid) >= 0) : [];
+
+    if (notifyRequest.length === 0) {
+      if (bleDevice.muteNotifyEvents) {
+        return Promise.resolve();
+      }
+      operationTimeoutMs += (bleDevice.operationTimeout || BLE_OPERATION_WAIT_MS) * notifiables.length;
+      notifiables = bleDevice.characteristics.filter(c => c.notifiable);
+      if (notifiables.length === 0) {
+        return Promise.resolve();
+      }
     }
-    let notifiables = bleDevice.characteristics.filter(c => c.notifiable);
-    if (notifiables.length === 0) {
-      return Promise.resolve();
-    }
-    operationTimeoutMs += (bleDevice.operationTimeout || BLE_OPERATION_WAIT_MS) * notifiables.length;
+
     return new Promise((taskResolve, taskReject) => {
       timeout = addTimeout(() => {
         if (TRACE) {
@@ -708,6 +720,7 @@ export default function(RED) {
       this.nodes = {};
       this._writeRequests = []; // {uuid:'characteristic-uuid-to-write', data:Buffer()}
       this._readRequests = []; // {uuid:'characteristic-uuid-to-read'}
+      this._notifyRequests = []; // {uuid:'characteristic-uuid-to-subscribe', period:subscription period}
       this.operations = {
         register: (node) => {
           this.nodes[node.id] = node;
@@ -775,6 +788,31 @@ export default function(RED) {
           }
           this._readRequests.push(readables.map((r) => {
             return { uuid: r.uuid };
+          }));
+          return true;
+        },
+        subscribe: (uuids='', period=3000) => {
+          uuids = uuids.split(',').map((uuid) => uuid.trim()).filter((uuid) => uuid);
+          let notifiables = this.characteristics.filter(c => {
+            if (c.notifiable) {
+              if (uuids.length === 0) {
+                return true;
+              }
+              return uuids.indexOf(c.uuid) >= 0;
+            }
+          });
+          if (TRACE) {
+            this.log(`characteristics => ${JSON.stringify(this.characteristics)}`);
+            this.log(`notifiables.length => ${notifiables.length}`);
+          }
+          if (notifiables.length === 0) {
+            return false;
+          }
+          if (this._notifyRequests.length >= MAX_REQUESTS) {
+            return false;
+          }
+          this._notifyRequests.push(notifiables.map((r) => {
+            return { uuid: r.uuid, period: period };
           }));
           return true;
         }
@@ -869,7 +907,18 @@ export default function(RED) {
           if (TRACE) {
             this.log(`input arrived!`);
           }
-          this.genericBleNode.operations.read(msg.topic);
+          let obj = msg.payload || {};
+          try {
+            if (typeof(obj) === 'string') {
+              obj = JSON.parse(msg.payload);
+            }
+          } catch (_) {
+          }
+          if (obj.notify) {
+            this.genericBleNode.operations.subscribe(msg.topic, obj.period);
+          } else {
+            this.genericBleNode.operations.read(msg.topic);
+          }
         });
         this.on('close', () => {
           if (this.genericBleNode) {

@@ -34,7 +34,7 @@
         "crontab": "",
         "once": false,
         "x": 200,
-        "y": 260,
+        "y": 220,
         "wires": [
             [
                 "dfcf20d6.138ff"
@@ -102,12 +102,31 @@
         ]
     },
     {
+        "id": "5525464e.999a4",
+        "type": "inject",
+        "z": "867e39b4.d517f",
+        "name": "Poll Notify Events",
+        "topic": "2a19",
+        "payload": "{\"notify\":true,\"period\":5000}",
+        "payloadType": "json",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 200,
+        "y": 300,
+        "wires": [
+            [
+                "dfcf20d6.138ff"
+            ]
+        ]
+    },
+    {
         "id": "3b98076c.99a4c8",
         "type": "Generic BLE",
         "z": "",
         "localName": "CC2650 SensorTag",
-        "address": "99:99:99:99:99:99",
-        "uuid": "00000000000000000000000000000000",
+        "address": "54:6c:0e:78:86:80",
+        "uuid": "666e850ba45c4952b8bed27a8133ecb2",
         "muteNotifyEvents": true,
         "operationTimeout": "5000",
         "characteristics": [
