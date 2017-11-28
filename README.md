@@ -130,7 +130,9 @@ sudo hcidump -t -x
 Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise log in `/var/log/syslog`.
 
 # Revision History
-* ?.?.?
+
+* 2.0.0
+  - Add `Poll Notify Events` message support so that Generic BLE out node can start to subscribe the given characteristic events
   - Support characteristic query by one or more uuids
   - Add `Mute Notify Events` to `Generic BLE` config node for this node to avoid unnecessary device connection for event subscription
   - Replace `RED.log` functions with node logging functions as possible to offer precise logging control via UI
@@ -138,6 +140,7 @@ Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise l
   - `GENERIC_BLE_OPERATION_WAIT_MS` is introduced for default `Operation Timeout` value
   - Remove `Listening Period` from `Generic BLE` config node
   - `GENERIC_BLE_NOTIFY_WAIT_MS` is removed
+
 * 1.0.2
   - Improve README
   - Add an example flow file available from the editor UI
