@@ -59,7 +59,7 @@ These are environmental variables for systemwidely configuring this node:
 | `GENERIC_BLE_CONNECTION_TIMEOUT_MS`  | Connection Timeout in milliseconds. 5s by default |
 | `GENERIC_BLE_CONCURRENT_CONNECTIONS` | Number of Concurrent BLE connections. 1 by default |
 | `GENERIC_BLE_READ_WRITE_INTERVAL_MS` | Read/Write operation interval in milliseconds. 50ms by default |
-| `GENERIC_BLE_NOTIFY_WAIT_MS`         | Default waiting time for listening notify events. 300 by default |
+| `GENERIC_BLE_OPERATION_WAIT_MS`      | Default waiting time for Read/Write/Notify response per characteristic. 500 by default |
 | `GENERIC_BLE_MAX_REQUESTS`           | The length of Read/Write operation queues. 10 by default |
 
 You can easily get started with importing the example flow from the menu icon > `Import` > `Examples` > `generic ble`.
@@ -73,7 +73,7 @@ This will take approx. 3 minutes on Raspberry Pi 3.
 Run the following commands:
 ```
 cd ~/.node-red
-sudo npm install --unsafe-perm node-red-contrib-generic-ble
+npm install node-red-contrib-generic-ble
 ```
 
 Then restart Node-RED process.
@@ -130,6 +130,17 @@ sudo hcidump -t -x
 Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise log in `/var/log/syslog`.
 
 # Revision History
+
+* 2.0.0
+  - Add `Poll Notify Events` message support so that Generic BLE out node can start to subscribe the given characteristic events
+  - Support characteristic query by one or more uuids
+  - Add `Mute Notify Events` to `Generic BLE` config node for this node to avoid unnecessary device connection for event subscription
+  - Replace `RED.log` functions with node logging functions as possible to offer precise logging control via UI
+  - Add `Operation Timeout` to `Generic BLE` config node to set the waiting time for Read/Write/Notify response **per characteristic** rather than per device
+  - `GENERIC_BLE_OPERATION_WAIT_MS` is introduced for default `Operation Timeout` value
+  - Remove `Listening Period` from `Generic BLE` config node
+  - `GENERIC_BLE_NOTIFY_WAIT_MS` is removed
+
 * 1.0.2
   - Improve README
   - Add an example flow file available from the editor UI

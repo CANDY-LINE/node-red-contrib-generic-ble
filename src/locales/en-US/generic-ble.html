@@ -20,9 +20,29 @@ You can access each <code>Buffer object</code> data in the same form as array el
 </p>
 <h3>Inputs</h3>
 <p>
-Expects a message used for triggering <code>Read</code> operations.
-This node will read all readable characteristics. These operaions are performed asynchrounsly.
-The content of the message paylaod is always <b>IGNORED</b>.
+Expects a message used for triggering <code>Read</code> operation or subscribing <code>Notify</code> events.
+<dl>
+<dt>For <code>Read</code> operation:</dt>
+<dd>
+You can set one or more characteristic uuids separated by comma (CSV) to query to <code>msg.topic</code>.
+However, leave <code>msg.topic</code> empty if you want to query all readable characteristics.
+</dd>
+<dt>For subscribing <code>Notify</code> events:</dt>
+<dd>
+In order to subscribe <code>Notify</code> events rather than reading characteristics,
+set one or more characteristic uuids separated by comma (CSV) to subscribe to <code>msg.topic</code>
+and set the following object to <code>msg.payload</code> as well.
+However, leave <code>msg.topic</code> empty if you want to subscribe all notifiable characteristics.
+<pre>
+{
+  "notify": true,
+  "period": 6000
+}
+</pre>
+When you set the above in <code>msg.payload</code>, <code>msg.topic</code> is ignored.
+The <code>period</code> property is the period for subscribing <code>Notify</code> events in milliseconds <b>per characteristic</b>.
+</dd>
+</dl>
 </p>
 </script>
 
@@ -78,8 +98,13 @@ The node will try to update the device name when the device has <code>Device Nam
 This can be done when you choose a device from the list.
 </p>
 <p>
-<code>Listening Period</code> means the period of the device connection to receive notify events.
-Since the node sequentially accesses each BLE device, the longer period delays the following operations.
+<code>Mute notify events</code> allows you to turn on/off whether to subscribe peripheral events.
+Check this item if you'd like to mute any notifications.
+</p>
+<p>
+<code>Operation Timeout</code> is the timeout period of Read/Write/Notify response <b>per characteristic</b>.
+300ms per characteristic by default.
+Since the node sequentially accesses each BLE device, the longer timeout delays the following operations.
 </p>
 <p>
 <code>GATT Characteristics</code> just shows the info provided by the device itself.

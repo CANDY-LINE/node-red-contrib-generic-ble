@@ -26,7 +26,7 @@ const TRACE = (process.env.GENERIC_BLE_TRACE === 'true');
 const BLE_CONNECTION_TIMEOUT_MS = parseInt(process.env.GENERIC_BLE_CONNECTION_TIMEOUT_MS || 5000);
 const BLE_CONCURRENT_CONNECTIONS = parseInt(process.env.GENERIC_BLE_CONCURRENT_CONNECTIONS || 1);
 const BLE_READ_WRITE_INTERVAL_MS = parseInt(process.env.GENERIC_BLE_READ_WRITE_INTERVAL_MS || 50);
-const BLE_NOTIFY_WAIT_MS = parseInt(process.env.GENERIC_BLE_NOTIFY_WAIT_MS || 300);
+const BLE_OPERATION_WAIT_MS = parseInt(process.env.GENERIC_BLE_OPERATION_WAIT_MS || 300);
 const MAX_REQUESTS = parseInt(process.env.GENERIC_BLE_MAX_REQUESTS || 10);
 const bleDevices = new NodeCache({
   stdTTL : 10 * 60 * 1000,
@@ -119,12 +119,28 @@ function valToBuffer(hexOrIntArray, len=1) {
   return new Buffer(0);
 }
 
-function characteristicsTask(services, bleDevice, RED) {
+function hasPendingOperations(bleDevice) {
+  if (!bleDevice) {
+    return false;
+  }
+  if ((bleDevice._writeRequests.length > 0) || (bleDevice._readRequests.length > 0) || (bleDevice._notifyRequests.length > 0)) {
+    return true;
+  }
+  if (bleDevice.muteNotifyEvents) {
+    return false;
+  }
+  return bleDevice.characteristics.filter(c => c.notifiable).length > 0;
+}
+
+function characteristicsTask(services, bleDevice) {
   let characteristics = services.reduce((prev, curr) => {
     return prev.concat(curr.characteristics);
   }, []);
-  return new Promise((resolve, reject) => {
-    let loop = () => {
+  let timeout = null;
+  let loop = null;
+  let operationTimeoutMs = 0;
+  return new Promise((taskResolve, taskReject) => {
+    loop = () => {
       let writeRequest = bleDevice._writeRequests.shift() || [];
       let writeUuidList = writeRequest.map(c => c.uuid);
       let writeChars = writeRequest.length > 0 ?
@@ -139,25 +155,38 @@ function characteristicsTask(services, bleDevice, RED) {
             writeRequest.writeWithoutResponse,
             (err) => {
               if (err) {
+                if (TRACE) {
+                  bleDevice.log(`<Write> ${c.uuid} => FAIL`);
+                }
                 return reject(err);
+              }
+              if (TRACE) {
+                bleDevice.log(`<Write> ${c.uuid} => OK`);
               }
               resolve();
             }
           );
         });
       }).filter(p => p);
+      operationTimeoutMs += writePromises.length * BLE_OPERATION_WAIT_MS;
 
       let readObj = {};
       let readRequest = bleDevice._readRequests.shift() || [];
       let readUuidList = readRequest.map(c => c.uuid);
       let readChars = readUuidList.length > 0 ?
-        characteristics.filter(c => readUuidList.indexOf(c.uuid) >= 0) : [];
+        characteristics.filter(c => c && readUuidList.indexOf(c.uuid) >= 0) : [];
       let readPromises = readChars.map((c) => {
         return new Promise((resolve, reject) => {
           c.read(
             (err, data) => {
               if (err) {
+                if (TRACE) {
+                  bleDevice.log(`<Read> ${c.uuid} => FAIL`);
+                }
                 return reject(err);
+              }
+              if (TRACE) {
+                bleDevice.log(`<Read> ${c.uuid} => ${data}`);
               }
               readObj[c.uuid] = data;
               resolve();
@@ -165,6 +194,7 @@ function characteristicsTask(services, bleDevice, RED) {
           );
         });
       });
+      operationTimeoutMs += readPromises.length * BLE_OPERATION_WAIT_MS;
 
       let promise = Promise.resolve();
       if (writePromises.length > 0) {
@@ -183,109 +213,138 @@ function characteristicsTask(services, bleDevice, RED) {
       }
       promise.then(() => {
         if (readPromises.length === 0) {
+          loop = null;
           return Promise.resolve();
         }
         return new Promise((resolve) => {
           Promise.all(readPromises).then(() => {
             bleDevice.emit('ble-read', bleDevice.uuid, readObj);
+            loop = null;
             resolve();
           }).catch((err) => {
             bleDevice.emit('ble-read', bleDevice.uuid, readObj, err);
+            loop = null;
             resolve();
           });
         });
       }).then(() => {
         if (loop) {
           setTimeout(loop, BLE_READ_WRITE_INTERVAL_MS);
+        } else {
+          taskResolve();
         }
       }).catch(() => {
         if (loop) {
           setTimeout(loop, BLE_READ_WRITE_INTERVAL_MS);
+        } else {
+          taskReject();
         }
       });
     };
-
-    let timeout = addTimeout(() => {
-      if (TRACE) {
-        RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIPTION TIMEOUT`);
-      }
-      deleteTimeout(timeout);
-      loop = null;
-      timeout = null;
-      bleDevice.emit('timeout');
-      Promise.all(bleDevice.characteristics.filter(c => c.notifiable).map((c) => {
-        return new Promise((resolve) => {
-          let characteristic = characteristics.filter(chr => chr.uuid === c.uuid)[0];
-          if (!characteristic) {
-            RED.log.warn(`[GenericBLE] <${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
-            return resolve();
-          }
-          characteristic.removeAllListeners('data');
-          if (characteristic._subscribed) {
-            delete characteristic._subscribed;
-            characteristic.unsubscribe(() => {
-              bleDevice.emit('unsubscribed');
-              if (TRACE) {
-                RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> UNSUBSCRIBED`);
-              }
-              return resolve();
-            });
-          } else {
-            return resolve();
-          }
-        });
-      })).then(() => {
-        if (TRACE) {
-          RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> END`);
-        }
-        resolve();
-      }).catch((err) => {
-        if (TRACE) {
-          RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> END`);
-        }
-        reject(err);
-      });
-    }, bleDevice.listeningPeriod || BLE_NOTIFY_WAIT_MS);
-
     if (TRACE) {
-      RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> START`);
+      bleDevice.log(`<characteristicsTask> <${bleDevice.uuid}> START (Timeout:${operationTimeoutMs})`);
     }
     process.nextTick(loop);
+  }).then(() => {
+    let notifiables = [];
+    let notifyRequest = bleDevice._notifyRequests.shift() || [];
+    let notifyUuidList = notifyRequest.map(c => {
+      operationTimeoutMs += c.period;
+      return c.uuid;
+    });
+    notifiables = notifyUuidList.length > 0 ?
+      characteristics.filter(c => c && notifyUuidList.indexOf(c.uuid) >= 0) : [];
 
-    bleDevice.characteristics.filter(c => c.notifiable).forEach(c => {
-      let characteristic = characteristics.filter(chr => chr && (chr.uuid === c.uuid))[0];
-      if (!characteristic) {
-        RED.log.warn(`[GenericBLE] <${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
-        return;
+    if (notifyRequest.length === 0) {
+      if (bleDevice.muteNotifyEvents) {
+        return Promise.resolve();
       }
-      characteristic.removeAllListeners('data');
-      characteristic.on('data', (data, isNotification) => {
-        if (isNotification) {
-          let readObj = {
-            notification: true
-          };
-          readObj[c.uuid] = data;
-          bleDevice.emit('ble-notify', bleDevice.uuid, readObj);
+      operationTimeoutMs += (bleDevice.operationTimeout || BLE_OPERATION_WAIT_MS) * notifiables.length;
+      notifiables = bleDevice.characteristics.filter(c => c.notifiable);
+      if (notifiables.length === 0) {
+        return Promise.resolve();
+      }
+    }
+
+    return new Promise((taskResolve, taskReject) => {
+      timeout = addTimeout(() => {
+        if (TRACE) {
+          bleDevice.log(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIPTION TIMEOUT`);
         }
-      });
-      if (TRACE) {
-        RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> START SUBSCRIBING`);
-      }
-      characteristic.subscribe((err) => {
-        if (err) {
-          if (timeout) {
-            deleteTimeout(timeout);
-            bleDevice.emit('error');
+        deleteTimeout(timeout);
+        loop = null;
+        timeout = null;
+        bleDevice.emit('timeout');
+
+        Promise.all(notifiables.map((c) => {
+          return new Promise((resolve) => {
+            let characteristic = characteristics.filter(chr => chr && (chr.uuid === c.uuid))[0];
+            if (!characteristic) {
+              bleDevice.warn(`<${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
+              return resolve();
+            }
+            characteristic.removeAllListeners('data');
+            if (characteristic._subscribed) {
+              delete characteristic._subscribed;
+              characteristic.unsubscribe(() => {
+                bleDevice.emit('unsubscribed');
+                if (TRACE) {
+                  bleDevice.log(`<characteristicsTask> <${bleDevice.uuid}> UNSUBSCRIBED`);
+                }
+                return resolve();
+              });
+            } else {
+              return resolve();
+            }
+          });
+        })).then(() => {
+          if (TRACE) {
+            bleDevice.log(`<characteristicsTask> <${bleDevice.uuid}> END`);
           }
-          loop = null;
-          timeout = null;
-          characteristics.forEach(c => c.removeAllListeners('data'));
-          return reject(err);
-        } else if (TRACE) {
-          RED.log.info(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIBED`);
+          taskResolve();
+        }).catch((err) => {
+          if (TRACE) {
+            bleDevice.log(`<characteristicsTask> <${bleDevice.uuid}> END`);
+          }
+          taskReject(err);
+        });
+      }, operationTimeoutMs);
+
+      notifiables.forEach(c => {
+        let characteristic = characteristics.filter(chr => chr && (chr.uuid === c.uuid))[0];
+        if (!characteristic) {
+          bleDevice.warn(`<${bleDevice.uuid}> Characteristic(${c.uuid}) is missing`);
+          return;
         }
-        bleDevice.emit('subscribed');
-        characteristic._subscribed = true;
+        characteristic.removeAllListeners('data');
+        characteristic.on('data', (data, isNotification) => {
+          if (isNotification) {
+            let readObj = {
+              notification: true
+            };
+            readObj[c.uuid] = data;
+            bleDevice.emit('ble-notify', bleDevice.uuid, readObj);
+          }
+        });
+        if (TRACE) {
+          bleDevice.log(`<characteristicsTask> <${bleDevice.uuid}> START SUBSCRIBING`);
+        }
+        characteristic.subscribe((err) => {
+          if (err) {
+            if (timeout) {
+              deleteTimeout(timeout);
+              bleDevice.emit('error');
+            }
+            loop = null;
+            timeout = null;
+            characteristics.forEach(c => c.removeAllListeners('data'));
+            return taskReject(err);
+          } else if (TRACE) {
+            bleDevice.log(`<characteristicsTask> <${bleDevice.uuid}> SUBSCRIBED`);
+          }
+          bleDevice.emit('subscribed');
+          characteristic._subscribed = true;
+        });
       });
     });
   });
@@ -357,6 +416,12 @@ function connectToPeripheral(peripheral) {
     return Promise.reject(`<${peripheral.uuid}> Try again`);
   }
   let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
+  if (!hasPendingOperations(bleDevice)) {
+    if (TRACE) {
+      console.log(`<connectToPeripheral> <${peripheral.uuid}> Skip to connect as there's nothing to do`);
+    }
+    return Promise.resolve();
+  }
   return new Promise((resolve, reject) => {
     let timeout;
     let onConnected = (err) => {
@@ -499,6 +564,13 @@ function peripheralTask(uuid, task, done, RED) {
     }
 
     connectToPeripheral(peripheral).then((result) => {
+      if (!result) {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            return resolve();
+          }, 100);
+        });
+      }
       return task(/* services */result[0], /* bleDevice */ result[1], RED);
     }).then(() => {
       tearDown();
@@ -638,7 +710,8 @@ export default function(RED) {
       this.localName = n.localName;
       this.address = n.address;
       this.uuid = n.uuid;
-      this.listeningPeriod = n.listeningPeriod;
+      this.muteNotifyEvents = n.muteNotifyEvents;
+      this.operationTimeout = n.operationTimeout;
       this.characteristics = n.characteristics || [];
       let key = getAddressOrUUID(n);
       if (key) {
@@ -647,6 +720,7 @@ export default function(RED) {
       this.nodes = {};
       this._writeRequests = []; // {uuid:'characteristic-uuid-to-write', data:Buffer()}
       this._readRequests = []; // {uuid:'characteristic-uuid-to-read'}
+      this._notifyRequests = []; // {uuid:'characteristic-uuid-to-subscribe', period:subscription period}
       this.operations = {
         register: (node) => {
           this.nodes[node.id] = node;
@@ -665,8 +739,8 @@ export default function(RED) {
           }
           let writables = this.characteristics.filter(c => c.writable || c.writeWithoutResponse);
           if (TRACE) {
-            RED.log.info(`[GenericBLE] characteristics => ${JSON.stringify(this.characteristics)}`);
-            RED.log.info(`[GenericBLE] writables.length => ${writables.length}`);
+            this.log(`characteristics => ${JSON.stringify(this.characteristics)}`);
+            this.log(`writables.length => ${writables.length}`);
           }
           if (writables.length === 0) {
             return false;
@@ -674,8 +748,8 @@ export default function(RED) {
           let uuidList = Object.keys(dataObj);
           writables = writables.filter(c => uuidList.indexOf(c.uuid) >= 0);
           if (TRACE) {
-            RED.log.info(`[GenericBLE] UUIDs to write => ${uuidList}`);
-            RED.log.info(`[GenericBLE] writables.length => ${writables.length}`);
+            this.log(`UUIDs to write => ${uuidList}`);
+            this.log(`writables.length => ${writables.length}`);
           }
           if (writables.length === 0) {
             return false;
@@ -692,11 +766,19 @@ export default function(RED) {
           }));
           return true;
         },
-        read: () => {
-          let readables = this.characteristics.filter(c => c.readable);
+        read: (uuids='') => {
+          uuids = uuids.split(',').map((uuid) => uuid.trim()).filter((uuid) => uuid);
+          let readables = this.characteristics.filter(c => {
+            if (c.readable) {
+              if (uuids.length === 0) {
+                return true;
+              }
+              return uuids.indexOf(c.uuid) >= 0;
+            }
+          });
           if (TRACE) {
-            RED.log.info(`[GenericBLE] characteristics => ${JSON.stringify(this.characteristics)}`);
-            RED.log.info(`[GenericBLE] readables.length => ${readables.length}`);
+            this.log(`characteristics => ${JSON.stringify(this.characteristics)}`);
+            this.log(`readables.length => ${readables.length}`);
           }
           if (readables.length === 0) {
             return false;
@@ -708,6 +790,31 @@ export default function(RED) {
             return { uuid: r.uuid };
           }));
           return true;
+        },
+        subscribe: (uuids='', period=3000) => {
+          uuids = uuids.split(',').map((uuid) => uuid.trim()).filter((uuid) => uuid);
+          let notifiables = this.characteristics.filter(c => {
+            if (c.notifiable) {
+              if (uuids.length === 0) {
+                return true;
+              }
+              return uuids.indexOf(c.uuid) >= 0;
+            }
+          });
+          if (TRACE) {
+            this.log(`characteristics => ${JSON.stringify(this.characteristics)}`);
+            this.log(`notifiables.length => ${notifiables.length}`);
+          }
+          if (notifiables.length === 0) {
+            return false;
+          }
+          if (this._notifyRequests.length >= MAX_REQUESTS) {
+            return false;
+          }
+          this._notifyRequests.push(notifiables.map((r) => {
+            return { uuid: r.uuid, period: period };
+          }));
+          return true;
         }
       };
       ['connected', 'disconnected', 'subscribed', 'unsubscribed', 'error', 'timeout'].forEach(ev => {
@@ -717,7 +824,7 @@ export default function(RED) {
               this.nodes[id].emit(ev);
             });
           } catch (e) {
-            RED.log.error(e);
+            this.error(e);
           }
         });
       });
@@ -738,7 +845,7 @@ export default function(RED) {
       if (this.genericBleNode) {
         this.genericBleNode.on('ble-read', (uuid, readObj, err) => {
           if (err) {
-            RED.log.error(`[GenericBLE] <${uuid}> read: ${err}`);
+            this.error(`<${uuid}> read: ${err}`);
             return;
           }
           let payload = {
@@ -749,7 +856,7 @@ export default function(RED) {
             try {
               payload = JSON.stringify(payload);
             } catch(err) {
-              RED.log.warn(`[GenericBLE] <${uuid}> read: ${err}`);
+              this.warn(`<${uuid}> read: ${err}`);
               return;
             }
           }
@@ -760,7 +867,7 @@ export default function(RED) {
         if (this.notification) {
           this.genericBleNode.on('ble-notify', (uuid, readObj, err) => {
             if (err) {
-              RED.log.error(`[GenericBLE] <${uuid}> notify: ${err}`);
+              this.error(`<${uuid}> notify: ${err}`);
               return;
             }
             let payload = {
@@ -771,7 +878,7 @@ export default function(RED) {
               try {
                 payload = JSON.stringify(payload);
               } catch(err) {
-                RED.log.warn(`[GenericBLE] <${uuid}> read: ${err}`);
+                this.warn(`<${uuid}> read: ${err}`);
                 return;
               }
             }
@@ -780,7 +887,7 @@ export default function(RED) {
             });
           });
           this.on('subscribed', () => {
-            this.status({fill:'green',shape:'dot',text:`generic-ble.status.connected`});
+            this.status({fill:'green',shape:'dot',text:`generic-ble.status.subscribed`});
           });
           this.on('unsubscribed', () => {
             this.status({fill:'red',shape:'ring',text:`generic-ble.status.unsubscribed`});
@@ -796,11 +903,22 @@ export default function(RED) {
         });
         this.genericBleNode.operations.register(this);
 
-        this.on('input', () => {
+        this.on('input', (msg) => {
           if (TRACE) {
-            RED.log.info(`[GenericBLEIn] input arrived!`);
+            this.log(`input arrived!`);
           }
-          this.genericBleNode.operations.read();
+          let obj = msg.payload || {};
+          try {
+            if (typeof(obj) === 'string') {
+              obj = JSON.parse(msg.payload);
+            }
+          } catch (_) {
+          }
+          if (obj.notify) {
+            this.genericBleNode.operations.subscribe(msg.topic, obj.period);
+          } else {
+            this.genericBleNode.operations.read(msg.topic);
+          }
         });
         this.on('close', () => {
           if (this.genericBleNode) {
@@ -821,11 +939,11 @@ export default function(RED) {
       if (this.genericBleNode) {
         this.genericBleNode.on('ble-write', (uuid, err) => {
           if (err) {
-            RED.log.error(`[GenericBLE] <${uuid}> write: ${err}`);
+            this.error(`<${uuid}> write: ${err}`);
             return;
           }
           if (TRACE) {
-            RED.log.debug(`[GenericBLE] <${uuid}> write: OK`);
+            this.log(`<${uuid}> write: OK`);
           }
         });
         this.on('connected', () => {
