@@ -131,6 +131,9 @@ Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise l
 
 # Revision History
 
+* 2.0.1
+  - Fix an issue where `Select from scan result` failed to list characteristics
+
 * 2.0.0
   - Add `Poll Notify Events` message support so that Generic BLE out node can start to subscribe the given characteristic events
   - Support characteristic query by one or more uuids
