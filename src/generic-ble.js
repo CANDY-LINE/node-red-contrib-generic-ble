@@ -407,7 +407,7 @@ function disconnectPeripheral(peripheral, done, RED) {
   delete peripheral._lock;
 }
 
-function connectToPeripheral(peripheral, RED) {
+function connectToPeripheral(peripheral, RED, forceConnect=false) {
   if (peripheral._lock) {
     if (TRACE) {
       RED.log.info(`<connectToPeripheral> <${peripheral.uuid}> Gave up to connect`);
@@ -416,11 +416,13 @@ function connectToPeripheral(peripheral, RED) {
     return Promise.reject(`<${peripheral.uuid}> Try again`);
   }
   let bleDevice = configBleDevices[getAddressOrUUID(peripheral)];
-  if (!hasPendingOperations(bleDevice)) {
-    if (TRACE) {
-      RED.log.info(`<connectToPeripheral> <${peripheral.uuid}> Skip to connect as there's nothing to do`);
+  if (!forceConnect) {
+    if (!hasPendingOperations(bleDevice)) {
+      if (TRACE) {
+        RED.log.info(`<connectToPeripheral> <${peripheral.uuid}> Skip to connect as there's nothing to do`);
+      }
+      return Promise.resolve();
     }
-    return Promise.resolve();
   }
   return new Promise((resolve, reject) => {
     let timeout;
@@ -526,7 +528,7 @@ function connectToPeripheral(peripheral, RED) {
   });
 }
 
-function peripheralTask(uuid, task, done, RED) {
+function peripheralTask(uuid, task, done, RED, forceConnect=false) {
   return (next) => {
     if (TRACE) {
       RED.log.info(`<peripheralTask> <${uuid}> START`);
@@ -563,7 +565,7 @@ function peripheralTask(uuid, task, done, RED) {
       }, RED);
     }
 
-    connectToPeripheral(peripheral, RED).then((result) => {
+    connectToPeripheral(peripheral, RED, forceConnect).then((result) => {
       if (!result) {
         return new Promise((resolve) => {
           setTimeout(() => {
@@ -580,11 +582,11 @@ function peripheralTask(uuid, task, done, RED) {
   };
 }
 
-function schedulePeripheralTask(uuid, task, done, RED) {
+function schedulePeripheralTask(uuid, task, done, RED, forceConnect=false) {
   if (!task) {
     return;
   }
-  q.push(peripheralTask(uuid, task, done, RED));
+  q.push(peripheralTask(uuid, task, done, RED, forceConnect));
 }
 
 function addErrorListenerToQueue(RED) {
@@ -1051,6 +1053,6 @@ export default function(RED) {
           return res.status(500).send({ status: 500, message: (err.message || err) }).end();
         }
       }
-    }, RED);
+    }, RED, true);
   });
 }
