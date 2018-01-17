@@ -142,17 +142,25 @@ function characteristicsTask(services, bleDevice) {
   return new Promise((taskResolve, taskReject) => {
     loop = () => {
       let writeRequest = bleDevice._writeRequests.shift() || [];
+      if (TRACE) {
+        bleDevice.log(`<characteristicsTask> writeRequest => ${JSON.stringify(writeRequest)}`);
+      }
       let writeUuidList = writeRequest.map(c => c.uuid);
       let writeChars = writeRequest.length > 0 ?
         characteristics.filter(c => writeUuidList.indexOf(c.uuid) >= 0) : [];
       let writePromises = writeChars.map((c) => {
-        if (!writeRequest.data) {
+        let req = writeRequest.filter((r) => r.uuid === c.uuid)[0];
+        if (!req || !req.data) {
           return null;
         }
         return new Promise((resolve, reject) => {
+          let buf = valToBuffer(req.data);
+          if (TRACE) {
+            bleDevice.log(`<Write> uuid => ${c.uuid}, data => ${buf}, writeWithoutResponse => ${req.writeWithoutResponse}`);
+          }
           c.write(
-            valToBuffer(writeRequest.data),
-            writeRequest.writeWithoutResponse,
+            buf,
+            req.writeWithoutResponse,
             (err) => {
               if (err) {
                 if (TRACE) {
@@ -169,9 +177,15 @@ function characteristicsTask(services, bleDevice) {
         });
       }).filter(p => p);
       operationTimeoutMs += writePromises.length * BLE_OPERATION_WAIT_MS;
+      if (TRACE) {
+        bleDevice.log(`<characteristicsTask> writePromises.length => ${writePromises.length}`);
+      }
 
       let readObj = {};
       let readRequest = bleDevice._readRequests.shift() || [];
+      if (TRACE) {
+        bleDevice.log(`<characteristicsTask> readRequest => ${JSON.stringify(readRequest)}`);
+      }
       let readUuidList = readRequest.map(c => c.uuid);
       let readChars = readUuidList.length > 0 ?
         characteristics.filter(c => c && readUuidList.indexOf(c.uuid) >= 0) : [];
@@ -186,7 +200,7 @@ function characteristicsTask(services, bleDevice) {
                 return reject(err);
               }
               if (TRACE) {
-                bleDevice.log(`<Read> ${c.uuid} => ${data}`);
+                bleDevice.log(`<Read> ${c.uuid} => ${JSON.stringify(data)}`);
               }
               readObj[c.uuid] = data;
               resolve();

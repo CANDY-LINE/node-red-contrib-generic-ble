@@ -1,31 +1,31 @@
 [
     {
-        "id": "867e39b4.d517f",
+        "id": "31e26832.b13058",
         "type": "tab",
         "label": "Generic BLE Example",
         "disabled": false,
         "info": "This flow shows BLE Read/Write example.\n"
     },
     {
-        "id": "dfcf20d6.138ff",
+        "id": "72e93d17.88e32c",
         "type": "Generic BLE in",
-        "z": "867e39b4.d517f",
+        "z": "31e26832.b13058",
         "name": "",
-        "genericBle": "3b98076c.99a4c8",
+        "genericBle": "bee5eec.96bf31",
         "useString": false,
         "notification": true,
         "x": 450,
         "y": 320,
         "wires": [
             [
-                "da23254.83523d8"
+                "ef614de2.5caa4"
             ]
         ]
     },
     {
-        "id": "215c4824.9513c8",
+        "id": "d0252715.dac4b8",
         "type": "inject",
-        "z": "867e39b4.d517f",
+        "z": "31e26832.b13058",
         "name": "Get Battery Level",
         "topic": "2a19",
         "payload": "",
@@ -37,14 +37,14 @@
         "y": 220,
         "wires": [
             [
-                "dfcf20d6.138ff"
+                "72e93d17.88e32c"
             ]
         ]
     },
     {
-        "id": "da23254.83523d8",
+        "id": "ef614de2.5caa4",
         "type": "debug",
-        "z": "867e39b4.d517f",
+        "z": "31e26832.b13058",
         "name": "",
         "active": true,
         "console": "false",
@@ -54,38 +54,38 @@
         "wires": []
     },
     {
-        "id": "f717fa38.f4e548",
+        "id": "73fbb96b.2b7cf8",
         "type": "Generic BLE out",
-        "z": "867e39b4.d517f",
+        "z": "31e26832.b13058",
         "name": "",
-        "genericBle": "3b98076c.99a4c8",
+        "genericBle": "bee5eec.96bf31",
         "x": 450,
         "y": 400,
         "wires": []
     },
     {
-        "id": "bcb384fa.99e64",
+        "id": "66eb9698.1366b8",
         "type": "inject",
-        "z": "867e39b4.d517f",
-        "name": "Write Some Data",
+        "z": "31e26832.b13058",
+        "name": "Write Transient Data",
         "topic": "",
-        "payload": "{\"2a00\":\"yayyay\"}",
+        "payload": "{\"f000aa0204514000b000000000000000\":\"ca\"}",
         "payloadType": "json",
         "repeat": "",
         "crontab": "",
         "once": false,
-        "x": 200,
+        "x": 210,
         "y": 460,
         "wires": [
             [
-                "f717fa38.f4e548"
+                "73fbb96b.2b7cf8"
             ]
         ]
     },
     {
-        "id": "940c1128.0cc1f8",
+        "id": "2b7c6888.26cb88",
         "type": "inject",
-        "z": "867e39b4.d517f",
+        "z": "31e26832.b13058",
         "name": "Get All Readable Attributes",
         "topic": "",
         "payload": "",
@@ -97,14 +97,14 @@
         "y": 140,
         "wires": [
             [
-                "dfcf20d6.138ff"
+                "72e93d17.88e32c"
             ]
         ]
     },
     {
-        "id": "5525464e.999a4",
+        "id": "1589318.4ea604f",
         "type": "inject",
-        "z": "867e39b4.d517f",
+        "z": "31e26832.b13058",
         "name": "Poll Notify Events",
         "topic": "2a19",
         "payload": "{\"notify\":true,\"period\":5000}",
@@ -116,12 +116,31 @@
         "y": 300,
         "wires": [
             [
-                "dfcf20d6.138ff"
+                "72e93d17.88e32c"
             ]
         ]
     },
     {
-        "id": "3b98076c.99a4c8",
+        "id": "164faa57.c92a66",
+        "type": "inject",
+        "z": "31e26832.b13058",
+        "name": "Read Trransient Data",
+        "topic": "f000aa0204514000b000000000000000",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "x": 220,
+        "y": 360,
+        "wires": [
+            [
+                "72e93d17.88e32c"
+            ]
+        ]
+    },
+    {
+        "id": "bee5eec.96bf31",
         "type": "Generic BLE",
         "z": "",
         "localName": "CC2650 SensorTag",

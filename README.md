@@ -131,6 +131,9 @@ Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise l
 
 # Revision History
 
+* 2.0.2
+  - Fix an issue where Write operation cannot be performed properly (#4)
+
 * 2.0.1
   - Fix an issue where `Select from scan result` failed to list characteristics
 
