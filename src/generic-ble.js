@@ -149,13 +149,18 @@ function characteristicsTask(services, bleDevice) {
       let writeChars = writeRequest.length > 0 ?
         characteristics.filter(c => writeUuidList.indexOf(c.uuid) >= 0) : [];
       let writePromises = writeChars.map((c) => {
-        if (!writeRequest.data) {
+        let req = writeRequest.filter((r) => r.uuid === c.uuid)[0];
+        if (!req || !req.data) {
           return null;
         }
         return new Promise((resolve, reject) => {
+          let buf = valToBuffer(req.data);
+          if (TRACE) {
+            bleDevice.log(`<Write> uuid => ${c.uuid}, data => ${buf}, writeWithoutResponse => ${req.writeWithoutResponse}`);
+          }
           c.write(
-            valToBuffer(writeRequest.data),
-            writeRequest.writeWithoutResponse,
+            buf,
+            req.writeWithoutResponse,
             (err) => {
               if (err) {
                 if (TRACE) {
