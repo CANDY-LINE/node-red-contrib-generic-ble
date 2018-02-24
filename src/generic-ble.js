@@ -396,6 +396,8 @@ function disconnectPeripheral(peripheral, done, RED) {
       if (bleDevice) {
         bleDevice.emit('disconnected');
       }
+      noble.stopScanning();
+      noble.startScanning([], true);
     }
     timeout = null;
     if (done) {
@@ -411,6 +413,8 @@ function disconnectPeripheral(peripheral, done, RED) {
     if (bleDevice) {
       bleDevice.emit('timeout');
     }
+    noble.stopScanning();
+    noble.startScanning([], true);
     if (done) {
       done();
     }
