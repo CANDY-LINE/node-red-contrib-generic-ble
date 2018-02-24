@@ -144,7 +144,7 @@
         "type": "Generic BLE",
         "z": "",
         "localName": "CC2650 SensorTag",
-        "address": "54:6c:0e:78:86:80",
+        "address": "88:99:00:00:FF:FF",
         "uuid": "666e850ba45c4952b8bed27a8133ecb2",
         "muteNotifyEvents": true,
         "operationTimeout": "5000",
