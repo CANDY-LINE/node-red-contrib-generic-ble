@@ -42,6 +42,109 @@ Click `Add` (`3`) when the information on the dialog looks good.
 
 Click `Done` (`4`) to finish the `ble in` node settings.
 
+## How to translate gatttool command into flow
+
+In this example, we show how to describe `gatttool` commands for characteristic value write and read with Generic BLE nodes.
+
+### Characteristics Value Write
+
+The following simple command line just issues a characteristic write request to the handle `0x0027`, which `gatttool` associates with the characteristic uuid `f000aa02-0451-4000-b000-000000000000`(uuids and handles can be listed by `gatttool -b 88:99:00:00:FF:FF --characteristics command`).
+
+```
+$ gatttool -b 88:99:00:00:FF:FF --char-write-req --handle=0x0027 --value=ca
+Characteristic value was written successfully
+```
+
+In this tutorial, we translate the above command into Node-RED flow.
+
+First of all, we use the following nodes.
+
+1. `inject` node to trigger a write request
+1. `Generic BLE out` node to perform the write request
+
+![gatttool](images/gatttool-001.jpg)
+
+So the first step to create a flow is to place the above nodes on the workspace and connect them as shown above.
+
+Next, open the `inject` dialog so that you can provide the write request parameters, the characteristic uuid and the value.
+
+** Important!) Unlike `gatttool`, Generic BLE nodes NEVER use `handles`. Always use `uuid`s instead. **
+
+![gatttool](images/gatttool-002.jpg)
+
+In this dialog, choose `JSON` at Payload input item since `Generic BLE out` node accepts a JSON object as its input value. See `Inputs` in the node description shown in the `info` tab for detail.
+
+![gatttool](images/gatttool-003.jpg)
+
+Click/tap `...` to launch JSON value editor and populate the following JSON text.
+
+```
+{
+    "f000aa0204514000b000000000000000": "ca"
+}
+```
+
+The property `f000aa0204514000b000000000000000` is a characteristic `uuid`. However, unlike `gatttool`, you must strip hyphens from the original uuid value. `Generic BLE` nodes doesn't accept `gatttool` style uuid format.
+
+The value `ca` is a hex string to be written, which is identical to the above command line.
+
+So you'll see the following image.
+
+![gatttool](images/gatttool-004.jpg)
+
+Close the dialog by clicking `Done` button after entering the JSON text.
+
+Configure `Generic BLE out` node for your BLE peripheral (This step is already introduced above so we don't describe here. See `How to configure a new BLE peripheral`).
+
+Now you're ready to issue a characteristic write request to your BLE peripheral. Click `Deploy` and click `inject` node to issue a characteristic write request.
+
+![gatttool](images/gatttool-005.jpg)
+
+Node-RED shows the notification message after your write request is performed successfully.
+
+Here in this tutorial, we use `inject` node to create characteristic write request parameters. However, this isn't the only way to do so. You can use other nodes than `inject` node. All you need is to prepare a valid JSON object for `Generic BLE out` node and provide it to the node.
+
+In order to retrieve the written value from your BLE peripheral, go to the next step.
+
+### Characteristics Value Read
+
+The both commands perform characteristic value read commands and return the same result, the characteristic value of the uuid `f000aa02-0451-4000-b000-000000000000`.
+
+```
+$ gatttool -b 88:99:00:00:FF:FF --char-read -u f000aa02-0451-4000-b000-000000000000
+handle: 0x0027 	 value: ca
+
+$ gatttool -b 88:99:00:00:FF:FF --char-read --handle=0x0027
+Characteristic value/descriptor: ca
+```
+
+In this tutorial, we translate the above commands into Node-RED flow.
+
+We use the following nodes this time.
+
+1. `inject` node to trigger a read command
+1. `Generic BLE in` node to perform the read command
+1. `debug` node to show the read value
+
+![gatttool](images/gatttool-006.jpg)
+
+
+Put the above nodes onto your workspace and add connectors like above.
+
+Open `inject` node dialog and enter the characteristic `uuid` at Topic input box. Leave default values other than Topic since `Generic BLE in` sees only the topic value.
+
+You can also leave Topic empty when you want to retrieve all characteristics values.
+
+![gatttool](images/gatttool-007.jpg)
+
+Click `Done` after entering the uuid to close the dialog. You need to configure `Generic BLE in` node to use your BLE peripheral but we skip to mention here as the instruction is described above (See `How to configure a new BLE peripheral` for detail).
+
+Click `Deploy` to function the flow.
+
+![gatttool](images/gatttool-008.jpg)
+
+Let's read the characteristic value by clicking `inject` node pedal. The read result will be displayed on the debug tab.
+
 ## BLE in and out nodes
 
 See `info` tab for detail on the editor UI.
