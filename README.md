@@ -48,7 +48,7 @@ In this example, we show how to describe `gatttool` commands for characteristic 
 
 ### Characteristics Value Write
 
-The following simple command line just issues a characteristic write request to the handle `0x0027`, which `gatttool` associates with the characteristic uuid `f000aa02-0451-4000-b000-000000000000`(uuids and handles can be listed by `gatttool -b 88:99:00:00:FF:FF --characteristics command`).
+The following simple command line just issues a characteristic write request to the handle `0x0027`, which the BLE peripheral associates with the characteristic uuid `f000aa02-0451-4000-b000-000000000000`(uuids and handles can be listed by `gatttool -b 88:99:00:00:FF:FF --characteristics command`).
 
 ```
 $ gatttool -b 88:99:00:00:FF:FF --char-write-req --handle=0x0027 --value=ca
@@ -68,7 +68,7 @@ So the first step to create a flow is to place the above nodes on the workspace 
 
 Next, open the `inject` dialog so that you can provide the write request parameters, the characteristic uuid and the value.
 
-** Important!) Unlike `gatttool`, Generic BLE nodes NEVER use `handles`. Always use `uuid`s instead. **
+**Important!) Unlike `gatttool`, Generic BLE nodes NEVER use `handles`. Always use `uuid`s instead.**
 
 ![gatttool](images/gatttool-002.jpg)
 
