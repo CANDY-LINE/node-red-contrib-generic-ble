@@ -499,7 +499,7 @@ function connectToPeripheral(peripheral, RED, forceConnect=false) {
         discoveryTimeout = null;
         onConnected = null;
         reject(`<${peripheral.uuid}> Discovery Timeout`);
-      }, BLE_DISCOVERY_TIMEOUT_MS);
+      }, BLE_CONNECTION_TIMEOUT_MS);
       peripheral._discovering = true;
       peripheral.discoverAllServicesAndCharacteristics(
           (err, services) => {
