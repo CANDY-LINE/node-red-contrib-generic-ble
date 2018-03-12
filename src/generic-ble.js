@@ -499,7 +499,7 @@ function connectToPeripheral(peripheral, RED, forceConnect=false) {
         discoveryTimeout = null;
         onConnected = null;
         reject(`<${peripheral.uuid}> Discovery Timeout`);
-      }, BLE_CONNECTION_TIMEOUT_MS);
+      }, BLE_DISCOVERY_TIMEOUT_MS);
       peripheral._discovering = true;
       peripheral.discoverAllServicesAndCharacteristics(
           (err, services) => {
@@ -570,7 +570,7 @@ function peripheralTask(uuid, task, done, RED, forceConnect=false) {
 
     function tearDown(err) {
       if (TRACE) {
-        RED.log.info(`<peripheralTask> <${uuid}> Trying to disconnect,${err}`);
+        RED.log.info(`<peripheralTask> <${uuid}> Trying to disconnect,(err:${err})`);
       }
       disconnectPeripheral(peripheral, () => {
         if (TRACE) {
@@ -611,7 +611,7 @@ function addErrorListenerToQueue(RED) {
   q.removeAllListeners('error');
   q.on('error', (err) => {
     if (TRACE) {
-      RED.log.error(`[GenericBLE] ${err} :: ${err.stack || 'N/A'}`);
+      RED.log.error(`[GenericBLE] error:${err} :: ${err.stack || 'N/A'}`);
     }
   });
 }
@@ -865,7 +865,7 @@ export default function(RED) {
       if (this.genericBleNode) {
         this.genericBleNode.on('ble-read', (uuid, readObj, err) => {
           if (err) {
-            this.error(`<${uuid}> read: ${err}`);
+            this.error(`<${uuid}> read: (err:${err})`);
             return;
           }
           let payload = {
@@ -876,7 +876,7 @@ export default function(RED) {
             try {
               payload = JSON.stringify(payload);
             } catch(err) {
-              this.warn(`<${uuid}> read: ${err}`);
+              this.warn(`<${uuid}> read: (err:${err})`);
               return;
             }
           }
@@ -887,7 +887,7 @@ export default function(RED) {
         if (this.notification) {
           this.genericBleNode.on('ble-notify', (uuid, readObj, err) => {
             if (err) {
-              this.error(`<${uuid}> notify: ${err}`);
+              this.error(`<${uuid}> notify: (err:${err})`);
               return;
             }
             let payload = {
@@ -898,7 +898,7 @@ export default function(RED) {
               try {
                 payload = JSON.stringify(payload);
               } catch(err) {
-                this.warn(`<${uuid}> read: ${err}`);
+                this.warn(`<${uuid}> notify: (err:${err})`);
                 return;
               }
             }
@@ -959,7 +959,7 @@ export default function(RED) {
       if (this.genericBleNode) {
         this.genericBleNode.on('ble-write', (uuid, err) => {
           if (err) {
-            this.error(`<${uuid}> write: ${err}`);
+            this.error(`<${uuid}> write: (err:${err})`);
             return;
           }
           if (TRACE) {
@@ -1063,10 +1063,10 @@ export default function(RED) {
     };
     schedulePeripheralTask(peripheral.uuid, task, (err) => {
       if (TRACE) {
-        RED.log.info(`/__bledev/${address} END err:${err}`);
+        RED.log.info(`/__bledev/${address} END (err:${err})`);
       }
       if (err) {
-        RED.log.error(`/__bledev/${address} ${err}\n=>${err.stack || err.message}`);
+        RED.log.error(`/__bledev/${address} err:${err}\n=>${err.stack || err.message}`);
         if (!res._headerSent) {
           return res.status(500).send({ status: 500, message: (err.message || err) }).end();
         }
