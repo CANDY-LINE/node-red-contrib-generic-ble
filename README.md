@@ -234,6 +234,9 @@ Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise l
 
 # Revision History
 
+* 2.0.4
+  - Fix an issue where this node don't work with noble@1.9.x
+
 * 2.0.3
   - Fix an issue where noble looses a reference to a peripheral after it is disconnected
 
