@@ -277,27 +277,36 @@ export default function(RED) {
             this.emit('disconnected');
             return Promise.resolve();
           }
+          let connecting = (peripheral.state === 'connecting');
           switch (peripheral.state) {
             case 'disconnected': {
               this.emit('disconnected');
-              peripheral.once('disconnect', () => {
-                this.emit('disconnected');
-              });
-              peripheral._disconnectedHandlerSet = true;
-              peripheral.once('connect', () => {
-                peripheral.discoverAllServicesAndCharacteristics(
-                (err, services) => {
-                  if (err) {
-                    this.log(`<discoverAllServicesAndCharacteristics> error:${err.message}`);
-                    return;
-                  }
-                  this.emit('connected');
-                  this.characteristics = services.reduce((prev, curr) => {
-                    return prev.concat(curr.characteristics);
-                  }, []).map((c) => toCharacteristic(c));
+              if (!peripheral._disconnectedHandlerSet) {
+                peripheral._disconnectedHandlerSet = true;
+                peripheral.once('disconnect', () => {
+                  this.emit('disconnected');
+                  peripheral._disconnectedHandlerSet = false;
                 });
-              });
+              }
+              if (!peripheral._connectHandlerSet) {
+                peripheral._connectHandlerSet = true;
+                peripheral.once('connect', () => {
+                  peripheral._connectHandlerSet = false;
+                  peripheral.discoverAllServicesAndCharacteristics(
+                  (err, services) => {
+                    if (err) {
+                      this.log(`<discoverAllServicesAndCharacteristics> error:${err.message}`);
+                      return;
+                    }
+                    this.emit('connected');
+                    this.characteristics = services.reduce((prev, curr) => {
+                      return prev.concat(curr.characteristics);
+                    }, []).map((c) => toCharacteristic(c));
+                  });
+                });
+              }
               peripheral.connect(); // peripheral.state => connecting
+              connecting = true;
               break;
             }
             case 'connected': {
@@ -310,6 +319,7 @@ export default function(RED) {
                 peripheral._disconnectedHandlerSet = true;
                 peripheral.once('disconnect', () => {
                   this.emit('disconnected');
+                  peripheral._disconnectedHandlerSet = false;
                 });
               }
               this.emit('connected');
@@ -319,7 +329,7 @@ export default function(RED) {
               break;
             }
           }
-          if (peripheral.state === 'connecting') {
+          if (connecting) {
             return new Promise((resolve) => {
               let retry = 0;
               let connectedHandler = () => {
