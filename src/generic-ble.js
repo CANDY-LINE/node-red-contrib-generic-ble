@@ -309,7 +309,24 @@ export default function(RED) {
               break;
             }
           }
-          return peripheral.state;
+          if (peripheral.state === 'connecting') {
+            return new Promise((resolve) => {
+              let retry = 0;
+              let connectedHandler = () => {
+                ++retry;
+                if (peripheral.state === 'connected') {
+                  return resolve(peripheral.state);
+                } else if (retry < 10) {
+                  setTimeout(connectedHandler, 500);
+                } else {
+                  return resolve(peripheral.state);
+                }
+              };
+              setTimeout(connectedHandler, 500);
+            });
+          } else {
+            return Promise.resolve(peripheral.state);
+          }
         },
         register: (node) => {
           this.nodes[node.id] = node;
@@ -326,108 +343,110 @@ export default function(RED) {
           if (!dataObj) {
             return Promise.resolve();
           }
-          let state = this.operations.preparePeripheral();
-          if (state !== 'connected') {
-            this.log(`[write] Peripheral:${this.uuid} is NOT ready. state=>${state}`);
-            return Promise.resolve();
-          }
-          let writables = this.characteristics.filter(c => c.writable || c.writeWithoutResponse);
-          if (TRACE) {
-            this.log(`characteristics => ${JSON.stringify(this.characteristics.map((c) => {
-              let obj = Object.assign({}, c);
-              delete obj.obj;
-              return obj;
-            }))}`);
-            this.log(`writables.length => ${writables.length}`);
-          }
-          if (writables.length === 0) {
-            return Promise.resolve();
-          }
-          let uuidList = Object.keys(dataObj);
-          writables = writables.filter(c => uuidList.indexOf(c.uuid) >= 0);
-          if (TRACE) {
-            this.log(`UUIDs to write => ${uuidList}`);
-            this.log(`writables.length => ${writables.length}`);
-          }
-          if (writables.length === 0) {
-            return Promise.resolve();
-          }
-          // perform write here right now
-          return Promise.all(writables.map(w => {
-            // {uuid:'characteristic-uuid-to-write', data:Buffer()}
-            return new Promise((resolve, reject) => {
-              let buf = valToBuffer(dataObj[w.uuid]);
-              if (TRACE) {
-                this.log(`<Write> uuid => ${w.uuid}, data => ${buf}, writeWithoutResponse => ${w.writeWithoutResponse}`);
-              }
-              w.object.write(
-                buf,
-                w.writeWithoutResponse,
-                (err) => {
-                  if (err) {
-                    if (TRACE) {
-                      this.log(`<Write> ${w.uuid} => FAIL`);
-                    }
-                    return reject(err);
-                  }
-                  if (TRACE) {
-                    this.log(`<Write> ${w.uuid} => OK`);
-                  }
-                  resolve(true);
+          return this.operations.preparePeripheral().then((state) => {
+            if (state !== 'connected') {
+              this.log(`[write] Peripheral:${this.uuid} is NOT ready. state=>${state}`);
+              return Promise.resolve();
+            }
+            let writables = this.characteristics.filter(c => c.writable || c.writeWithoutResponse);
+            if (TRACE) {
+              this.log(`characteristics => ${JSON.stringify(this.characteristics.map((c) => {
+                let obj = Object.assign({}, c);
+                delete obj.obj;
+                return obj;
+              }))}`);
+              this.log(`writables.length => ${writables.length}`);
+            }
+            if (writables.length === 0) {
+              return Promise.resolve();
+            }
+            let uuidList = Object.keys(dataObj);
+            writables = writables.filter(c => uuidList.indexOf(c.uuid) >= 0);
+            if (TRACE) {
+              this.log(`UUIDs to write => ${uuidList}`);
+              this.log(`writables.length => ${writables.length}`);
+            }
+            if (writables.length === 0) {
+              return Promise.resolve();
+            }
+            // perform write here right now
+            return Promise.all(writables.map(w => {
+              // {uuid:'characteristic-uuid-to-write', data:Buffer()}
+              return new Promise((resolve, reject) => {
+                let buf = valToBuffer(dataObj[w.uuid]);
+                if (TRACE) {
+                  this.log(`<Write> uuid => ${w.uuid}, data => ${buf}, writeWithoutResponse => ${w.writeWithoutResponse}`);
                 }
-              );
-            });
-          }));
+                w.object.write(
+                  buf,
+                  w.writeWithoutResponse,
+                  (err) => {
+                    if (err) {
+                      if (TRACE) {
+                        this.log(`<Write> ${w.uuid} => FAIL`);
+                      }
+                      return reject(err);
+                    }
+                    if (TRACE) {
+                      this.log(`<Write> ${w.uuid} => OK`);
+                    }
+                    resolve(true);
+                  }
+                );
+              });
+            }));
+          });
         },
         read: (uuids='') => {
-          let state = this.operations.preparePeripheral();
-          if (state !== 'connected') {
-            this.log(`[read] Peripheral:${this.uuid} is NOT ready. state=>${state}`);
-            return Promise.resolve();
-          }
-          uuids = uuids.split(',').map((uuid) => uuid.trim()).filter((uuid) => uuid);
-          let readables = this.characteristics.filter(c => {
-            if (c.readable) {
-              if (uuids.length === 0) {
-                return true;
-              }
-              return uuids.indexOf(c.uuid) >= 0;
+          return this.operations.preparePeripheral().then((state) => {
+            if (state !== 'connected') {
+              this.log(`[read] Peripheral:${this.uuid} is NOT ready. state=>${state}`);
+              return Promise.resolve();
             }
-          });
-          if (TRACE) {
-            this.log(`characteristics => ${JSON.stringify(this.characteristics.map((c) => {
-              let obj = Object.assign({}, c);
-              delete obj.obj;
-              return obj;
-            }))}`);
-            this.log(`readables.length => ${readables.length}`);
-          }
-          if (readables.length === 0) {
-            return Promise.resolve();
-          }
-          // perform read here right now
-          let readObj = {};
-          return Promise.all(readables.map((r) => {
-            // {uuid:'characteristic-uuid-to-read'}
-            return new Promise((resolve, reject) => {
-              r.object.read(
-                (err, data) => {
-                  if (err) {
-                    if (TRACE) {
-                      this.log(`<Read> ${r.uuid} => FAIL`);
-                    }
-                    return reject(err);
-                  }
-                  if (TRACE) {
-                    this.log(`<Read> ${r.uuid} => ${JSON.stringify(data)}`);
-                  }
-                  readObj[r.uuid] = data;
-                  resolve();
+            uuids = uuids.split(',').map((uuid) => uuid.trim()).filter((uuid) => uuid);
+            let readables = this.characteristics.filter(c => {
+              if (c.readable) {
+                if (uuids.length === 0) {
+                  return true;
                 }
-              );
+                return uuids.indexOf(c.uuid) >= 0;
+              }
             });
-          })).then(() => {
-            return readObj;
+            if (TRACE) {
+              this.log(`characteristics => ${JSON.stringify(this.characteristics.map((c) => {
+                let obj = Object.assign({}, c);
+                delete obj.obj;
+                return obj;
+              }))}`);
+              this.log(`readables.length => ${readables.length}`);
+            }
+            if (readables.length === 0) {
+              return Promise.resolve();
+            }
+            // perform read here right now
+            let readObj = {};
+            return Promise.all(readables.map((r) => {
+              // {uuid:'characteristic-uuid-to-read'}
+              return new Promise((resolve, reject) => {
+                r.object.read(
+                  (err, data) => {
+                    if (err) {
+                      if (TRACE) {
+                        this.log(`<Read> ${r.uuid} => FAIL`);
+                      }
+                      return reject(err);
+                    }
+                    if (TRACE) {
+                      this.log(`<Read> ${r.uuid} => ${JSON.stringify(data)}`);
+                    }
+                    readObj[r.uuid] = data;
+                    resolve();
+                  }
+                );
+              });
+            })).then(() => {
+              return readObj;
+            });
           });
         },
         subscribe: (uuids='', period=3000) => {
