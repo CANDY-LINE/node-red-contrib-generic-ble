@@ -26,6 +26,8 @@ Expects a message used for triggering <code>Read</code> operation or subscribing
 <dd>
 You can set one or more characteristic uuids separated by comma (CSV) to query to <code>msg.topic</code>.
 However, leave <code>msg.topic</code> empty if you want to query all readable characteristics.
+
+<b>Note that the Read operation to the subscribing uuids cancels the subscriptions.</b>
 </dd>
 <dt>For subscribing <code>Notify</code> events:</dt>
 <dd>
