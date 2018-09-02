@@ -490,8 +490,6 @@ export default function(RED) {
                 if (err) {
                   this.emit('error', err);
                   this.log(`subscription error: ${err.message}`);
-                } else {
-                  this.emit('subscribed');
                 }
               });
               if (period > 0) {
@@ -510,7 +508,7 @@ export default function(RED) {
           });
         }
       };
-      ['connected', 'disconnected', 'subscribed', 'error', 'timeout'].forEach(ev => {
+      ['connected', 'disconnected', 'error', 'timeout'].forEach(ev => {
         this.on(ev, () => {
           try {
             Object.keys(this.nodes).forEach(id => {
@@ -557,9 +555,6 @@ export default function(RED) {
             this.send({
               payload: payload
             });
-          });
-          this.on('subscribed', () => {
-            this.status({fill:'green',shape:'dot',text:`generic-ble.status.subscribed`});
           });
         }
         this.on('connected', () => {
