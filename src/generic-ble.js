@@ -242,6 +242,16 @@ export default function(RED) {
         obj.object.on('data', func);
         return true;
       },
+      unsubscribe: () => {
+        return new Promise((resolve) => {
+          if (obj.notifiable) {
+            delete obj.dataListener;
+            obj.object.unsubscribe(resolve);
+          } else {
+            return resolve();
+          }
+        });
+      },
     };
     return obj;
   }
@@ -328,6 +338,9 @@ export default function(RED) {
           } else {
             return Promise.resolve(peripheral.state);
           }
+        },
+        shutdown: () => {
+          return Promise.all(this.characteristics.map((c) => c.unsubscribe()));
         },
         register: (node) => {
           this.nodes[node.id] = node;
@@ -519,8 +532,9 @@ export default function(RED) {
           }
         });
       });
-      this.on('close', () => {
+      this.on('close', (done) => {
         Object.keys(configBleDevices).forEach(k => delete configBleDevices[k]);
+        this.operations.shutdown().then(done).catch(done);
       });
     }
   }
