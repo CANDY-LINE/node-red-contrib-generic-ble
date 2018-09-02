@@ -240,6 +240,9 @@ export default function(RED) {
       this.operations = {
         preparePeripheral: () => {
           let peripheral = noble._peripherals[this.uuid];
+          if (!peripheral) {
+            return Promise.resolve();
+          }
           switch (peripheral.state) {
             case 'disconnected': {
               this.emit('disconnected');
