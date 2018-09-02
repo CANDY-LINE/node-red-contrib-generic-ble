@@ -304,8 +304,8 @@ export default function(RED) {
                     }, []).map((c) => toCharacteristic(c));
                   });
                 });
+                peripheral.connect(); // peripheral.state => connecting
               }
-              peripheral.connect(); // peripheral.state => connecting
               connecting = true;
               break;
             }
