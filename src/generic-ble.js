@@ -552,6 +552,7 @@ export default function(RED) {
           }
         });
       });
+      this.emit('disconnected');
       this.on('close', (done) => {
         Object.keys(configBleDevices).forEach(k => delete configBleDevices[k]);
         this.operations.shutdown().then(done).catch(done);
