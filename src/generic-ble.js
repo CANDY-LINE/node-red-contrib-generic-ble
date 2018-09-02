@@ -589,7 +589,7 @@ export default function(RED) {
           } else {
             p = this.genericBleNode.operations.read(msg.topic).then((readObj) => {
               if (!readObj) {
-                this.warn(`<${this.uuid}> Nothing to read`);
+                this.warn(`<${this.genericBleNode.uuid}> Nothing to read`);
                 return;
               }
               let payload = {
