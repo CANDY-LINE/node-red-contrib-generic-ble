@@ -437,28 +437,38 @@ export default function(RED) {
             if (readables.length === 0) {
               return Promise.resolve();
             }
+            let notifiables = this.characteristics.filter(c => {
+              if (c.notifiable) {
+                if (uuids.length === 0) {
+                  return true;
+                }
+                return uuids.indexOf(c.uuid) >= 0;
+              }
+            });
             // perform read here right now
             let readObj = {};
-            return Promise.all(readables.map((r) => {
-              // {uuid:'characteristic-uuid-to-read'}
-              return new Promise((resolve, reject) => {
-                r.object.read(
-                  (err, data) => {
-                    if (err) {
-                      if (TRACE) {
-                        this.log(`<Read> ${r.uuid} => FAIL`);
+            return Promise.all(notifiables.map((n) => n.unsubscribe())).then(() => {
+              return Promise.all(readables.map((r) => {
+                // {uuid:'characteristic-uuid-to-read'}
+                return new Promise((resolve, reject) => {
+                  r.object.read(
+                    (err, data) => {
+                      if (err) {
+                        if (TRACE) {
+                          this.log(`<Read> ${r.uuid} => FAIL`);
+                        }
+                        return reject(err);
                       }
-                      return reject(err);
+                      if (TRACE) {
+                        this.log(`<Read> ${r.uuid} => ${JSON.stringify(data)}`);
+                      }
+                      readObj[r.uuid] = data;
+                      resolve();
                     }
-                    if (TRACE) {
-                      this.log(`<Read> ${r.uuid} => ${JSON.stringify(data)}`);
-                    }
-                    readObj[r.uuid] = data;
-                    resolve();
-                  }
-                );
-              });
-            })).then(() => {
+                  );
+                });
+              }));
+            }).then(() => {
               return readObj;
             });
           });
