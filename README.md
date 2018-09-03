@@ -211,6 +211,9 @@ Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise l
 
 * 3.0.0
   - Refactor entire architecture
+  - Peripheral connections are retained until it disconnects
+  - Characteristic subscriptions are retained while the ongoing flows are running (will be unsubscribed on stopping them though)
+  - The max number of concurrent BLE connections is 5 or 6 according to [this document](https://github.com/noble/noble#maximum-simultaneous-connections)
 
 * 2.0.4
   - Fix an issue where this node don't work with noble@1.9.x

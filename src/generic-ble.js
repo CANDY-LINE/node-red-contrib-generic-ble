@@ -244,7 +244,8 @@ export default function(RED) {
       },
       unsubscribe: () => {
         return new Promise((resolve) => {
-          if (obj.notifiable) {
+          let peripheral = noble._peripherals[obj._peripheralId];
+          if (obj.notifiable && peripheral && peripheral.state === 'connected') {
             delete obj.dataListener;
             obj.object.unsubscribe(resolve);
           } else {
@@ -304,8 +305,8 @@ export default function(RED) {
                     }, []).map((c) => toCharacteristic(c));
                   });
                 });
+                peripheral.connect(); // peripheral.state => connecting
               }
-              peripheral.connect(); // peripheral.state => connecting
               connecting = true;
               break;
             }
@@ -552,6 +553,7 @@ export default function(RED) {
           }
         });
       });
+      this.emit('disconnected');
       this.on('close', (done) => {
         Object.keys(configBleDevices).forEach(k => delete configBleDevices[k]);
         this.operations.shutdown().then(done).catch(done);
