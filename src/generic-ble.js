@@ -244,7 +244,8 @@ export default function(RED) {
       },
       unsubscribe: () => {
         return new Promise((resolve) => {
-          if (obj.notifiable) {
+          let peripheral = noble._peripherals[obj._peripheralId];
+          if (obj.notifiable && peripheral && peripheral.state === 'connected') {
             delete obj.dataListener;
             obj.object.unsubscribe(resolve);
           } else {
