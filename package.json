@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-generic-ble",
-  "version": "2.0.4",
+  "version": "3.0.0",
   "description": "Node-RED nodes for generic BLE devices",
   "license": "Apache-2.0",
   "repository": {
@@ -61,7 +61,6 @@
   "dependencies": {
     "noble": "~1.8.1",
     "node-cache": "^4.1.0",
-    "queue": "^4.2.1",
     "source-map-support": "^0.4.2"
   },
   "node-red": {

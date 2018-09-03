@@ -26,6 +26,8 @@ Expects a message used for triggering <code>Read</code> operation or subscribing
 <dd>
 You can set one or more characteristic uuids separated by comma (CSV) to query to <code>msg.topic</code>.
 However, leave <code>msg.topic</code> empty if you want to query all readable characteristics.
+
+<b>Note that the Read operation to the subscribing uuids cancels the subscriptions.</b>
 </dd>
 <dt>For subscribing <code>Notify</code> events:</dt>
 <dd>
@@ -41,6 +43,7 @@ However, leave <code>msg.topic</code> empty if you want to subscribe all notifia
 </pre>
 When you set the above in <code>msg.payload</code>, <code>msg.topic</code> is ignored.
 The <code>period</code> property is the period for subscribing <code>Notify</code> events in milliseconds <b>per characteristic</b>.
+<code>0</code> or less value means to keep subscribing.
 </dd>
 </dl>
 </p>

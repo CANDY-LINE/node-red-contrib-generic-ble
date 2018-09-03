@@ -10,8 +10,6 @@ Supported operations are as follows:
 - Write without Response
 - Notify
 
-Read and Write operations are performed asynchronously and they're stored into the separate queues (read queue and write queue). Each queue has up to 10 operation requests. The parameter can be modified by providing an environmental variable `GENERIC_BLE_MAX_REQUESTS`.
-
 # How to use
 
 ## How to configure a new BLE peripheral
@@ -153,20 +151,6 @@ See `info` tab for detail on the editor UI.
 
 You can import [the example flow](examples/01.read-write.json) on Node-RED UI. You need to change Generic BLE config node named `nRF5x` or add a new config node for your device.
 
-# Systemwide Configuration
-
-These are environmental variables for systemwidely configuring this node:
-
-| Variable | Description |
-|----------|-------------|
-| `GENERIC_BLE_CONNECTION_TIMEOUT_MS`  | Connection Timeout in milliseconds. 5s by default |
-| `GENERIC_BLE_CONCURRENT_CONNECTIONS` | Number of Concurrent BLE connections. 1 by default |
-| `GENERIC_BLE_READ_WRITE_INTERVAL_MS` | Read/Write operation interval in milliseconds. 50ms by default |
-| `GENERIC_BLE_OPERATION_WAIT_MS`      | Default waiting time for Read/Write/Notify response per characteristic. 500 by default |
-| `GENERIC_BLE_MAX_REQUESTS`           | The length of Read/Write operation queues. 10 by default |
-
-You can easily get started with importing the example flow from the menu icon > `Import` > `Examples` > `generic ble`.
-
 # How to install
 
 This will take approx. 3 minutes on Raspberry Pi 3.
@@ -181,14 +165,6 @@ npm install node-red-contrib-generic-ble
 
 Then restart Node-RED process.
 
-When you have trouble with connecting your BLE devices, reset your HCI socket by the following command.
-
-```
-# STOP Node-RED first!!
-sudo hciconfig hci0 reset
-```
-And restart Node-RED.
-
 ## CANDY RED users
 
 Run the following commands:
@@ -202,7 +178,6 @@ Then restart `candy-red` service.
 ```
 sudo systemctl restart candy-red
 ```
-The above command performs `hciconfig hci0 reset` as well. So you don't have to run `hciconfig` command separately.
 
 # Appendix
 
@@ -233,6 +208,12 @@ sudo hcidump -t -x
 Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise log in `/var/log/syslog`.
 
 # Revision History
+
+* 3.0.0
+  - Refactor entire architecture
+  - Peripheral connections are retained until it disconnects
+  - Characteristic subscriptions are retained while the ongoing flows are running (will be unsubscribed on stopping them though)
+  - The max number of concurrent BLE connections is 5 or 6 according to [this document](https://github.com/noble/noble#maximum-simultaneous-connections)
 
 * 2.0.4
   - Fix an issue where this node don't work with noble@1.9.x
