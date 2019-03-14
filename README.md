@@ -209,6 +209,9 @@ Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise l
 
 # Revision History
 
+* 3.1.0
+  - Support Node.js v10.x LTS (Issue #14)
+
 * 3.0.0
   - Refactor entire architecture
   - Peripheral connections are retained until it disconnects
