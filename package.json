@@ -56,10 +56,11 @@
     "jshint-stylish": "^2.0.1",
     "mocha": "^3.0.2",
     "sinon": "^2.1.0",
+    "natives": "^1.1.6",
     "supertest": "^1.1.0"
   },
   "dependencies": {
-    "noble": "~1.8.1",
+    "@abandonware/noble": "^1.9.2-1",
     "node-cache": "^4.1.0",
     "source-map-support": "^0.4.2"
   },
