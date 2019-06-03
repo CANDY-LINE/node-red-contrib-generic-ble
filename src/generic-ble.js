@@ -18,7 +18,7 @@
 'use strict';
 
 import 'source-map-support/register';
-import noble from 'noble';
+import noble from '@abandonware/noble';
 import NodeCache from 'node-cache';
 
 const TRACE = (process.env.GENERIC_BLE_TRACE === 'true');
