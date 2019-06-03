@@ -80,7 +80,7 @@ gulp.task('js', ['assets'], () => {
     .pipe(babel({
       minified: minified,
       compact: minified,
-      presets: ["es2015"],
+      presets: ["env"],
       plugins: ['add-module-exports']
     }))
     .pipe(gulpif(!sourcemapEnabled, uglify({
@@ -101,7 +101,7 @@ gulp.task('js', ['assets'], () => {
         unsafe: true
       },
     }), util.noop()))
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.write(), util.noop()))
+    .pipe(gulpif(sourcemapEnabled, sourcemaps.write('.'), util.noop()))
     .pipe(gulp.dest('./dist'));
 });
 
@@ -110,7 +110,7 @@ gulp.task('less', () => {
     .pipe(gulpif(sourcemapEnabled, sourcemaps.init(), util.noop()))
     .pipe(less())
     .pipe(cleancss({compatibility: 'ie8'}))
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.write(), util.noop()))
+    .pipe(gulpif(sourcemapEnabled, sourcemaps.write('.'), util.noop()))
     .pipe(gulp.dest('./dist'));
 });
 
@@ -139,7 +139,7 @@ gulp.task('testJs', ['cleanTestJs', 'build'], () => {
   return gulp.src('./tests/**/*.js')
     .pipe(sourcemaps.init())
     .pipe(babel({
-      presets: ['es2015'],
+      presets: ['env'],
       plugins: ['add-module-exports']
     }))
     .pipe(sourcemaps.write('.'))
