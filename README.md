@@ -149,7 +149,7 @@ See `info` tab for detail on the editor UI.
 
 # Example Flow
 
-You can import [the example flow](examples/01.read-write.json) on Node-RED UI. You need to change Generic BLE config node named `nRF5x` or add a new config node for your device.
+You can import [the example flow](examples/01-read-write.json) on Node-RED UI. You need to change Generic BLE config node named `nRF5x` or add a new config node for your device.
 
 # How to install
 
