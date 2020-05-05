@@ -60,7 +60,7 @@
     "supertest": "^1.1.0"
   },
   "dependencies": {
-    "@abandonware/noble": "^1.9.2-2",
+    "@abandonware/noble": "^1.9.2-8",
     "node-cache": "^4.1.0",
     "source-map-support": "^0.4.2"
   },
