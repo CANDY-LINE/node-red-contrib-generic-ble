@@ -658,7 +658,7 @@ module.exports = function (RED) {
         if (this.notification) {
           this.genericBleNode.on('ble-notify', (uuid, readObj, err) => {
             if (err) {
-              this.error(`<${uuid}> notify: (err:${err})`);
+              this.error(`<${uuid}> notify: (err:${err}, stack:${err.stack})`);
               return;
             }
             let payload = {
@@ -669,7 +669,7 @@ module.exports = function (RED) {
               try {
                 payload = JSON.stringify(payload);
               } catch (err) {
-                this.warn(`<${uuid}> notify: (err:${err})`);
+                this.warn(`<${uuid}> notify: (err:${err}, stack:${err.stack})`);
                 return;
               }
             }
