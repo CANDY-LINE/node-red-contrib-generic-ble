@@ -122,16 +122,16 @@ function startBLEScanning(RED) {
   }
 }
 
-function toApiObject(peripheral) {
+async function toApiObject(peripheral) {
   if (!peripheral) {
-    return Promise.resolve(null);
+    return null;
   }
-  return Promise.resolve({
+  return {
     localName: peripheral.advertisement.localName,
     address: peripheral.address === 'unknown' ? '' : peripheral.address,
     uuid: peripheral.uuid,
     rssi: peripheral.rssi,
-  });
+  };
 }
 
 function toDetailedObject(peripheral, RED) {
