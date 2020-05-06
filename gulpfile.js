@@ -77,12 +77,13 @@ gulp.task('assets', gulp.series('i18n', () => {
 gulp.task('js', gulp.series('assets', () => {
   return gulp.src('./src/**/*.js')
     .pipe(gulpif(sourcemapEnabled, sourcemaps.init(), util.noop()))
-    .pipe(babel({
-      minified: minified,
-      compact: minified,
-      presets: ["env"],
-      plugins: ['add-module-exports']
-    }))
+    .pipe(
+      babel({
+        minified: true,
+        compact: true,
+        configFile: './.babelrc',
+      })
+    )
     .pipe(gulpif(!sourcemapEnabled, uglify({
       mangle: minified,
       output: {
