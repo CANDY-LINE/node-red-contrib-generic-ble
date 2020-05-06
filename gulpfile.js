@@ -23,7 +23,7 @@ const del         = require('del');
 const jshint      = require('gulp-jshint');
 const jest        = require('gulp-jest').default;
 const sourcemaps  = require('gulp-sourcemaps');
-const gulpif      = require('gulp-if');
+const gulpIf      = require('gulp-if');
 const htmlmin     = require('gulp-htmlmin');
 const cleancss    = require('gulp-clean-css');
 const less        = require('gulp-less');
@@ -76,7 +76,7 @@ gulp.task('assets', gulp.series('i18n', () => {
 
 gulp.task('js', gulp.series('assets', () => {
   return gulp.src('./src/**/*.js')
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.init(), util.noop()))
+    .pipe(gulpIf(sourcemapEnabled, sourcemaps.init(), util.noop()))
     .pipe(
       babel({
         minified: true,
@@ -84,7 +84,7 @@ gulp.task('js', gulp.series('assets', () => {
         configFile: './.babelrc',
       })
     )
-    .pipe(gulpif(!sourcemapEnabled, uglify({
+    .pipe(gulpIf(!sourcemapEnabled, uglify({
       mangle: minified,
       output: {
         comments: 'some',
@@ -102,16 +102,16 @@ gulp.task('js', gulp.series('assets', () => {
         unsafe: true
       },
     }), util.noop()))
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.write('.'), util.noop()))
+    .pipe(gulpIf(sourcemapEnabled, sourcemaps.write('.'), util.noop()))
     .pipe(gulp.dest('./dist'));
 }));
 
 gulp.task('less', () => {
   return gulp.src('./src/**/*.less')
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.init(), util.noop()))
+    .pipe(gulpIf(sourcemapEnabled, sourcemaps.init(), util.noop()))
     .pipe(less())
     .pipe(cleancss({compatibility: 'ie8'}))
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.write('.'), util.noop()))
+    .pipe(gulpIf(sourcemapEnabled, sourcemaps.write('.'), util.noop()))
     .pipe(gulp.dest('./dist'));
 });
 
