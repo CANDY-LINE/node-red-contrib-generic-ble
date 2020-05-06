@@ -838,31 +838,38 @@ module.exports = function (RED) {
   RED.httpAdmin.get(
     '/__bledevlist',
     RED.auth.needsPermission('generic-ble.read'),
-    (req, res) => {
-      let promises = [];
+    async (req, res) => {
       try {
-        promises = bleDevices.keys().map((k) => {
-          // load the live object for invoking functions
-          // as cached object is disconnected from noble context
-          const uuid = bleDevices.get(k);
-          return toApiObject(noble._peripherals[uuid]);
-        });
-      } catch (_) {
-        // ignore
-      }
-      Promise.all(promises).then((body) => {
+        const body = await Promise.all(
+          bleDevices.keys().map((k) => {
+            // load the live object for invoking functions
+            // as cached object is disconnected from noble context
+            const uuid = bleDevices.get(k);
+            return toApiObject(noble._peripherals[uuid]);
+          })
+        );
         if (TRACE) {
           RED.log.info('/__bledevlist', JSON.stringify(body, null, 2));
         }
         res.json(body);
-      });
+      } catch (err) {
+        RED.log.error(
+          `/__bledevlist err:${err}\n=>${err.stack || err.message}`
+        );
+        if (!res._headerSent) {
+          return res
+            .status(500)
+            .send({ status: 500, message: err.message || err })
+            .end();
+        }
+      }
     }
   );
   // __bledev endpoint
   RED.httpAdmin.get(
     '/__bledev/:address',
     RED.auth.needsPermission('generic-ble.read'),
-    (req, res) => {
+    async (req, res) => {
       const address = req.params.address;
       if (!address) {
         return res
@@ -887,27 +894,26 @@ module.exports = function (RED) {
           .end();
       }
 
-      return toDetailedObject(peripheral, RED)
-        .then((bleDevice) => {
-          if (TRACE) {
-            RED.log.info(
-              `/__bledev/${address} OUTPUT`,
-              JSON.stringify(bleDevice, null, 2)
-            );
-          }
-          res.json(bleDevice);
-        })
-        .catch((err) => {
-          RED.log.error(
-            `/__bledev/${address} err:${err}\n=>${err.stack || err.message}`
+      try {
+        const bleDevice = await toDetailedObject(peripheral, RED);
+        if (TRACE) {
+          RED.log.info(
+            `/__bledev/${address} OUTPUT`,
+            JSON.stringify(bleDevice, null, 2)
           );
-          if (!res._headerSent) {
-            return res
-              .status(500)
-              .send({ status: 500, message: err.message || err })
-              .end();
-          }
-        });
+        }
+        return res.json(bleDevice);
+      } catch (err) {
+        RED.log.error(
+          `/__bledev/${address} err:${err}\n=>${err.stack || err.message}`
+        );
+        if (!res._headerSent) {
+          return res
+            .status(500)
+            .send({ status: 500, message: err.message || err })
+            .end();
+        }
+      }
     }
   );
 };
