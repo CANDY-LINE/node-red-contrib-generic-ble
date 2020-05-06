@@ -138,10 +138,13 @@ gulp.task('testAssets', () => {
 gulp.task('testJs', gulp.series('cleanTestJs', 'build', () => {
   return gulp.src('./tests/**/*.js')
     .pipe(sourcemaps.init())
-    .pipe(babel({
-      presets: ['env'],
-      plugins: ['add-module-exports']
-    }))
+    .pipe(
+      babel({
+        minified: true,
+        compact: true,
+        configFile: './.babelrc',
+      })
+    )
     .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('./dist'));
 }));
