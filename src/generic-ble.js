@@ -390,71 +390,70 @@ module.exports = function (RED) {
         //   'uuid-to-write-2': Buffer(),
         //   :
         // }
-        write: (dataObj) => {
+        write: async (dataObj) => {
           if (!dataObj) {
-            return Promise.resolve();
+            return;
           }
-          return this.operations.preparePeripheral().then((state) => {
-            if (state !== 'connected') {
-              this.log(
-                `[write] Peripheral:${this.uuid} is NOT ready. state=>${state}`
-              );
-              return Promise.resolve();
-            }
-            let writables = this.characteristics.filter(
-              (c) => c.writable || c.writeWithoutResponse
+          const state = await this.operations.preparePeripheral();
+          if (state !== 'connected') {
+            this.log(
+              `[write] Peripheral:${this.uuid} is NOT ready. state=>${state}`
             );
-            if (TRACE) {
-              this.log(
-                `characteristics => ${JSON.stringify(
-                  this.characteristics.map((c) => {
-                    const obj = Object.assign({}, c);
-                    delete obj.obj;
-                    return obj;
-                  })
-                )}`
-              );
-              this.log(`writables.length => ${writables.length}`);
-            }
-            if (writables.length === 0) {
-              return Promise.resolve();
-            }
-            const uuidList = Object.keys(dataObj);
-            writables = writables.filter((c) => uuidList.indexOf(c.uuid) >= 0);
-            if (TRACE) {
-              this.log(`UUIDs to write => ${uuidList}`);
-              this.log(`writables.length => ${writables.length}`);
-            }
-            if (writables.length === 0) {
-              return Promise.resolve();
-            }
-            // perform write here right now
-            return Promise.all(
-              writables.map((w) => {
-                // {uuid:'characteristic-uuid-to-write', data:Buffer()}
-                return new Promise((resolve, reject) => {
-                  const buf = valToBuffer(dataObj[w.uuid]);
-                  if (TRACE) {
-                    this.log(
-                      `<Write> uuid => ${w.uuid}, data => ${buf}, writeWithoutResponse => ${w.writeWithoutResponse}`
-                    );
-                  }
-                  w.object.write(buf, w.writeWithoutResponse, (err) => {
-                    if (err) {
-                      if (TRACE) {
-                        this.log(`<Write> ${w.uuid} => FAIL`);
-                      }
-                      return reject(err);
-                    }
+            return;
+          }
+          let writables = this.characteristics.filter(
+            (c) => c.writable || c.writeWithoutResponse
+          );
+          if (TRACE) {
+            this.log(
+              `characteristics => ${JSON.stringify(
+                this.characteristics.map((c) => {
+                  const obj = Object.assign({}, c);
+                  delete obj.obj;
+                  return obj;
+                })
+              )}`
+            );
+            this.log(`writables.length => ${writables.length}`);
+          }
+          if (writables.length === 0) {
+            return;
+          }
+          const uuidList = Object.keys(dataObj);
+          writables = writables.filter((c) => uuidList.indexOf(c.uuid) >= 0);
+          if (TRACE) {
+            this.log(`UUIDs to write => ${uuidList}`);
+            this.log(`writables.length => ${writables.length}`);
+          }
+          if (writables.length === 0) {
+            return;
+          }
+          // perform write here right now
+          return await Promise.all(
+            writables.map((w) => {
+              // {uuid:'characteristic-uuid-to-write', data:Buffer()}
+              return new Promise((resolve, reject) => {
+                const buf = valToBuffer(dataObj[w.uuid]);
+                if (TRACE) {
+                  this.log(
+                    `<Write> uuid => ${w.uuid}, data => ${buf}, writeWithoutResponse => ${w.writeWithoutResponse}`
+                  );
+                }
+                w.object.write(buf, w.writeWithoutResponse, (err) => {
+                  if (err) {
                     if (TRACE) {
-                      this.log(`<Write> ${w.uuid} => OK`);
+                      this.log(`<Write> ${w.uuid} => FAIL`);
                     }
-                    resolve(true);
-                  });
+                    return reject(err);
+                  }
+                  if (TRACE) {
+                    this.log(`<Write> ${w.uuid} => OK`);
+                  }
+                  resolve(true);
                 });
-              })
-            );
-          });
+              });
+            })
+          );
         },
         read: (uuids = '') => {
           return this.operations.preparePeripheral().then((state) => {
