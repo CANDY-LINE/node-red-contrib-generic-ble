@@ -16,7 +16,7 @@
  */
 
 import * as sinon from 'sinon';
-import genericBLEModule from '../dist/generic-ble';
+import genericBLEModule from 'generic-ble';
 import EventEmitter from 'events';
 
 const RED = {};
