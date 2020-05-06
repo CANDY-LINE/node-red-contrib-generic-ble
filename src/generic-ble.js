@@ -696,7 +696,7 @@ module.exports = function (RED) {
         });
         this.genericBleNode.operations.register(this);
 
-        this.on('input', (msg) => {
+        this.on('input', async (msg) => {
           if (TRACE) {
             this.log(`input arrived!`);
           }
@@ -708,32 +708,39 @@ module.exports = function (RED) {
           } catch (_) {
             // ignore
           }
-          let p;
-          if (obj.notify) {
-            p = this.genericBleNode.operations.subscribe(msg.topic, obj.period);
-          } else {
-            p = this.genericBleNode.operations
-              .read(msg.topic)
-              .then((readObj) => {
-                if (!readObj) {
-                  this.warn(`<${this.genericBleNode.uuid}> Nothing to read`);
-                  return;
-                }
-                let payload = {
-                  uuid: this.genericBleNode.uuid,
-                  characteristics: readObj,
-                };
-                if (this.useString) {
-                  payload = JSON.stringify(payload);
-                }
-                this.send({
-                  payload: payload,
+          try {
+            if (obj.notify) {
+              await this.genericBleNode.operations.subscribe(
+                msg.topic,
+                obj.period
+              );
+            } else {
+              await this.genericBleNode.operations
+                .read(msg.topic)
+                .then((readObj) => {
+                  if (!readObj) {
+                    this.warn(
+                      `<${this.genericBleNode.uuid}> read[${msg.topic}]: (no data)`
+                    );
+                    return;
+                  }
+                  let payload = {
+                    uuid: this.genericBleNode.uuid,
+                    characteristics: readObj,
+                  };
+                  if (this.useString) {
+                    payload = JSON.stringify(payload);
+                  }
+                  this.send({
+                    payload: payload,
+                  });
                 });
-              });
+            }
+          } catch (err) {
+            this.error(
+              `<${this.genericBleNode.uuid}> read[${msg.topic}]: (err:${err}, stack:${err.stack})`
+            );
           }
-          p.catch((err) => {
-            this.error(`<${this.uuid}> read: (err:${err})`);
-          });
         });
         this.on('close', () => {
           if (this.genericBleNode) {
