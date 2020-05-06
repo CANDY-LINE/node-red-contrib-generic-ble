@@ -69,7 +69,7 @@ function valToBuffer(hexOrIntArray, len = 1) {
     if (rawHex.length % 2 === 1) {
       rawHex = '0' + rawHex;
     }
-    return new Buffer(rawHex, 'hex');
+    return Buffer.from(rawHex, 'hex');
   }
   if (typeof hexOrIntArray === 'string') {
     if (hexOrIntArray.length < len * 2) {
@@ -79,15 +79,15 @@ function valToBuffer(hexOrIntArray, len = 1) {
     if (hexOrIntArray.length % 2 === 1) {
       hexOrIntArray = '0' + hexOrIntArray;
     }
-    return new Buffer(hexOrIntArray, 'hex');
+    return Buffer.from(hexOrIntArray, 'hex');
   }
   if (Array.isArray(hexOrIntArray)) {
     for (let i = 0; i < len - hexOrIntArray.length; i++) {
       hexOrIntArray.splice(0, 0, 0);
     }
-    return new Buffer(hexOrIntArray);
+    return Buffer.from(hexOrIntArray);
   }
-  return new Buffer(0);
+  return Buffer.alloc(0);
 }
 
 function onDiscoverFunc(RED) {
