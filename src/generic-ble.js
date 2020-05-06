@@ -51,7 +51,7 @@ function getAddressOrUUID(peripheral) {
 }
 
 function deleteBleDevice(addressOrUUID, RED) {
-  let value = bleDevices.del(addressOrUUID);
+  const value = bleDevices.del(addressOrUUID);
   if (value && TRACE) {
     RED.log.info(`[GenericBLE:TRACE] Delete => ${addressOrUUID}`);
   }
@@ -92,7 +92,7 @@ function valToBuffer(hexOrIntArray, len = 1) {
 
 function onDiscoverFunc(RED) {
   return (peripheral) => {
-    let addressOrUUID = getAddressOrUUID(peripheral);
+    const addressOrUUID = getAddressOrUUID(peripheral);
     if (!addressOrUUID) {
       return;
     } else if (peripheral.connectable) {
@@ -195,7 +195,7 @@ function toDetailedObject(peripheral, RED) {
           obj.characteristics = obj.characteristics.concat(
             (s.characteristics || [])
               .map((c) => {
-                let characteristic = {
+                const characteristic = {
                   uuid: c.uuid,
                   name: c.name || RED._('generic-ble.label.unnamedChr'),
                   type: c.type || RED._('generic-ble.label.customType'),
@@ -242,7 +242,7 @@ function toDetailedObject(peripheral, RED) {
 
 module.exports = function (RED) {
   function toCharacteristic(c) {
-    let obj = {
+    const self = {
       uuid: c.uuid,
       name: c.name || RED._('generic-ble.label.unnamedChr'),
       type: c.type || RED._('generic-ble.label.customType'),
@@ -252,31 +252,31 @@ module.exports = function (RED) {
       writeWithoutResponse: c.properties.indexOf('writeWithoutResponse') >= 0,
       object: c,
       addDataListener: (func) => {
-        if (obj.dataListener) {
+        if (self.dataListener) {
           return false;
         }
-        obj.dataListener = func;
-        obj.object.removeAllListeners('data');
-        obj.object.on('data', func);
+        self.dataListener = func;
+        self.object.removeAllListeners('data');
+        self.object.on('data', func);
         return true;
       },
       unsubscribe: () => {
         return new Promise((resolve) => {
-          let peripheral = noble._peripherals[obj._peripheralId];
+          const peripheral = noble._peripherals[self._peripheralId];
           if (
-            obj.notifiable &&
+            self.notifiable &&
             peripheral &&
             peripheral.state === 'connected'
           ) {
-            delete obj.dataListener;
-            obj.object.unsubscribe(resolve);
+            delete self.dataListener;
+            self.object.unsubscribe(resolve);
           } else {
             return resolve();
           }
         });
       },
     };
-    return obj;
+    return self;
   }
 
   class GenericBLENode {
@@ -288,14 +288,14 @@ module.exports = function (RED) {
       this.muteNotifyEvents = n.muteNotifyEvents;
       this.operationTimeout = n.operationTimeout;
       this.characteristics = [];
-      let key = getAddressOrUUID(n);
+      const key = getAddressOrUUID(n);
       if (key) {
         configBleDevices[key] = this;
       }
       this.nodes = {};
       this.operations = {
         preparePeripheral: () => {
-          let peripheral = noble._peripherals[this.uuid];
+          const peripheral = noble._peripherals[this.uuid];
           if (!peripheral) {
             this.emit('disconnected');
             return Promise.resolve();
@@ -362,7 +362,7 @@ module.exports = function (RED) {
           if (connecting) {
             return new Promise((resolve) => {
               let retry = 0;
-              let connectedHandler = () => {
+              const connectedHandler = () => {
                 ++retry;
                 if (peripheral.state === 'connected') {
                   return resolve(peripheral.state);
@@ -411,7 +411,7 @@ module.exports = function (RED) {
               this.log(
                 `characteristics => ${JSON.stringify(
                   this.characteristics.map((c) => {
-                    let obj = Object.assign({}, c);
+                    const obj = Object.assign({}, c);
                     delete obj.obj;
                     return obj;
                   })
@@ -422,7 +422,7 @@ module.exports = function (RED) {
             if (writables.length === 0) {
               return Promise.resolve();
             }
-            let uuidList = Object.keys(dataObj);
+            const uuidList = Object.keys(dataObj);
             writables = writables.filter((c) => uuidList.indexOf(c.uuid) >= 0);
             if (TRACE) {
               this.log(`UUIDs to write => ${uuidList}`);
@@ -436,7 +436,7 @@ module.exports = function (RED) {
               writables.map((w) => {
                 // {uuid:'characteristic-uuid-to-write', data:Buffer()}
                 return new Promise((resolve, reject) => {
-                  let buf = valToBuffer(dataObj[w.uuid]);
+                  const buf = valToBuffer(dataObj[w.uuid]);
                   if (TRACE) {
                     this.log(
                       `<Write> uuid => ${w.uuid}, data => ${buf}, writeWithoutResponse => ${w.writeWithoutResponse}`
@@ -471,7 +471,7 @@ module.exports = function (RED) {
               .split(',')
               .map((uuid) => uuid.trim())
               .filter((uuid) => uuid);
-            let readables = this.characteristics.filter((c) => {
+            const readables = this.characteristics.filter((c) => {
               if (c.readable) {
                 if (uuids.length === 0) {
                   return true;
@@ -483,7 +483,7 @@ module.exports = function (RED) {
               this.log(
                 `characteristics => ${JSON.stringify(
                   this.characteristics.map((c) => {
-                    let obj = Object.assign({}, c);
+                    const obj = Object.assign({}, c);
                     delete obj.obj;
                     return obj;
                   })
@@ -494,7 +494,7 @@ module.exports = function (RED) {
             if (readables.length === 0) {
               return Promise.resolve();
             }
-            let notifiables = this.characteristics.filter((c) => {
+            const notifiables = this.characteristics.filter((c) => {
               if (c.notifiable) {
                 if (uuids.length === 0) {
                   return true;
@@ -503,7 +503,7 @@ module.exports = function (RED) {
               }
             });
             // perform read here right now
-            let readObj = {};
+            const readObj = {};
             return Promise.all(notifiables.map((n) => n.unsubscribe()))
               .then(() => {
                 return Promise.all(
@@ -546,7 +546,7 @@ module.exports = function (RED) {
               .split(',')
               .map((uuid) => uuid.trim())
               .filter((uuid) => uuid);
-            let notifiables = this.characteristics.filter((c) => {
+            const notifiables = this.characteristics.filter((c) => {
               if (c.notifiable) {
                 if (uuids.length === 0) {
                   return true;
@@ -791,7 +791,7 @@ module.exports = function (RED) {
         promises = bleDevices.keys().map((k) => {
           // load the live object for invoking functions
           // as cached object is disconnected from noble context
-          let uuid = bleDevices.get(k);
+          const uuid = bleDevices.get(k);
           return toApiObject(noble._peripherals[uuid]);
         });
       } catch (_) {
@@ -810,14 +810,14 @@ module.exports = function (RED) {
     '/__bledev/:address',
     RED.auth.needsPermission('generic-ble.read'),
     (req, res) => {
-      let address = req.params.address;
+      const address = req.params.address;
       if (!address) {
         return res
           .status(404)
           .send({ status: 404, message: 'missing peripheral' })
           .end();
       }
-      let uuid = bleDevices.get(address);
+      const uuid = bleDevices.get(address);
       if (!uuid) {
         return res
           .status(404)
@@ -826,7 +826,7 @@ module.exports = function (RED) {
       }
       // load the live object for invoking functions
       // as cached object is disconnected from noble context
-      let peripheral = noble._peripherals[uuid];
+      const peripheral = noble._peripherals[uuid];
       if (!peripheral) {
         return res
           .status(404)
