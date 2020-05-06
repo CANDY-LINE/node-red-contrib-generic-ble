@@ -21,7 +21,7 @@ const babel       = require('gulp-babel');
 const uglify      = require('gulp-uglify-es').default;
 const del         = require('del');
 const jshint      = require('gulp-jshint');
-const mocha       = require('gulp-mocha');
+const jest        = require('gulp-jest').default;
 const sourcemaps  = require('gulp-sourcemaps');
 const gulpif      = require('gulp-if');
 const htmlmin     = require('gulp-htmlmin');
@@ -154,12 +154,13 @@ gulp.task('test', gulp.series('testJs', 'testAssets', () => {
   return gulp.src([
     './dist/**/*.test.js',
   ], {read: false})
-  .pipe(mocha({
-    require: ['source-map-support/register'],
-    reporter: 'spec'
-  }))
-  .once('error', () => process.exit(1))
-  .once('end', () => process.exit())
+  .pipe(jest({
+    rootDir: './dist',
+    verbose: false,
+    modulePaths: [
+      '.'
+    ]
+  }));
 }));
 
 gulp.task('default', gulp.series('build'));

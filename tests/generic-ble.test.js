@@ -15,11 +15,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
 import 'source-map-support/register';
 import * as sinon from 'sinon';
-import { assert } from 'chai';
 import genericBLEModule from '../dist/generic-ble';
 import EventEmitter from 'events';
 
@@ -53,11 +50,11 @@ describe('generic-ble node', () => {
 	});
   describe('generic-ble module', () => {
     it('should have valid Node-RED plugin classes', () => {
-      assert.isNotNull(RED);
+      expect(RED).not.toBeNull();
       genericBLEModule(RED);
-      assert.isTrue(RED.nodes.registerType.withArgs('Generic BLE', sinon.match.any).calledOnce);
-      assert.isTrue(RED.nodes.registerType.withArgs('Generic BLE in', sinon.match.any).calledOnce);
-      assert.isTrue(RED.nodes.registerType.withArgs('Generic BLE out', sinon.match.any).calledOnce);
+      expect(RED.nodes.registerType.withArgs('Generic BLE', sinon.match.any).calledOnce).toBeTruthy();
+      expect(RED.nodes.registerType.withArgs('Generic BLE in', sinon.match.any).calledOnce).toBeTruthy();
+      expect(RED.nodes.registerType.withArgs('Generic BLE out', sinon.match.any).calledOnce).toBeTruthy();
     });
   });
 });
