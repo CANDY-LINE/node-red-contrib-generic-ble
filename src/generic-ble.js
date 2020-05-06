@@ -530,7 +530,7 @@ module.exports = function (RED) {
                 );
               })
               .then(() => {
-                return readObj;
+                return Object.keys(readObj).length > 0 ? readObj : null;
               });
           });
         },
