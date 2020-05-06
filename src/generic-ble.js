@@ -137,12 +137,16 @@ function startBLEScanning(RED) {
   if (!onDiscover) {
     onDiscover = onDiscoverFunc(RED);
   }
+  if (!onStateChange) {
+    onStateChange = onStateChangeFunc(RED);
+  }
   noble.removeListener('stateChange', onStateChange);
   noble.removeListener('discover', onDiscover);
   noble.addListener('stateChange', onStateChange);
   noble.addListener('discover', onDiscover);
   if (noble.state === 'poweredOn') {
     noble.startScanning([], true);
+    genericBleState.scanning = true;
   }
 }
 
