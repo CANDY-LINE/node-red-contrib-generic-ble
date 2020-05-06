@@ -134,66 +134,21 @@ async function toApiObject(peripheral) {
   };
 }
 
-function toDetailedObject(peripheral, RED) {
-  let p = Promise.resolve();
-  return toApiObject(peripheral).then((obj) => {
-    switch (peripheral.state) {
-      case 'disconnected': {
-        p = new Promise((resolve, reject) => {
-          peripheral.once('connect', () => {
-            peripheral.discoverAllServicesAndCharacteristics(
-              (err, services) => {
-                if (err) {
-                  return reject(err);
-                }
-                let resolved = false;
-                obj.characteristics = services
-                  .reduce((prev, curr) => {
-                    return prev.concat(curr.characteristics);
-                  }, [])
-                  .map((c) => {
-                    let characteristic = {
-                      uuid: c.uuid,
-                      name: c.name || RED._('generic-ble.label.unnamedChr'),
-                      type: c.type || RED._('generic-ble.label.customType'),
-                      notifiable: c.properties.indexOf('notify') >= 0,
-                      readable: c.properties.indexOf('read') >= 0,
-                      writable: c.properties.indexOf('write') >= 0,
-                      writeWithoutResponse:
-                        c.properties.indexOf('writeWithoutResponse') >= 0,
-                    };
-                    if (
-                      !peripheral.advertisement.localName &&
-                      peripheral.state === 'connected' &&
-                      c.type === 'org.bluetooth.characteristic.gap.device_name'
-                    ) {
-                      resolved = true;
-                      c.read((err, data) => {
-                        if (err) {
-                          return resolve();
-                        }
-                        obj.localName = data.toString();
-                        peripheral.advertisement.localName = obj.localName;
-                        return resolve();
-                      });
-                    }
-                    return characteristic;
-                  });
-                if (!resolved) {
-                  return resolve();
-                }
-              }
-            );
-          });
-          peripheral.connect(); // peripheral.state => connecting
-        });
-        break;
-      }
-      case 'connected': {
-        obj.characteristics = [];
-        peripheral.services.map((s) => {
-          obj.characteristics = obj.characteristics.concat(
-            (s.characteristics || [])
+async function toDetailedObject(peripheral, RED) {
+  const obj = await toApiObject(peripheral);
+  switch (peripheral.state) {
+    case 'disconnected': {
+      await new Promise((resolve, reject) => {
+        peripheral.once('connect', () => {
+          peripheral.discoverAllServicesAndCharacteristics((err, services) => {
+            if (err) {
+              return reject(err);
+            }
+            let resolved = false;
+            obj.characteristics = services
+              .reduce((prev, curr) => {
+                return prev.concat(curr.characteristics);
+              }, [])
               .map((c) => {
                 const characteristic = {
                   uuid: c.uuid,
@@ -210,34 +165,76 @@ function toDetailedObject(peripheral, RED) {
                   peripheral.state === 'connected' &&
                   c.type === 'org.bluetooth.characteristic.gap.device_name'
                 ) {
-                  p = new Promise((resolve) => {
-                    c.read((err, data) => {
-                      if (err) {
-                        return resolve();
-                      }
-                      obj.localName = data.toString();
-                      peripheral.advertisement.localName = obj.localName;
+                  resolved = true;
+                  c.read((err, data) => {
+                    if (err) {
                       return resolve();
-                    });
+                    }
+                    obj.localName = data.toString();
+                    peripheral.advertisement.localName = obj.localName;
+                    return resolve();
                   });
                 }
                 return characteristic;
-              })
-              .filter((c) => c)
-          );
+              });
+            if (!resolved) {
+              return resolve();
+            }
+          });
         });
-        break;
-      }
-      case 'disconnecting':
-      case 'connecting': {
-        return;
-      }
-      default: {
-        return;
-      }
+        peripheral.connect(); // peripheral.state => connecting
+      });
+      break;
     }
-    return p.then(() => Promise.resolve(obj));
-  });
+    case 'connected': {
+      obj.characteristics = [];
+      let deviceNameCharacteristic;
+      peripheral.services.map((s) => {
+        obj.characteristics = obj.characteristics.concat(
+          (s.characteristics || []).map((c) => {
+            if (c.type === 'org.bluetooth.characteristic.gap.device_name') {
+              deviceNameCharacteristic = c;
+            }
+            return {
+              uuid: c.uuid,
+              name: c.name || RED._('generic-ble.label.unnamedChr'),
+              type: c.type || RED._('generic-ble.label.customType'),
+              notifiable: c.properties.indexOf('notify') >= 0,
+              readable: c.properties.indexOf('read') >= 0,
+              writable: c.properties.indexOf('write') >= 0,
+              writeWithoutResponse:
+                c.properties.indexOf('writeWithoutResponse') >= 0,
+            };
+          })
+        );
+      });
+      if (
+        deviceNameCharacteristic &&
+        !peripheral.advertisement.localName &&
+        peripheral.state === 'connected'
+      ) {
+        await new Promise((resolve) => {
+          deviceNameCharacteristic.read((err, data) => {
+            if (err) {
+              return resolve();
+            }
+            obj.localName = data.toString();
+            peripheral.advertisement.localName = obj.localName;
+            return resolve();
+          });
+        });
+      }
+      break;
+    }
+    case 'disconnecting':
+    case 'connecting': {
+      return;
+    }
+    default: {
+      return;
+    }
+  }
+  return obj;
 }
 
 module.exports = function (RED) {
