@@ -30,15 +30,11 @@ const bleDevices = new NodeCache({
   checkperiod: 60 * 1000,
 });
 const configBleDevices = {};
+const genericBleState = {
+  scanning: false,
+};
 let onDiscover;
-
-function onStateChange(state) {
-  if (state === 'poweredOn') {
-    noble.startScanning([], true);
-  } else {
-    noble.stopScanning();
-  }
-}
+let onStateChange;
 
 function getAddressOrUUID(peripheral) {
   if (!peripheral) {
@@ -108,7 +104,35 @@ function onDiscoverFunc(RED) {
   };
 }
 
+function onStateChangeFunc(RED) {
+  return (state) => {
+    if (state === 'poweredOn') {
+      if (!genericBleState.scanning) {
+        RED.log.info(`[GenericBLE] Start BLE scanning`);
+        noble.startScanning([], true);
+        genericBleState.scanning = true;
+      }
+    } else if (genericBleState.scanning) {
+      RED.log.info(`[GenericBLE] Stop BLE scanning`);
+      noble.stopScanning();
+      genericBleState.scanning = false;
+    }
+  };
+}
+
+function stopBLEScanning(RED) {
+  if (!genericBleState.scanning) {
+    return;
+  }
+  RED.log.info(`[GenericBLE] Stop BLE scanning`);
+  noble.stopScanning();
+  genericBleState.scanning = false;
+}
+
 function startBLEScanning(RED) {
+  if (genericBleState.scanning) {
+    return;
+  }
   RED.log.info(`[GenericBLE] Start BLE scanning`);
   if (!onDiscover) {
     onDiscover = onDiscoverFunc(RED);
@@ -612,6 +636,9 @@ module.exports = function (RED) {
       });
       this.emit('disconnected');
       this.on('close', (done) => {
+        if (genericBleState.scanning) {
+          stopBLEScanning();
+        }
         Object.keys(configBleDevices).forEach(
           (k) => delete configBleDevices[k]
         );
@@ -771,11 +798,42 @@ module.exports = function (RED) {
       RED.log.info(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
     }
     if (ev.id === 'runtime-state' && Object.keys(configBleDevices).length > 0) {
-      noble.stopScanning();
+      stopBLEScanning(RED);
       bleDevices.flushAll();
       startBLEScanning(RED);
     }
   });
+
+  // __blestate endpoint
+  RED.httpAdmin.get(
+    '/__blestate',
+    RED.auth.needsPermission('generic-ble.read'),
+    async (req, res) => {
+      return res.status(200).send(genericBleState).end();
+    }
+  );
+
+  // __blescan/:sw endpoint
+  RED.httpAdmin.post(
+    '/__blescan/:sw',
+    RED.auth.needsPermission('generic-ble.write'),
+    async (req, res) => {
+      const { sw } = req.params;
+      if (sw === 'start') {
+        startBLEScanning(RED);
+        return res
+          .status(200)
+          .send({ status: 200, message: 'startScanning' })
+          .end();
+      } else {
+        stopBLEScanning(RED);
+        return res
+          .status(200)
+          .send({ status: 200, message: 'stopScanning' })
+          .end();
+      }
+    }
+  );
 
   // __bledevlist endpoint
   RED.httpAdmin.get(

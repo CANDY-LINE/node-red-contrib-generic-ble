@@ -16,6 +16,7 @@ generic-ble:
     customType: (Custom Type)
     unnamedChr: <Unnamed>
     muteNotifyEvents: Mute notify events
+    scanning: Running BLE Scan
   placeholder:
     localName: BLE device name
     address: aa:11:bb:22:cc:33 (case insensitive)

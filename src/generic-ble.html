@@ -84,6 +84,11 @@
 </script>
 
 <script type="text/x-red" data-template-name="Generic BLE">
+  <div class="form-row">
+    <label>&nbsp;</label>
+    <input type="checkbox" id="node-config-input-scanning" style="display: inline-block; width: auto; vertical-align: top;">
+    <label for="node-config-input-scanning" style="width: 70%;" data-i18n="generic-ble.label.scanning"></label>
+  </div>
   <div class='form-row'>
     <label for='node-config-input-bleDevices'>
       <i class='fa fa-tag'></i>
@@ -352,18 +357,40 @@
       $('#node-config-input-bleDevices').prop('disabled', true);
       $('#node-config-input-selectable').prop('disabled', true);
       $('#node-config-input-selectable').val(false);
-      getBleDevices(that, function(bleDevices) {
-        if (bleDevices.length > 0) {
-          $('#node-config-input-selectable')
-            .prop('disabled', false)
+      function fetchBleDevices() {
+          getBleDevices(that, function(bleDevices) {
+          if (bleDevices.length > 0) {
+            $('#node-config-input-selectable')
+              .prop('disabled', false)
+              .click(function() {
+                const checked = $(this).prop('checked');
+                $('#node-config-input-bleDevices').prop('disabled', !checked);
+                if (checked) {
+                  $('#node-config-input-bleDevices').trigger('change');
+                }
+              });
+          }
+        });
+      }
+      fetchBleDevices();
+      $.getJSON('__blestate', function(genericBleState) {
+        $('#node-config-input-scanning')
+            .prop('checked', genericBleState.scanning)
             .click(function() {
-              let checked = $(this).prop('checked');
-              $('#node-config-input-bleDevices').prop('disabled', !checked);
-              if (checked) {
-                $('#node-config-input-bleDevices').trigger('change');
-              }
+              const checked = $(this).prop('checked');
+              $.ajax({
+                cache: false,
+                url: '__blescan/' + (checked ? 'start' : 'stop'),
+                dataType: 'json',
+                type:'POST',
+                success: function () {
+                  setTimeout(fetchBleDevices, 3000);
+                },
+                error: function() {
+                  $(this).prop('checked', !checked);
+                }
+              });
             });
-        }
       });
     }
   });
