@@ -39,6 +39,7 @@ describe('generic-ble node', () => {
     });
     RED.httpAdmin = sandbox.stub({
       get: () => {},
+      post: () => {},
     });
     RED.auth = sandbox.stub({
       needsPermission: () => {},
