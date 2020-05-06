@@ -20,7 +20,7 @@ const util        = require("gulp-util");
 const babel       = require('gulp-babel');
 const uglify      = require('gulp-uglify-es').default;
 const del         = require('del');
-const jshint      = require('gulp-jshint');
+const eslint      = require('gulp-eslint');
 const jest        = require('gulp-jest').default;
 const sourcemaps  = require('gulp-sourcemaps');
 const gulpIf      = require('gulp-if');
@@ -33,15 +33,41 @@ const yaml        = require('gulp-yaml');
 const minified = process.env.NODE_ENV !== 'development';
 const sourcemapEnabled = !minified;
 
-gulp.task('lint', () => {
-  return gulp.src([
-    './tests/**/*.js',
-    './src/**/*.js'
-  ])
-  .pipe(jshint())
-  .pipe(jshint.reporter('jshint-stylish'))
-  .pipe(jshint.reporter('fail'));
+gulp.task('lintSrcs', () => {
+  return gulp.src(['./src/**/*.js'])
+  .pipe(
+    eslint({
+      useEslintrc: true,
+      fix: true,
+    })
+  )
+  .pipe(eslint.format())
+  .pipe(
+    gulpIf((file) => {
+      return file.eslint != null && file.eslint.fixed;
+    }, gulp.dest('./src'))
+  )
+  .pipe(eslint.failAfterError());
 });
+
+gulp.task('lintTests', () => {
+  return gulp.src(['./tests/**/*.js'])
+  .pipe(
+    eslint({
+      useEslintrc: true,
+      fix: true,
+    })
+  )
+  .pipe(eslint.format())
+  .pipe(
+    gulpIf((file) => {
+      return file.eslint != null && file.eslint.fixed;
+    }, gulp.dest('./tests'))
+  )
+  .pipe(eslint.failAfterError());
+});
+
+gulp.task('lint', gulp.series('lintSrcs', 'lintTests'));
 
 gulp.task('clean', () => {
   return del([
