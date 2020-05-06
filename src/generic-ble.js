@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-'use strict';
-
 import 'source-map-support/register';
 import noble from '@abandonware/noble';
 import NodeCache from 'node-cache';
