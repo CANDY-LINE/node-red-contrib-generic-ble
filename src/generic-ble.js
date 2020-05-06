@@ -483,80 +483,75 @@ module.exports = function (RED) {
             })
           );
         },
-        read: (uuids = '') => {
-          return this.operations.preparePeripheral().then((state) => {
-            if (state !== 'connected') {
-              this.log(
-                `[read] Peripheral:${this.uuid} is NOT ready. state=>${state}`
-              );
-              return Promise.resolve();
-            }
-            uuids = uuids
-              .split(',')
-              .map((uuid) => uuid.trim())
-              .filter((uuid) => uuid);
-            const readables = this.characteristics.filter((c) => {
-              if (c.readable) {
-                if (uuids.length === 0) {
-                  return true;
-                }
-                return uuids.indexOf(c.uuid) >= 0;
+        read: async (uuids = '') => {
+          const state = await this.operations.preparePeripheral();
+          if (state !== 'connected') {
+            this.log(
+              `[read] Peripheral:${this.uuid} is NOT ready. state=>${state}`
+            );
+            return null;
+          }
+          uuids = uuids
+            .split(',')
+            .map((uuid) => uuid.trim())
+            .filter((uuid) => uuid);
+          const readables = this.characteristics.filter((c) => {
+            if (c.readable) {
+              if (uuids.length === 0) {
+                return true;
               }
-            });
-            if (TRACE) {
-              this.log(
-                `characteristics => ${JSON.stringify(
-                  this.characteristics.map((c) => {
-                    const obj = Object.assign({}, c);
-                    delete obj.obj;
-                    return obj;
-                  })
-                )}`
-              );
-              this.log(`readables.length => ${readables.length}`);
+              return uuids.indexOf(c.uuid) >= 0;
             }
-            if (readables.length === 0) {
-              return Promise.resolve();
-            }
-            const notifiables = this.characteristics.filter((c) => {
-              if (c.notifiable) {
-                if (uuids.length === 0) {
-                  return true;
-                }
-                return uuids.indexOf(c.uuid) >= 0;
-              }
-            });
-            // perform read here right now
-            const readObj = {};
-            return Promise.all(notifiables.map((n) => n.unsubscribe()))
-              .then(() => {
-                return Promise.all(
-                  readables.map((r) => {
-                    // {uuid:'characteristic-uuid-to-read'}
-                    return new Promise((resolve, reject) => {
-                      r.object.read((err, data) => {
-                        if (err) {
-                          if (TRACE) {
-                            this.log(`<Read> ${r.uuid} => FAIL`);
-                          }
-                          return reject(err);
-                        }
-                        if (TRACE) {
-                          this.log(
-                            `<Read> ${r.uuid} => ${JSON.stringify(data)}`
-                          );
-                        }
-                        readObj[r.uuid] = data;
-                        resolve();
-                      });
-                    });
-                  })
-                );
-              })
-              .then(() => {
-                return Object.keys(readObj).length > 0 ? readObj : null;
-              });
           });
+          if (TRACE) {
+            this.log(
+              `characteristics => ${JSON.stringify(
+                this.characteristics.map((c) => {
+                  const obj = Object.assign({}, c);
+                  delete obj.obj;
+                  return obj;
+                })
+              )}`
+            );
+            this.log(`readables.length => ${readables.length}`);
+          }
+          if (readables.length === 0) {
+            return null;
+          }
+          const notifiables = this.characteristics.filter((c) => {
+            if (c.notifiable) {
+              if (uuids.length === 0) {
+                return true;
+              }
+              return uuids.indexOf(c.uuid) >= 0;
+            }
+          });
+          // perform read here right now
+          const readObj = {};
+          // unsubscribe all notifiable characteristics
+          await Promise.all(notifiables.map((n) => n.unsubscribe()));
+          // read all readable characteristics
+          await Promise.all(
+            readables.map((r) => {
+              // {uuid:'characteristic-uuid-to-read'}
+              return new Promise((resolve, reject) => {
+                r.object.read((err, data) => {
+                  if (err) {
+                    if (TRACE) {
+                      this.log(`<Read> ${r.uuid} => FAIL`);
+                    }
+                    return reject(err);
+                  }
+                  if (TRACE) {
+                    this.log(`<Read> ${r.uuid} => ${JSON.stringify(data)}`);
+                  }
+                  readObj[r.uuid] = data;
+                  resolve();
+                });
+              });
+            })
+          );
+          return Object.keys(readObj).length > 0 ? readObj : null;
         },
         subscribe: (uuids = '', period = 0) => {
           return this.operations.preparePeripheral().then((state) => {
