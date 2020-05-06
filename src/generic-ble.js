@@ -221,7 +221,7 @@ function toDetailedObject(peripheral, RED) {
   });
 }
 
-export default function(RED) {
+module.exports = function(RED) {
 
   function toCharacteristic(c) {
     let obj = {
@@ -747,4 +747,4 @@ export default function(RED) {
       }
     });
   });
-}
+};
