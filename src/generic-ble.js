@@ -15,11 +15,15 @@
  * limitations under the License.
  */
 
-import 'source-map-support/register';
 import noble from '@abandonware/noble';
 import NodeCache from 'node-cache';
 
-const TRACE = (process.env.GENERIC_BLE_TRACE === 'true');
+// Workaround for a Jest Issue
+// https://github.com/kulshekhar/ts-jest/issues/727#issuecomment-422747294
+if (process.env.NODE_ENV !== 'test') {
+  require('source-map-support/register');
+}
+const TRACE = process.env.GENERIC_BLE_TRACE === 'true';
 const bleDevices = new NodeCache({
   stdTTL : 10 * 60 * 1000,
   checkperiod : 60 * 1000

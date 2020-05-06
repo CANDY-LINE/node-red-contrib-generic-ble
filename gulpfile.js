@@ -177,6 +177,7 @@ gulp.task('testJs', gulp.series('cleanTestJs', 'build', () => {
 }));
 
 gulp.task('test', gulp.series('testJs', 'testAssets', () => {
+  process.env.NODE_ENV = 'test';
   return gulp.src([
     './dist/**/*.test.js',
   ], {read: false})
