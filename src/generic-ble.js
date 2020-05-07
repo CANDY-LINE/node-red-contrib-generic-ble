@@ -17,10 +17,14 @@
 
 import noble from '@abandonware/noble';
 import NodeCache from 'node-cache';
+import debugLogger from 'debug';
+
+const debug = debugLogger('node-red-contrib-generic-ble:index');
 
 // Workaround for a Jest Issue
 // https://github.com/kulshekhar/ts-jest/issues/727#issuecomment-422747294
 if (process.env.NODE_ENV !== 'test') {
+  debug('Requiring "source-map-support/register"...');
   require('source-map-support/register');
 }
 const LOG_ENABLE_BUILD_FLAG = false;
