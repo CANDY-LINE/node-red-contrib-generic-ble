@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "gulp build",
-    "test": "gulp test",
+    "test": "DEBUG=node-red-contrib-generic-ble:* gulp test",
     "clean": "gulp clean",
     "prepublish": "gulp build"
   },
@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@abandonware/noble": "^1.9.2-8",
+    "debug": "^4.1.1",
     "node-cache": "^4.1.0",
     "source-map-support": "^0.5.19"
   },
