@@ -162,30 +162,16 @@ gulp.task('testAssets', () => {
   .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('testJs', gulp.series('cleanTestJs', 'build', () => {
-  return gulp.src('./tests/**/*.js')
-    .pipe(sourcemaps.init())
-    .pipe(
-      babel({
-        minified: true,
-        compact: true,
-        configFile: './.babelrc',
-      })
-    )
-    .pipe(sourcemaps.write('.'))
-    .pipe(gulp.dest('./dist'));
-}));
-
-gulp.task('test', gulp.series('testJs', 'testAssets', () => {
+gulp.task('test', gulp.series('build', 'testAssets', () => {
   process.env.NODE_ENV = 'test';
   return gulp.src([
-    './dist/**/*.test.js',
+    './tests/**/*.test.js',
   ], {read: false})
   .pipe(jest({
-    rootDir: './dist',
+    rootDir: '.',
     verbose: false,
     modulePaths: [
-      '.'
+      './src'
     ]
   }));
 }));
