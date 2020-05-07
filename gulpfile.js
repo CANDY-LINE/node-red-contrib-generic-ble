@@ -169,10 +169,11 @@ gulp.task('test', gulp.series('build', 'testAssets', () => {
   ], {read: false})
   .pipe(jest({
     rootDir: '.',
-    verbose: false,
+    verbose: true,
     modulePaths: [
       './src'
-    ]
+    ],
+    runInBand: true
   }));
 }));
 
