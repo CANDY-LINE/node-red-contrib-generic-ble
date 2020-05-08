@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import noble from '@abandonware/noble';
+import noble from './noble';
 import NodeCache from 'node-cache';
 import debugLogger from 'debug';
 
@@ -647,7 +647,6 @@ module.exports = function (RED) {
         );
       });
     }
-
   }
   RED.nodes.registerType('Generic BLE', GenericBLENode);
 
