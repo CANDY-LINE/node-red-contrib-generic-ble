@@ -164,16 +164,16 @@ gulp.task('testAssets', () => {
 
 gulp.task('test', gulp.series('build', 'testAssets', () => {
   process.env.NODE_ENV = 'test';
-  return gulp.src([
-    './tests/**/*.test.js',
-  ], {read: false})
-  .pipe(jest({
-    rootDir: '.',
-    verbose: true,
+  return gulp.src('tests').pipe(jest({
     modulePaths: [
-      './src'
+      '<rootDir>/src'
     ],
-    runInBand: true
+    preprocessorIgnorePatterns: [
+      '<rootDir>/dist/',
+      '<rootDir>/node_modules/'
+    ],
+    verbose: true,
+    automock: false
   }));
 }));
 
