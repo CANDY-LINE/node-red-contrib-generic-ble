@@ -17,7 +17,6 @@
 
 import Noble from '../../node_modules/@abandonware/noble/lib/noble';
 import os from 'os';
-import cproc from 'child_process';
 import debugLogger from 'debug';
 
 const debug = debugLogger('node-red-contrib-generic-ble:noble');
@@ -27,14 +26,7 @@ debug(`Detected Platform => [${platform}]`);
 
 let bindings;
 if (platform === 'linux') {
-  try {
-    debug(`Locating bluetoothctl...`);
-    const pathToBluetoothctl = cproc.execSync('which bluetoothctl');
-    bindings = require('./lib/bluetoothctl/bindings').default;
-    debug(`Found => ${pathToBluetoothctl}`);
-  } catch (_) {
-    debug(`bluetoothctl is missing in the current path.`);
-  }
+  bindings = require('./lib/bluez/bindings').default;
 }
 if (!bindings) {
   debug(`Loading the default resolve-bindings module in @abandonware/noble.`);

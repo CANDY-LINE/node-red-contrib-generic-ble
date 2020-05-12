@@ -16,8 +16,9 @@
  */
 
 describe('bindings', () => {
-  test('object has the read-only property "bluetoothctl"', () => {
-    const bindings = require('noble/lib/bluetoothctl/bindings').default;
-    expect(bindings.bluetoothctl).toBeTruthy();
+  test('object is an instance of NobleBindings class', () => {
+    const bindings = require('noble/lib/bluez/bindings').default;
+    expect(bindings).not.toBeNull();
+    expect(bindings.bluez).toBeTruthy();
   });
 });

@@ -62,8 +62,7 @@
     "@abandonware/noble": "^1.9.2-8",
     "debug": "^4.1.1",
     "node-cache": "^4.1.0",
-    "source-map-support": "^0.5.19",
-    "bluetoothctl": "git+https://github.com/miroslawlis/bluetoothctl"
+    "source-map-support": "^0.5.19"
   },
   "node-red": {
     "nodes": {
