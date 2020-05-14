@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@abandonware/noble": "^1.9.2-8",
+    "dbus-next": "^0.8.2",
     "debug": "^4.1.1",
     "node-cache": "^4.1.0",
     "source-map-support": "^0.5.19"
