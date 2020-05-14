@@ -135,15 +135,15 @@ class BluezBindings extends EventEmitter {
           })
         : null;
       const advertisement = {
-        localName: device.Alias.value,
-        txPowerLevel: device.TxPower.value,
-        serviceUuids: device.UUIDs.value,
+        localName: this.option(device, 'Alias'),
+        txPowerLevel: this.option(device, 'TxPower'),
+        serviceUuids: this.option(device, 'UUIDs', []),
         manufacturerData: manufacturerData
           ? Buffer.from(manufacturerData)
           : null,
         serviceData,
       };
-      const rssi = device.RSSI.value;
+      const rssi = this.option(device, 'RSSI');
 
       // Device Properties Change Listener
       const props = await this.getDevicePropertiesInterface(objectPath);
@@ -231,6 +231,13 @@ class BluezBindings extends EventEmitter {
     this._initialized = true;
     debug(`async init() => done`);
     this.emit('stateChange', 'poweredOn');
+  }
+
+  option(proxy, prop, defaultValue = null) {
+    if (proxy[prop]) {
+      return proxy[prop].value;
+    }
+    return defaultValue;
   }
 
   async getDeviceObject(/*deviceUuid*/ objectPath) {
