@@ -36,7 +36,7 @@ class BluezBindings extends EventEmitter {
 
     this._state = null;
     this._scanning = false;
-    this.hciObjectPath = `/org.bluez/${process.env.HCIDEVICE || 'hci0'}`;
+    this.hciObjectPath = `/org/bluez/${process.env.HCIDEVICE || 'hci0'}`;
 
     debug('BluezBindings instance created!');
   }
@@ -47,7 +47,7 @@ class BluezBindings extends EventEmitter {
   ) {
     this._scanning = true;
     if (this._initialized) {
-      this.bluezAdapter.StartDiscovery();
+      this.hciAdapter.StartDiscovery();
     } else {
       this.once('poweredOn', () => {
         this.startScanning(serviceUuids, allowDuplicates);
@@ -58,7 +58,7 @@ class BluezBindings extends EventEmitter {
   stopScanning() {
     this._scanning = false;
     if (this._initialized) {
-      this.bluezAdapter.StopDiscovery();
+      this.hciAdapter.StopDiscovery();
     }
   }
 
@@ -100,6 +100,7 @@ class BluezBindings extends EventEmitter {
     this.hciProps = this.hciObject.getInterface(
       'org.freedesktop.DBus.Properties'
     );
+    this.hciAdapter = this.hciObject.getInterface('org.bluez.Adapter1');
 
     // Device Discovered/Missed
     this.bluezObjectManager.on('InterfacesAdded', async (
