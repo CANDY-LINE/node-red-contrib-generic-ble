@@ -146,13 +146,13 @@ class BluezBindings extends EventEmitter {
 
       // Device Properties Change Listener
       const props = await this.getDevicePropertiesInterface(objectPath);
-      props.on('PropertyChanged', (
+      props.on('PropertiesChanged', (
         /*string*/ interfaceName,
         /*obj*/ changedProps,
         /*obj*/ invalidatedProps
       ) => {
         debug(
-          `[${objectPath}]<PropertyChanged> interfaceName:${interfaceName}, changedProps:${Object.keys(
+          `[${objectPath}]<PropertiesChanged> interfaceName:${interfaceName}, changedProps:${Object.keys(
             changedProps
           )}, invalidatedProps:${Object.keys(invalidatedProps)}`
         );
