@@ -21,6 +21,13 @@ import dbus from 'dbus-next';
 
 const debug = debugLogger('node-red-contrib-generic-ble:noble:bluez');
 
+// Workaround for a Jest Issue
+// https://github.com/kulshekhar/ts-jest/issues/727#issuecomment-422747294
+if (process.env.NODE_ENV !== 'test') {
+  debug('Requiring "source-map-support/register"...');
+  require('source-map-support/register');
+}
+
 class BluezBindings extends EventEmitter {
   constructor() {
     super();
