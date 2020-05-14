@@ -33,4 +33,26 @@ if (!bindings) {
   bindings = require('../../node_modules/@abandonware/noble/lib/resolve-bindings')();
 }
 
-module.exports = new Noble(bindings);
+class PeripheralRemovableNoble extends Noble {
+  constructor(bindings) {
+    super(bindings);
+    bindings.on('miss', this.onMiss.bind(this));
+  }
+  onMiss(uuid) {
+    if (super._peripherals[uuid]) {
+      delete super._peripherals[uuid];
+      delete super._services[uuid];
+      delete super._characteristics[uuid];
+      delete super._descriptors[uuid];
+      const previouslyDiscoverdIndex = super._discoveredPeripheralUUids.indexOf(
+        uuid
+      );
+      if (previouslyDiscoverdIndex >= 0) {
+        super._discoveredPeripheralUUids.splice(previouslyDiscoverdIndex, 1);
+      }
+      debug(`Peripheral(uuid:${uuid}) has gone.`);
+    }
+  }
+}
+
+module.exports = new PeripheralRemovableNoble(bindings);
