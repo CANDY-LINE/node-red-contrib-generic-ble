@@ -119,7 +119,7 @@ class BluezBindings extends EventEmitter {
       const addressType = device.AddressType.value;
       const connectable = !device.Blocked.value;
       const manufacturerData = device.ManufacturerData
-        ? Object.values(device.ManufacturerData.value)[0]
+        ? Object.values(device.ManufacturerData.value)[0].value
         : null;
       if (manufacturerData) {
         // Prepend Manufacturer ID
@@ -227,6 +227,7 @@ class BluezBindings extends EventEmitter {
     });
 
     // init finished
+    this._initialized = true;
     this.emit('stateChange', 'poweredOn');
   }
 
