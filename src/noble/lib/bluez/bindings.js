@@ -228,6 +228,7 @@ class BluezBindings extends EventEmitter {
 
     // init finished
     this._initialized = true;
+    debug(`async init() => done`);
     this.emit('stateChange', 'poweredOn');
   }
 
