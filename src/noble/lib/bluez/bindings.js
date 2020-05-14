@@ -108,12 +108,13 @@ class BluezBindings extends EventEmitter {
       /*Object<String,Object<String,Variant>>*/ interfacesAndProps
     ) => {
       const interfaces = Object.keys(interfacesAndProps);
-      debug(
-        `<InterfacesAdded> objectPath:${objectPath}, interfaces:${JSON.stringify(
-          interfaces
-        )}`
-      );
       const device = interfacesAndProps['org.bluez.Device1'];
+      debug(
+        `<InterfacesAdded> objectPath:${objectPath}, alias:${
+          device.Alias.value || 'n/a'
+        }, interfaces:${JSON.stringify(interfaces)}`
+      );
+
       const peripheralUuid = objectPath; // deviceUuid = peripheralUuid = objectPath
       const address = device.Address.value;
       const addressType = device.AddressType.value;
