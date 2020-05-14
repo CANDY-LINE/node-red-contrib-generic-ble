@@ -80,6 +80,7 @@ class BluezBindings extends EventEmitter {
       'org.freedesktop.DBus.ObjectManager'
     );
     const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
+    debug(`Detected Object Paths:${Object.keys(bluezObjects)}`);
     if (!bluezObjects[this.hciObjectPath]) {
       this.emit('stateChange', 'error');
       debug(
@@ -112,7 +113,9 @@ class BluezBindings extends EventEmitter {
       debug(
         `<InterfacesAdded> objectPath:${objectPath}, alias:${
           device.Alias.value || 'n/a'
-        }, interfaces:${JSON.stringify(interfaces)}`
+        }, interfaces:${JSON.stringify(interfaces)}, device: ${JSON.stringify(
+          device
+        )}`
       );
 
       const peripheralUuid = objectPath; // deviceUuid = peripheralUuid = objectPath
