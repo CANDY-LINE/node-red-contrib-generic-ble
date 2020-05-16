@@ -38,6 +38,7 @@ class BluezBindings extends EventEmitter {
     this.bus = dbus.systemBus();
 
     this._state = null;
+    this._scanFilterDuplicates = null;
     this._scanning = false;
     this.hciObjectPath = `/org/bluez/${process.env.HCIDEVICE || 'hci0'}`;
 
@@ -46,9 +47,10 @@ class BluezBindings extends EventEmitter {
 
   startScanning(
     /* never used */ serviceUuids,
-    /* never used */ allowDuplicates
+    allowDuplicates
   ) {
     if (this._initialized) {
+      this._scanFilterDuplicates = !allowDuplicates;
       if (this._scanning) {
         debug(`[startScanning] Scan already ongoing...`);
       } else {
@@ -458,7 +460,7 @@ class BluezBindings extends EventEmitter {
           );
         }
       );
-    this.emit('scanStart');
+    this.emit('scanStart', this._scanFilterDuplicates);
   }
 
   onScanStopepd() {
