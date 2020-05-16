@@ -295,10 +295,17 @@ class BluezBindings extends EventEmitter {
   ) {
     const interfaces = Object.keys(interfacesAndProps);
     if (interfaces.includes('org.bluez.Device1')) {
-      this.onDeviceDiscovered(
-        objectPath,
-        interfacesAndProps['org.bluez.Device1']
-      );
+      const device = interfacesAndProps['org.bluez.Device1'];
+      if (device.RSSI) {
+        this.onDeviceDiscovered(objectPath, device);
+      } else {
+        debug(
+          `<onDevicesServicesCharacteristicsDiscovered> objectPath:${objectPath}, RSSI is missing. Removing the device ${
+            device.Address.value
+          }(${this.option(device, 'Alias', 'n/a')})`
+        );
+        this.hciAdapter.RemoveDevice(objectPath);
+      }
     } else {
       debug(
         `<onDevicesServicesCharacteristicsDiscovered> objectPath:${objectPath}, interfaces:${JSON.stringify(
