@@ -48,19 +48,26 @@ class BluezBindings extends EventEmitter {
     /* never used */ serviceUuids,
     /* never used */ allowDuplicates
   ) {
-    this._scanning = true;
     if (this._initialized) {
-      this.hciAdapter.StartDiscovery();
+      if (this._scanning) {
+        debug(`[startScanning] Scan already ongoing...`);
+      } else {
+        debug(`[startScanning] Start Scanning...`);
+        this.hciAdapter.StartDiscovery();
+      }
     } else {
       this.once('poweredOn', () => {
+        debug(
+          `[startScanning] Trigger startScanning again as initialization done.`
+        );
         this.startScanning(serviceUuids, allowDuplicates);
       });
     }
   }
 
   stopScanning() {
-    this._scanning = false;
     if (this._initialized) {
+      debug(`[startScanning] Stop Scanning...`);
       this.hciAdapter.StopDiscovery();
     }
   }
@@ -105,6 +112,12 @@ class BluezBindings extends EventEmitter {
       'org.freedesktop.DBus.Properties'
     );
     this.hciAdapter = this.hciObject.getInterface('org.bluez.Adapter1');
+    this._scanning = (
+      await this.hciProps.Get('org.bluez.Adapter1', 'Discovering')
+    ).value;
+    if (this._scanning) {
+      this.onScanStarted();
+    }
 
     // Devices/Services/Characteristics Discovered/Missed
     this.bluezObjectManager.on(
