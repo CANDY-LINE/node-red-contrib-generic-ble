@@ -234,16 +234,27 @@ class BluezBindings extends EventEmitter {
     /*Object<String,Object<String,Variant>>*/ interfacesAndProps
   ) {
     const interfaces = Object.keys(interfacesAndProps);
-    const device = interfacesAndProps['org.bluez.Device1'];
+    if (interfaces.includes['org.bluez.Device1']) {
+      this.onDeviceDiscovered(
+        objectPath,
+        interfacesAndProps['org.bluez.Device1']
+      );
+    } else {
+      debug(
+        `<onDevicesServicesCharacteristicsDiscovered> objectPath:${objectPath}, interfaces:${JSON.stringify(
+          interfaces
+        )}`
+      );
+    }
+  }
+
+  async onDeviceDiscovered(peripheralUuid, device) {
     debug(
-      `<InterfacesAdded:DevicesDiscovered> objectPath:${objectPath}, alias:${
+      `<onDeviceDiscovered> peripheralUuid:${peripheralUuid}, alias:${
         device.Alias.value || 'n/a'
-      }, interfaces:${JSON.stringify(interfaces)}, device: ${JSON.stringify(
-        device
-      )}`
+      }, device: ${JSON.stringify(device)}`
     );
 
-    const peripheralUuid = objectPath; // deviceUuid = peripheralUuid = objectPath
     const address = device.Address.value;
     const addressType = device.AddressType.value;
     const connectable = !device.Blocked.value;
@@ -272,37 +283,33 @@ class BluezBindings extends EventEmitter {
     const rssi = this.option(device, 'RSSI');
 
     // Device Properties Change Listener
-    const props = await this.getDevicePropertiesInterface(objectPath);
+    const props = await this.getDevicePropertiesInterface(peripheralUuid);
     props.on('PropertiesChanged', async (
       /*string*/ interfaceName,
       /*obj*/ changedProps,
       /*obj*/ invalidatedProps
     ) => {
       debug(
-        `[${objectPath}]<PropertiesChanged> interfaceName:${interfaceName}, changedProps:${Object.keys(
+        `[${peripheralUuid}]<PropertiesChanged> interfaceName:${interfaceName}, changedProps:${Object.keys(
           changedProps
         )}, invalidatedProps:${Object.keys(invalidatedProps)}`
       );
       if (interfaceName === 'org.bluez.Device1') {
         if (changedProps.Connected) {
           if (changedProps.Connected.value) {
-            this.emit('connect', objectPath);
+            this.emit('connect', peripheralUuid);
           } else {
-            this.emit('disconnect', objectPath);
+            this.emit('disconnect', peripheralUuid);
           }
         }
         if (
           changedProps.ServicesResolved &&
           changedProps.ServicesResolved.value
         ) {
-          this.onServicesResolved(props, objectPath);
+          this.onServicesResolved(props, peripheralUuid);
         }
         if (changedProps.RSSI) {
-          this.emit(
-            'rssiUpdate',
-            /*peripheralUuid*/ objectPath,
-            changedProps.RSSI.value
-          );
+          this.emit('rssiUpdate', peripheralUuid, changedProps.RSSI.value);
         }
       }
     });
