@@ -817,6 +817,7 @@ module.exports = function (RED) {
     '/__blestate',
     RED.auth.needsPermission('generic-ble.read'),
     async (req, res) => {
+      debug(`${req.method}:${req.originalUrl}`);
       return res.status(200).send(genericBleState).end();
     }
   );
@@ -826,6 +827,7 @@ module.exports = function (RED) {
     '/__blescan/:sw',
     RED.auth.needsPermission('generic-ble.write'),
     async (req, res) => {
+      debug(`${req.method}:${req.originalUrl}`);
       const { sw } = req.params;
       if (sw === 'start') {
         startBLEScanning(RED);
@@ -848,6 +850,7 @@ module.exports = function (RED) {
     '/__bledevlist',
     RED.auth.needsPermission('generic-ble.read'),
     async (req, res) => {
+      debug(`${req.method}:${req.originalUrl}`);
       try {
         const body = await Promise.all(
           bleDevices.keys().map((k) => {
@@ -879,6 +882,7 @@ module.exports = function (RED) {
     '/__bledev/:address',
     RED.auth.needsPermission('generic-ble.read'),
     async (req, res) => {
+      debug(`${req.method}:${req.originalUrl}`);
       const address = req.params.address;
       if (!address) {
         return res
