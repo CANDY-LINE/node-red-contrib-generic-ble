@@ -418,32 +418,13 @@ class BluezBindings extends EventEmitter {
         changedProps
       )}, invalidatedProps:${Object.keys(invalidatedProps)}`
     );
-    if (interfaceName === this.hciObjectPath) {
+    if (interfaceName === 'org.bluez.Adapter1') {
       if (changedProps.Discovering) {
         debug(`Discovering=>${changedProps.Discovering.value}`);
         if (changedProps.Discovering.value) {
-          this.emit('scanStart');
-          const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
-          // Invoke DevicesDiscovered event listerner if devices already exists
-          const deviceObjectPathPrefix = `${this.hciObjectPath}/dev_`;
-          Object.keys(bluezObjects)
-            .filter(
-              (objectPath) =>
-                objectPath.indexOf(deviceObjectPathPrefix) === 0 &&
-                /*Exclude Service/Characteristic Paths*/ objectPath.length ===
-                  37 /*=> '/org/bluez/hci0/dev_11_22_33_44_55_66'.length*/
-            )
-            .forEach(
-              /*deviceUuid*/ (objectPath) => {
-                const interfacesAndProps = bluezObjects[objectPath];
-                this.onDevicesServicesCharacteristicsDiscovered(
-                  objectPath,
-                  /*Object<String,Object<String,Variant>>*/ interfacesAndProps
-                );
-              }
-            );
+          this.onScanStarted();
         } else {
-          this.emit('scanStop');
+          this.onScanStopepd();
         }
       }
       if (changedProps.Powered) {
@@ -454,6 +435,35 @@ class BluezBindings extends EventEmitter {
       }
       // Skip to show other props
     }
+  }
+
+  async onScanStarted() {
+    debug(`[onScanStarted] fired`);
+    const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
+    // Invoke DevicesDiscovered event listerner if devices already exists
+    const deviceObjectPathPrefix = `${this.hciObjectPath}/dev_`;
+    Object.keys(bluezObjects)
+      .filter(
+        (objectPath) =>
+          objectPath.indexOf(deviceObjectPathPrefix) === 0 &&
+          /*Exclude Service/Characteristic Paths*/ objectPath.length ===
+            37 /*=> '/org/bluez/hci0/dev_11_22_33_44_55_66'.length*/
+      )
+      .forEach(
+        /*deviceUuid*/ (objectPath) => {
+          const interfacesAndProps = bluezObjects[objectPath];
+          this.onDevicesServicesCharacteristicsDiscovered(
+            objectPath,
+            /*Object<String,Object<String,Variant>>*/ interfacesAndProps
+          );
+        }
+      );
+    this.emit('scanStart');
+  }
+
+  onScanStopepd() {
+    debug(`[onScanStopepd] fired`);
+    this.emit('scanStop');
   }
 
   onSigInt() {
