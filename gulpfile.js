@@ -16,7 +16,6 @@
  */
 
 const gulp        = require('gulp');
-const util        = require("gulp-util");
 const babel       = require('gulp-babel');
 const uglify      = require('gulp-uglify-es').default;
 const del         = require('del');
@@ -27,8 +26,8 @@ const gulpIf      = require('gulp-if');
 const htmlmin     = require('gulp-htmlmin');
 const cleancss    = require('gulp-clean-css');
 const less        = require('gulp-less');
-const manifest    = require('gulp-manifest');
 const yaml        = require('gulp-yaml');
+const prettier    = require('gulp-prettier');
 
 gulp.task('lintSrcs', () => {
   return gulp.src(['./src/**/*.js'])
@@ -39,6 +38,7 @@ gulp.task('lintSrcs', () => {
     })
   )
   .pipe(eslint.format())
+  .pipe(prettier())
   .pipe(
     gulpIf((file) => {
       return file.eslint != null && file.eslint.fixed;
@@ -56,6 +56,7 @@ gulp.task('lintTests', () => {
     })
   )
   .pipe(eslint.format())
+  .pipe(prettier())
   .pipe(
     gulpIf((file) => {
       return file.eslint != null && file.eslint.fixed;
