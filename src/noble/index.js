@@ -39,16 +39,17 @@ class PeripheralRemovableNoble extends Noble {
     bindings.on('miss', this.onMiss.bind(this));
   }
   onMiss(uuid) {
-    if (super._peripherals[uuid]) {
-      delete super._peripherals[uuid];
-      delete super._services[uuid];
-      delete super._characteristics[uuid];
-      delete super._descriptors[uuid];
-      const previouslyDiscoverdIndex = super._discoveredPeripheralUUids.indexOf(
+    debug(`<onMiss> this.initialized => ${this.initialized}`);
+    if (this._peripherals[uuid]) {
+      delete this._peripherals[uuid];
+      delete this._services[uuid];
+      delete this._characteristics[uuid];
+      delete this._descriptors[uuid];
+      const previouslyDiscoverdIndex = this._discoveredPeripheralUUids.indexOf(
         uuid
       );
       if (previouslyDiscoverdIndex >= 0) {
-        super._discoveredPeripheralUUids.splice(previouslyDiscoverdIndex, 1);
+        this._discoveredPeripheralUUids.splice(previouslyDiscoverdIndex, 1);
       }
       debug(`Peripheral(uuid:${uuid}) has gone.`);
     }
