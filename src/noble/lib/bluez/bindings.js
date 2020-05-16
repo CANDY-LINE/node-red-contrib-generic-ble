@@ -45,10 +45,7 @@ class BluezBindings extends EventEmitter {
     debug('BluezBindings instance created!');
   }
 
-  startScanning(
-    /* never used */ serviceUuids,
-    allowDuplicates
-  ) {
+  startScanning(/* never used */ serviceUuids, allowDuplicates) {
     if (this._initialized) {
       this._scanFilterDuplicates = !allowDuplicates;
       if (this._scanning) {
