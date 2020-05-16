@@ -829,7 +829,9 @@ module.exports = function (RED) {
     '/__blescan/:sw',
     RED.auth.needsPermission('generic-ble.write'),
     async (req, res) => {
-      debug(`${req.method}:${req.originalUrl}`);
+      debug(
+        `${req.method}:${req.originalUrl}, genericBleState.scanning:${genericBleState.scanning}`
+      );
       const { sw } = req.params;
       if (sw === 'start') {
         startBLEScanning(RED);
