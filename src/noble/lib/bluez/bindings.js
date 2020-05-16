@@ -103,14 +103,14 @@ class BluezBindings extends EventEmitter {
     );
     this.hciAdapter = this.hciObject.getInterface('org.bluez.Adapter1');
 
-    // Device Discovered/Missed
+    // Devices/Services/Characteristics Discovered/Missed
     this.bluezObjectManager.on(
       'InterfacesAdded',
-      this.onDevicesDiscovered.bind(this)
+      this.onDevicesServicesCharacteristicsDiscovered.bind(this)
     );
     this.bluezObjectManager.on(
       'InterfacesRemoved',
-      this.onDevicesMissed.bind(this)
+      this.onDevicesServicesCharacteristicsMissed.bind(this)
     );
 
     // Adapter Properties Change Listener
@@ -229,7 +229,7 @@ class BluezBindings extends EventEmitter {
   // readHandle(deviceUuid, handle)
   // writeHandle(deviceUuid, handle, data, withoutResponse)
 
-  async onDevicesDiscovered(
+  async onDevicesServicesCharacteristicsDiscovered(
     objectPath,
     /*Object<String,Object<String,Variant>>*/ interfacesAndProps
   ) {
@@ -326,7 +326,7 @@ class BluezBindings extends EventEmitter {
     this.emit('servicesDiscover', objectPath, serviceUuids);
   }
 
-  async onDevicesMissed(objectPath, /*String[]*/ interfaces) {
+  async onDevicesServicesCharacteristicsMissed(objectPath, /*String[]*/ interfaces) {
     debug(
       `<InterfacesRemoved:DevicesMissed> objectPath:${objectPath}, interfaces:${JSON.stringify(
         interfaces
@@ -363,7 +363,7 @@ class BluezBindings extends EventEmitter {
             .forEach(
               /*deviceUuid*/ (objectPath) => {
                 const interfacesAndProps = bluezObjects[objectPath];
-                this.onDevicesDiscovered(
+                this.onDevicesServicesCharacteristicsDiscovered(
                   objectPath,
                   /*Object<String,Object<String,Variant>>*/ interfacesAndProps
                 );
