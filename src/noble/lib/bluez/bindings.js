@@ -229,6 +229,10 @@ class BluezBindings extends EventEmitter {
         )
         .map((objectPath) => {
           const chr = bluezObjects[objectPath]['org.bluez.GattCharacteristic1'];
+          if (!chr) {
+            // org.bluez.GattDescriptor1
+            return null;
+          }
           if (
             characteristicUuids.length > 0 &&
             !characteristicUuids.includes(chr.UUID.value)
