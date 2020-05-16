@@ -355,7 +355,10 @@ class BluezBindings extends EventEmitter {
           const deviceObjectPathPrefix = `${this.hciObjectPath}/dev_`;
           Object.keys(bluezObjects)
             .filter(
-              (objectPath) => objectPath.indexOf(deviceObjectPathPrefix) === 0
+              (objectPath) =>
+                objectPath.indexOf(deviceObjectPathPrefix) === 0 &&
+                /*Exclude Service/Characteristic Paths*/ objectPath.length ===
+                  37
             )
             .forEach(
               /*deviceUuid*/ (objectPath) => {
