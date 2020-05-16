@@ -326,13 +326,18 @@ class BluezBindings extends EventEmitter {
     this.emit('servicesDiscover', objectPath, serviceUuids);
   }
 
-  async onDevicesServicesCharacteristicsMissed(objectPath, /*String[]*/ interfaces) {
+  async onDevicesServicesCharacteristicsMissed(
+    objectPath,
+    /*String[]*/ interfaces
+  ) {
     debug(
       `<InterfacesRemoved:DevicesMissed> objectPath:${objectPath}, interfaces:${JSON.stringify(
         interfaces
       )}`
     );
-    this.emit('miss', objectPath);
+    if (interfaces.includes('org.bluez.Device1')) {
+      this.emit('miss', /*peripheralUuid*/ objectPath);
+    }
   }
 
   async onAdapterPropertiesChanged(
