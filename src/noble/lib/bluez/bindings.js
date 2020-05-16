@@ -266,7 +266,7 @@ class BluezBindings extends EventEmitter {
 
     // Device Properties Change Listener
     const props = await this.getDevicePropertiesInterface(objectPath);
-    props.on('PropertiesChanged', (
+    props.on('PropertiesChanged', async (
       /*string*/ interfaceName,
       /*obj*/ changedProps,
       /*obj*/ invalidatedProps
@@ -283,6 +283,18 @@ class BluezBindings extends EventEmitter {
           } else {
             this.emit('disconnect', objectPath);
           }
+        }
+        if (
+          changedProps.ServicesResolved &&
+          changedProps.ServicesResolved.value
+        ) {
+          const serviceUuids = (await props.Get('org.bluez.Device1', 'UUIDs'))
+            .value;
+          this.emit(
+            'servicesDiscover',
+            /*peripheralUuid*/ objectPath,
+            serviceUuids
+          );
         }
         if (changedProps.RSSI) {
           this.emit(
