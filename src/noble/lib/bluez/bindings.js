@@ -174,7 +174,6 @@ class BluezBindings extends EventEmitter {
           err.message
         }, err.toString:${err.toString()}`
       );
-      this.emit('stateChange', 'error', err);
     }
   }
 
@@ -189,7 +188,6 @@ class BluezBindings extends EventEmitter {
           err.message
         }, err.toString:${err.toString()}`
       );
-      this.emit('stateChange', 'error', err);
     }
   }
 
