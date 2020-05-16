@@ -298,16 +298,7 @@ class BluezBindings extends EventEmitter {
     const interfaces = Object.keys(interfacesAndProps);
     if (interfaces.includes('org.bluez.Device1')) {
       const device = interfacesAndProps['org.bluez.Device1'];
-      if (device.RSSI) {
-        this.onDeviceDiscovered(objectPath, device);
-      } else {
-        debug(
-          `<onDevicesServicesCharacteristicsDiscovered> objectPath:${objectPath}, RSSI is missing. Removing the device ${
-            device.Address.value
-          }(${this.option(device, 'Alias', 'n/a')})`
-        );
-        this.hciAdapter.RemoveDevice(objectPath);
-      }
+      this.onDeviceDiscovered(objectPath, device);
     } else {
       debug(
         `<onDevicesServicesCharacteristicsDiscovered> objectPath:${objectPath}, interfaces:${JSON.stringify(
@@ -379,6 +370,18 @@ class BluezBindings extends EventEmitter {
         }
         if (changedProps.RSSI) {
           this.emit('rssiUpdate', peripheralUuid, changedProps.RSSI.value);
+        }
+        if (invalidatedProps.includes('RSSI')) {
+          debug(
+            `[${peripheralUuid}]<PropertiesChanged> RSSI is invalidated. Removing the device.`
+          );
+          try {
+            await this.hciAdapter.RemoveDevice(peripheralUuid);
+          } catch (err) {
+            debug(
+              `[${peripheralUuid}]<PropertiesChanged> Error: ${err.message}, ${err.type}`
+            );
+          }
         }
       }
     });
