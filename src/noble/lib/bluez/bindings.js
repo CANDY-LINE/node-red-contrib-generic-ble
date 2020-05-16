@@ -348,12 +348,12 @@ class BluezBindings extends EventEmitter {
     props.on('PropertiesChanged', async (
       /*string*/ interfaceName,
       /*obj*/ changedProps,
-      /*obj*/ invalidatedProps
+      /*string[]*/ invalidatedProps
     ) => {
       debug(
         `[${peripheralUuid}]<PropertiesChanged> interfaceName:${interfaceName}, changedProps:${Object.keys(
           changedProps
-        )}, invalidatedProps:${Object.keys(invalidatedProps)}`
+        )}, invalidatedProps:${JSON.stringify(invalidatedProps)}`
       );
       if (interfaceName === 'org.bluez.Device1') {
         if (changedProps.Connected) {
@@ -411,12 +411,12 @@ class BluezBindings extends EventEmitter {
   async onAdapterPropertiesChanged(
     /*string*/ interfaceName,
     /*obj*/ changedProps,
-    /*obj*/ invalidatedProps
+    /*string[]*/ invalidatedProps
   ) {
     debug(
       `<Adapter:PropertiesChanged> interfaceName:${interfaceName}, changedProps:${Object.keys(
         changedProps
-      )}, invalidatedProps:${Object.keys(invalidatedProps)}`
+      )}, invalidatedProps:${JSON.stringify(invalidatedProps)}`
     );
     if (interfaceName === 'org.bluez.Adapter1') {
       if (changedProps.Discovering) {
