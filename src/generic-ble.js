@@ -269,6 +269,8 @@ async function toDetailedObject(peripheral, RED) {
 }
 
 module.exports = function (RED) {
+  // Start Noble Initialization
+  RED.log.debug(`noble.state=>${noble.state}`);
   function toCharacteristic(c) {
     const self = {
       uuid: c.uuid,
