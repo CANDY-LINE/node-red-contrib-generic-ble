@@ -20,6 +20,9 @@ import debugLogger from 'debug';
 import dbus from 'dbus-next';
 
 const debug = debugLogger('node-red-contrib-generic-ble:noble:bluez');
+const CHRARACTERISTICS_DISCOVERY_TIMEOUT_MS = parseInt(
+  process.env.CHRARACTERISTICS_DISCOVERY_TIMEOUT_MS || '500'
+);
 
 // Workaround for a Jest Issue
 // https://github.com/kulshekhar/ts-jest/issues/727#issuecomment-422747294
@@ -193,6 +196,51 @@ class BluezBindings extends EventEmitter {
     debug(
       `discoverCharacteristics:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},characteristicUuids=>${characteristicUuids}`
     );
+    setTimeout(async () => {
+      debug(
+        `[${deviceUuid}] Collecting characteristsics for the service ${serviceUuid}`
+      );
+      const objectPathPrefix = `${deviceUuid}/service`;
+      const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
+      const serviceObjectPaths = Object.keys(bluezObjects).filter(
+        (objectPath) => objectPath.indexOf(objectPathPrefix) === 0
+      );
+      const serviceObjectPath = serviceObjectPaths.filter((objectPath) => {
+        const serviceObject = bluezObjects[objectPath];
+        return (
+          serviceObject['org.bluez.GattService1'] &&
+          serviceObject['org.bluez.GattService1'].UUID.value === serviceUuid
+        );
+      })[0];
+      const characteristicPathPrefix = `${serviceObjectPath}/char`;
+      const discoveredCharacteristics = serviceObjectPaths
+        .filter(
+          (objectPath) => objectPath.indexOf(characteristicPathPrefix) === 0
+        )
+        .map((objectPath) => {
+          const chr = bluezObjects[objectPath]['org.bluez.GattCharacteristic1'];
+          if (
+            characteristicUuids.length > 0 &&
+            !characteristicUuids.includes[chr.UUID.value]
+          ) {
+            return null;
+          }
+          return {
+            uuid: chr.UUID.value,
+            properties: chr.Flags.value,
+          };
+        })
+        .filter((chr) => chr);
+      this.emit(
+        'characteristicsDiscover',
+        deviceUuid,
+        serviceUuid,
+        discoveredCharacteristics
+      );
+      debug(
+        `[${deviceUuid}] OK. Found ${discoveredCharacteristics.length} Characteristics.`
+      );
+    }, CHRARACTERISTICS_DISCOVERY_TIMEOUT_MS);
   }
 
   async read(deviceUuid, serviceUuid, characteristicUuid) {
