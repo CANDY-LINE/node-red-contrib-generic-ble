@@ -137,7 +137,6 @@ function startBLEScanning(RED) {
   if (genericBleState.scanning) {
     return;
   }
-  RED.log.info(`[GenericBLE] Start BLE scanning`);
   if (!onDiscover) {
     onDiscover = onDiscoverFunc(RED);
   }
