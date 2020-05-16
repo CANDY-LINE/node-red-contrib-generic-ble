@@ -856,14 +856,21 @@ module.exports = function (RED) {
     async (req, res) => {
       debug(`${req.method}:${req.originalUrl}`);
       try {
-        const body = await Promise.all(
-          bleDevices.keys().map((k) => {
-            // load the live object for invoking functions
-            // as cached object is disconnected from noble context
-            const uuid = bleDevices.get(k);
-            return toApiObject(noble._peripherals[uuid]);
-          })
-        );
+        const body = (
+          await Promise.all(
+            bleDevices.keys().map((k) => {
+              // load the live object for invoking functions
+              // as cached object is disconnected from noble context
+              const uuid = bleDevices.get(k);
+              const apiObject = toApiObject(noble._peripherals[uuid]);
+              if (apiObject) {
+                return apiObject;
+              } else {
+                deleteBleDevice(uuid, RED);
+              }
+            })
+          )
+        ).filter((obj) => obj);
         if (TRACE) {
           RED.log.info('/__bledevlist', JSON.stringify(body, null, 2));
         }
