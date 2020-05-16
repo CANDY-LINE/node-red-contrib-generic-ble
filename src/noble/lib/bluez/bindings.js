@@ -234,7 +234,7 @@ class BluezBindings extends EventEmitter {
           const chr = bluezObjects[objectPath]['org.bluez.GattCharacteristic1'];
           if (
             characteristicUuids.length > 0 &&
-            !characteristicUuids.includes[chr.UUID.value]
+            !characteristicUuids.includes(chr.UUID.value)
           ) {
             return null;
           }
@@ -295,7 +295,7 @@ class BluezBindings extends EventEmitter {
     /*Object<String,Object<String,Variant>>*/ interfacesAndProps
   ) {
     const interfaces = Object.keys(interfacesAndProps);
-    if (interfaces.includes['org.bluez.Device1']) {
+    if (interfaces.includes('org.bluez.Device1')) {
       this.onDeviceDiscovered(
         objectPath,
         interfacesAndProps['org.bluez.Device1']
