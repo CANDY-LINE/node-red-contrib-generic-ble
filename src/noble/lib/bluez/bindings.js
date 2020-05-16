@@ -180,6 +180,13 @@ class BluezBindings extends EventEmitter {
 
   async discoverServices(deviceUuid, uuids) {
     debug(`discoverServices:deviceUuid=>${deviceUuid},uuids=>${uuids}`);
+    const props = await this.getDevicePropertiesInterface(deviceUuid);
+    const servicesResolved = (
+      await props.Get('org.bluez.Device1', 'ServicesResolved')
+    ).value;
+    if (servicesResolved) {
+      this.onServicesResolved(props, deviceUuid);
+    }
   }
 
   async discoverCharacteristics(deviceUuid, serviceUuid, characteristicUuids) {
@@ -288,13 +295,7 @@ class BluezBindings extends EventEmitter {
           changedProps.ServicesResolved &&
           changedProps.ServicesResolved.value
         ) {
-          const serviceUuids = (await props.Get('org.bluez.Device1', 'UUIDs'))
-            .value;
-          this.emit(
-            'servicesDiscover',
-            /*peripheralUuid*/ objectPath,
-            serviceUuids
-          );
+          this.onServicesResolved(props, objectPath);
         }
         if (changedProps.RSSI) {
           this.emit(
@@ -315,6 +316,14 @@ class BluezBindings extends EventEmitter {
       advertisement,
       rssi
     );
+  }
+
+  async onServicesResolved(
+    /*getDevicePropertiesInterface()*/ props,
+    /*peripheralUuid*/ objectPath
+  ) {
+    const serviceUuids = (await props.Get('org.bluez.Device1', 'UUIDs')).value;
+    this.emit('servicesDiscover', objectPath, serviceUuids);
   }
 
   async onDevicesMissed(objectPath, /*String[]*/ interfaces) {
