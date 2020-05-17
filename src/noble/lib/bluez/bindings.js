@@ -329,7 +329,7 @@ class BluezBindings extends EventEmitter {
       ? Object.keys(device.ServiceData.value).map((uuid) => {
           return {
             uuid,
-            data: Buffer.from(device.ServiceData.value[uuid]),
+            data: Buffer.from(device.ServiceData.value[uuid].value),
           };
         })
       : null;
