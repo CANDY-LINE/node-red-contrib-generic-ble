@@ -3,7 +3,6 @@ generic-ble:
   label:
     genericBle: BLE
     useString: Stringify in payload
-    selectable: Select from scan result
     bleDevices: Scan Result
     localName: Local Name
     unnamed: (Unnamed)
@@ -16,7 +15,8 @@ generic-ble:
     customType: (Custom Type)
     unnamedChr: <Unnamed>
     muteNotifyEvents: Mute notify events
-    scanning: Running BLE Scan
+    scanning: BLE Scanning
+    applyBleDevice: Apply
   placeholder:
     localName: BLE device name
     address: aa:11:bb:22:cc:33 (case insensitive)
