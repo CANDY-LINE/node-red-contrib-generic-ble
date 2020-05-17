@@ -180,7 +180,11 @@
     label: function() {
       return this.localName;
     },
+    oneditcancel: function() {
+      state.fetchBleDevicesTask = null;
+    },
     oneditsave: function() {
+      state.fetchBleDevicesTask = null;
       var address = $('#node-config-input-address').val();
       if (address) {
         $('#node-config-input-address').val(address.toLowerCase());
