@@ -698,7 +698,7 @@ module.exports = function (RED) {
             });
           });
         });
-        this.genericBleNode.operations.register(this);
+        this.genericBleNode.register(this);
 
         this.on('input', async (msg) => {
           if (TRACE) {
@@ -714,31 +714,26 @@ module.exports = function (RED) {
           }
           try {
             if (obj.notify) {
-              await this.genericBleNode.operations.subscribe(
-                msg.topic,
-                obj.period
-              );
+              await this.genericBleNode.subscribe(msg.topic, obj.period);
             } else {
-              await this.genericBleNode.operations
-                .read(msg.topic)
-                .then((readObj) => {
-                  if (!readObj) {
-                    this.warn(
-                      `<${this.genericBleNode.uuid}> read[${msg.topic}]: (no data)`
-                    );
-                    return;
-                  }
-                  let payload = {
-                    uuid: this.genericBleNode.uuid,
-                    characteristics: readObj,
-                  };
-                  if (this.useString) {
-                    payload = JSON.stringify(payload);
-                  }
-                  this.send({
-                    payload: payload,
-                  });
+              await this.genericBleNode.read(msg.topic).then((readObj) => {
+                if (!readObj) {
+                  this.warn(
+                    `<${this.genericBleNode.uuid}> read[${msg.topic}]: (no data)`
+                  );
+                  return;
+                }
+                let payload = {
+                  uuid: this.genericBleNode.uuid,
+                  characteristics: readObj,
+                };
+                if (this.useString) {
+                  payload = JSON.stringify(payload);
+                }
+                this.send({
+                  payload: payload,
                 });
+              });
             }
           } catch (err) {
             this.error(
@@ -748,7 +743,7 @@ module.exports = function (RED) {
         });
         this.on('close', () => {
           if (this.genericBleNode) {
-            this.genericBleNode.operations.remove(this);
+            this.genericBleNode.remove(this);
           }
         });
       }
@@ -779,9 +774,9 @@ module.exports = function (RED) {
             });
           });
         });
-        this.genericBleNode.operations.register(this);
+        this.genericBleNode.register(this);
         this.on('input', (msg) => {
-          this.genericBleNode.operations
+          this.genericBleNode
             .write(msg.payload)
             .then(() => {
               if (TRACE) {
@@ -794,7 +789,7 @@ module.exports = function (RED) {
         });
         this.on('close', () => {
           if (this.genericBleNode) {
-            this.genericBleNode.operations.remove(this);
+            this.genericBleNode.remove(this);
           }
         });
       }
