@@ -17,6 +17,7 @@ generic-ble:
     muteNotifyEvents: Mute notify events
     scanning: BLE Scanning
     applyBleDevice: Apply
+    noSignal: no signal
   placeholder:
     localName: BLE device name
     address: aa:11:bb:22:cc:33 (case insensitive)

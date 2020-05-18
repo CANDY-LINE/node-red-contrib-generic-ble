@@ -349,7 +349,7 @@
         $.getJSON('__bledevlist', function(bleDevices) {
           $('#node-config-input-bleDevices option').remove();
           $.each(bleDevices, function(i, v) {
-            var label = (v.localName || that._('generic-ble.label.unnamed')) + '[' + v.address + '] (' + v.rssi + ' dBm)';
+            var label = (v.localName || that._('generic-ble.label.unnamed')) + '[' + v.address + '] (' + (v.rssi ? v.rssi + ' dBm)' : that._('generic-ble.label.noSignal') + ')');
             var val = JSON.stringify(v);
             var option = $('<option></option>').attr('value', val).text(label);
             $('#node-config-input-bleDevices').append(option);
