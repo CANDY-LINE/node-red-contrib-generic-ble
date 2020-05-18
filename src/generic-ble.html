@@ -144,6 +144,8 @@
   'use strict';
   const MAX_MILLIS = 60 * 1000;
   const MIN_MILLIS = 300;
+  const LIST_BLE_DEVICE_INTERVAL_MS = 10 * 1000;
+  const LIST_BLE_DEVICE_DELAY_MS = 5 * 1000;
   var charBuff = [];
   function getAddressOrUUID(peripheral) {
     if (!peripheral) {
@@ -368,10 +370,10 @@
         function task() {
           getBleDevices(getBleDevice());
           if (state.fetchBleDevicesTask) {
-            state.fetchBleDevicesTask = setTimeout(task, 5000);
+            state.fetchBleDevicesTask = setTimeout(task, LIST_BLE_DEVICE_INTERVAL_MS);
           }
         };
-        state.fetchBleDevicesTask = setTimeout(task, 5000);
+        state.fetchBleDevicesTask = setTimeout(task, LIST_BLE_DEVICE_DELAY_MS);
       }
 
       function stopFetchDevices() {
