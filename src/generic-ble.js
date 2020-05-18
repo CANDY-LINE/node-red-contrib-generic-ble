@@ -330,7 +330,13 @@ module.exports = function (RED) {
         configBleDevices[key] = this;
       }
       this.nodes = {};
-      ['connected', 'disconnected', 'error'].forEach((ev) => {
+      [
+        'connected',
+        'disconnected',
+        'error',
+        'connecting',
+        'disconnecting',
+      ].forEach((ev) => {
         this.on(ev, () => {
           try {
             Object.keys(this.nodes).forEach((id) => {
@@ -404,6 +410,7 @@ module.exports = function (RED) {
               );
             });
             peripheral.connect(); // peripheral.state => connecting
+            this.emit('connecting');
           }
           connecting = true;
           break;
@@ -480,6 +487,7 @@ module.exports = function (RED) {
         });
       }
       peripheral.disconnect();
+      this.emit('disconnecting');
     }
     async shutdown() {
       await Promise.all(this.characteristics.map((c) => c.unsubscribe()));
@@ -743,6 +751,15 @@ module.exports = function (RED) {
             });
           });
         });
+        ['connecting', 'disconnecting'].forEach((ev) => {
+          this.on(ev, () => {
+            this.status({
+              fill: 'grey',
+              shape: 'ring',
+              text: `generic-ble.status.${ev}`,
+            });
+          });
+        });
         this.genericBleNode.register(this);
 
         this.on('input', async (msg) => {
@@ -817,6 +834,15 @@ module.exports = function (RED) {
           this.on(ev, () => {
             this.status({
               fill: 'red',
+              shape: 'ring',
+              text: `generic-ble.status.${ev}`,
+            });
+          });
+        });
+        ['connecting', 'disconnecting'].forEach((ev) => {
+          this.on(ev, () => {
+            this.status({
+              fill: 'grey',
               shape: 'ring',
               text: `generic-ble.status.${ev}`,
             });

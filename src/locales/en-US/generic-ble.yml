@@ -29,3 +29,5 @@ generic-ble:
     subscribed: subscribed
     unsubscribed: unsubscribed
     error: error
+    connecting: connecting
+    disconnecting: disconnecting
