@@ -200,6 +200,9 @@ class BluezBindings extends EventEmitter {
       await props.Get('org.bluez.Device1', 'ServicesResolved')
     ).value;
     if (servicesResolved) {
+      debug(
+        `discoverServices:deviceUuid=>${deviceUuid}, servicesResolved=>${servicesResolved}`
+      );
       this.onServicesResolved(props, deviceUuid);
     }
   }
