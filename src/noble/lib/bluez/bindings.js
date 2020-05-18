@@ -426,10 +426,6 @@ class BluezBindings extends EventEmitter {
 
   async onDeviceMissed(peripheralUuid) {
     debug(`<onDeviceMissed> peripheralUuid:${peripheralUuid}`);
-
-    // Device Properties Change Listener
-    const props = await this.getDevicePropertiesInterface(peripheralUuid);
-    props.removeListener('PropertiesChanged');
     this.emit('miss', peripheralUuid);
   }
 
