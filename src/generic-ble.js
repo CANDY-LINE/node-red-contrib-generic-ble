@@ -509,7 +509,9 @@ module.exports = function (RED) {
           return new Promise((resolve, reject) => {
             const buf = valToBuffer(dataObj[w.uuid]);
             debugCfg(
-              `<Write> uuid => ${w.uuid}, data => ${buf}, writeWithoutResponse => ${w.writeWithoutResponse}`
+              `<Write> uuid => ${w.uuid}, data => ${buf.toString(
+                'hex'
+              )}, writeWithoutResponse => ${w.writeWithoutResponse}`
             );
             w.object.write(buf, w.writeWithoutResponse, (err) => {
               if (err) {
