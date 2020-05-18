@@ -89,7 +89,7 @@
     <input type="checkbox" id="node-config-input-scanning" style="display: inline-block; width: auto; vertical-align: top;">
     <label for="node-config-input-scanning" style="width: 70%;" data-i18n="generic-ble.label.scanning"></label>
   </div>
-  <div class='form-row'>
+  <div class='form-row' id='row-node-config-input-bleDevices'>
     <label for='node-config-input-bleDevices'>
       <i class='fa fa-tag'></i>
       <span data-i18n='generic-ble.label.bleDevices'></span>
@@ -374,11 +374,13 @@
           }
         };
         state.fetchBleDevicesTask = setTimeout(task, LIST_BLE_DEVICE_DELAY_MS);
+        $('#row-node-config-input-bleDevices').show();
       }
 
       function stopFetchDevices() {
         clearTimeout(state.fetchBleDevicesTask);
         state.fetchBleDevicesTask = null;
+        $('#row-node-config-input-bleDevices').hide();
       }
 
       $.getJSON('__blestate', function(genericBleState) {
