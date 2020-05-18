@@ -44,6 +44,26 @@ class BluezBindings extends EventEmitter {
     debug('BluezBindings instance created!');
   }
 
+  _addDashes(uuid) {
+    if (!uuid || typeof uuid !== 'string') {
+      return uuid;
+    }
+    if (uuid && uuid.length === 32) {
+      uuid = `${uuid.substring(0, 8)}-${uuid.substring(8, 12)}-${uuid.substring(
+        12,
+        16
+      )}-${uuid.substring(16, 20)}-${uuid.substring(20)}`;
+    }
+    return uuid.toLowerCase();
+  }
+
+  _stripDashes(uuid) {
+    if (typeof uuid === 'string') {
+      uuid = uuid.split('-').join('');
+    }
+    return uuid;
+  }
+
   async startScanning(/* never used */ serviceUuids, allowDuplicates) {
     if (this._initialized) {
       this._scanFilterDuplicates = !allowDuplicates;
@@ -251,6 +271,9 @@ class BluezBindings extends EventEmitter {
     debug(
       `[${deviceUuid}] Collecting characteristsics for the service ${serviceUuid}`
     );
+    const dashedCharacteristicUuids = (characteristicUuids || []).map(
+      this._addDashes
+    );
     const objectPath = this._toObjectPath(deviceUuid);
     const objectPathPrefix = `${objectPath}/service`;
     const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
@@ -287,8 +310,8 @@ class BluezBindings extends EventEmitter {
           return;
         }
         if (
-          characteristicUuids.length > 0 &&
-          !characteristicUuids.includes(chr.UUID.value)
+          dashedCharacteristicUuids.length > 0 &&
+          !dashedCharacteristicUuids.includes(chr.UUID.value)
         ) {
           return;
         }
@@ -321,7 +344,7 @@ class BluezBindings extends EventEmitter {
       const resultChrs = Object.values(discoveredCharacteristics || {}).map(
         (chr) => {
           return {
-            uuid: chr.UUID.value,
+            uuid: this._stripDashes(chr.UUID.value),
             properties: chr.Flags.value,
           };
         }
@@ -333,8 +356,9 @@ class BluezBindings extends EventEmitter {
   }
 
   async read(deviceUuid, serviceUuid, characteristicUuid) {
+    const dashedCharacteristicUuid = this._addDashes(characteristicUuid);
     debug(
-      `read:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},characteristicUuid=>${characteristicUuid}`
+      `read:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},dashedCharacteristicUuid=>${dashedCharacteristicUuid}`
     );
   }
 
@@ -345,14 +369,16 @@ class BluezBindings extends EventEmitter {
     data,
     withoutResponse
   ) {
+    const dashedCharacteristicUuid = this._addDashes(characteristicUuid);
     debug(
-      `write:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},characteristicUuid=>${characteristicUuid},data=>${data},withoutResponse=>${withoutResponse}`
+      `write:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},dashedCharacteristicUuid=>${dashedCharacteristicUuid},data=>${data},withoutResponse=>${withoutResponse}`
     );
   }
 
   async notify(deviceUuid, serviceUuid, characteristicUuid, notify) {
+    const dashedCharacteristicUuid = this._addDashes(characteristicUuid);
     debug(
-      `notify:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},characteristicUuid=>${characteristicUuid},notify=>${notify}`
+      `notify:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},dashedCharacteristicUuid=>${dashedCharacteristicUuid},notify=>${notify}`
     );
   }
 
