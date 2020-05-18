@@ -451,10 +451,11 @@ class BluezBindings extends EventEmitter {
   }
 
   async onScanStarted() {
-    debug(`[onScanStarted] fired`);
+    debug(`<onScanStarted> fired`);
     const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
     // Invoke DevicesDiscovered event listerner if devices already exists
     const deviceObjectPathPrefix = `${this.hciObjectPath}/dev_`;
+    let count = 0;
     Object.keys(bluezObjects)
       .filter(
         (objectPath) =>
@@ -464,6 +465,7 @@ class BluezBindings extends EventEmitter {
       )
       .forEach(
         /*deviceUuid*/ (objectPath) => {
+          debug(`<onScanStarted> ${count++}:${objectPath} Device Found`);
           const interfacesAndProps = bluezObjects[objectPath];
           this.onDevicesServicesCharacteristicsDiscovered(
             objectPath,
