@@ -315,33 +315,6 @@ class BluezBindings extends EventEmitter {
       }, device: ${JSON.stringify(device)}`
     );
 
-    const address = device.Address.value;
-    const addressType = device.AddressType.value;
-    const connectable = !device.Blocked.value;
-    const manufacturerData = device.ManufacturerData
-      ? Object.values(device.ManufacturerData.value)[0].value
-      : null;
-    if (manufacturerData) {
-      // Prepend Manufacturer ID
-      manufacturerData.unshift(Object.keys(device.ManufacturerData.value)[0]);
-    }
-    const serviceData = device.ServiceData
-      ? Object.keys(device.ServiceData.value).map((uuid) => {
-          return {
-            uuid,
-            data: Buffer.from(device.ServiceData.value[uuid].value),
-          };
-        })
-      : null;
-    const advertisement = {
-      localName: this.option(device, 'Alias'),
-      txPowerLevel: this.option(device, 'TxPower'),
-      serviceUuids: this.option(device, 'UUIDs', []),
-      manufacturerData: manufacturerData ? Buffer.from(manufacturerData) : null,
-      serviceData,
-    };
-    const rssi = this.option(device, 'RSSI');
-
     // Device Properties Change Listener
     const props = await this.getDevicePropertiesInterface(peripheralUuid);
     props.on('PropertiesChanged', async (
@@ -379,12 +352,39 @@ class BluezBindings extends EventEmitter {
             await this.hciAdapter.RemoveDevice(peripheralUuid);
           } catch (err) {
             debug(
-              `[${peripheralUuid}]<PropertiesChanged> Error: ${err.message}, ${err.type}`
+              `[${peripheralUuid}]<PropertiesChanged> Error while removing the device: ${err.message}, ${err.type}`
             );
           }
         }
       }
     });
+
+    const rssi = this.option(device, 'RSSI');
+    const address = device.Address.value;
+    const addressType = device.AddressType.value;
+    const connectable = !device.Blocked.value;
+    const manufacturerData = device.ManufacturerData
+      ? Object.values(device.ManufacturerData.value)[0].value
+      : null;
+    if (manufacturerData) {
+      // Prepend Manufacturer ID
+      manufacturerData.unshift(Object.keys(device.ManufacturerData.value)[0]);
+    }
+    const serviceData = device.ServiceData
+      ? Object.keys(device.ServiceData.value).map((uuid) => {
+          return {
+            uuid,
+            data: Buffer.from(device.ServiceData.value[uuid].value),
+          };
+        })
+      : null;
+    const advertisement = {
+      localName: this.option(device, 'Alias'),
+      txPowerLevel: this.option(device, 'TxPower'),
+      serviceUuids: this.option(device, 'UUIDs', []),
+      manufacturerData: manufacturerData ? Buffer.from(manufacturerData) : null,
+      serviceData,
+    };
 
     this.emit(
       'discover',
