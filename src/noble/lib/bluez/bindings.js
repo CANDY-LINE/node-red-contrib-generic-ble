@@ -371,13 +371,13 @@ class BluezBindings extends EventEmitter {
       serviceUuid,
       [dashedCharacteristicUuid]
     );
-    let data = null;
+    let data = null; // Buffer object
     const characteristicObjectPath = Object.keys(discoveredCharacteristics)[0];
     if (characteristicObjectPath) {
       const chracteristic = await this._getCharacteristicInterface(
         characteristicObjectPath
       );
-      data = await chracteristic.ReadValue({});
+      data = Buffer.from(await chracteristic.ReadValue({}));
     }
     debug(
       `read:characteristicObjectPath=>${characteristicObjectPath}, data=>${JSON.stringify(
@@ -391,7 +391,7 @@ class BluezBindings extends EventEmitter {
     deviceUuid,
     serviceUuid,
     characteristicUuid,
-    data,
+    data, // Buffer object
     withoutResponse
   ) {
     const dashedCharacteristicUuid = this._addDashes(characteristicUuid);
@@ -430,11 +430,65 @@ class BluezBindings extends EventEmitter {
     );
   }
 
-  async notify(deviceUuid, serviceUuid, characteristicUuid, notify) {
+  async notify(deviceUuid, serviceUuid, characteristicUuid, subscribe) {
     const dashedCharacteristicUuid = this._addDashes(characteristicUuid);
     debug(
-      `notify:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},dashedCharacteristicUuid=>${dashedCharacteristicUuid},notify=>${notify}`
+      `notify:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},dashedCharacteristicUuid=>${dashedCharacteristicUuid},subscribe?=>${subscribe}`
     );
+    const discoveredCharacteristics = await this._listCharacteristics(
+      deviceUuid,
+      serviceUuid,
+      [dashedCharacteristicUuid]
+    );
+    const characteristicObjectPath = Object.keys(discoveredCharacteristics)[0];
+    if (characteristicObjectPath) {
+      const chracteristic = await this._getCharacteristicInterface(
+        characteristicObjectPath
+      );
+
+      // GattCharacteristic1 Properties Change Listener
+      const props = await this._getPropertiesInterface(
+        characteristicObjectPath
+      );
+      if (!props.notificationHandeler) {
+        props.notificationHandeler = async (
+          /*string*/ interfaceName,
+          /*obj*/ changedProps,
+          /*string[]*/ invalidatedProps
+        ) => {
+          debug(
+            `[${characteristicObjectPath}]<PropertiesChanged> interfaceName:${interfaceName}, changedProps:${Object.keys(
+              changedProps
+            )}, invalidatedProps:${JSON.stringify(invalidatedProps)}`
+          );
+          if (interfaceName === 'org.bluez.GattCharacteristic1') {
+            if (changedProps.Value) {
+              this.emit(
+                'read',
+                deviceUuid,
+                serviceUuid,
+                characteristicUuid,
+                Buffer.from(changedProps.Value.value),
+                true
+              );
+            }
+          }
+        };
+      }
+
+      if (subscribe) {
+        await chracteristic.StartNotify();
+        props.on('PropertiesChanged', props.notificationHandeler);
+      } else {
+        await chracteristic.StopNotify();
+        props.removeListener('PropertiesChanged', props.notificationHandeler);
+        delete props.notificationHandeler;
+      }
+    }
+    debug(
+      `notify:characteristicObjectPath=>${characteristicObjectPath}, subscribe?=>${subscribe}`
+    );
+    this.emit('notify', deviceUuid, serviceUuid, characteristicUuid, subscribe);
   }
 
   // Methods not implemented:
