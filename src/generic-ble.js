@@ -441,6 +441,7 @@ module.exports = function (RED) {
               setTimeout(connectedHandler, 500);
             } else {
               this.emit('timeout');
+              peripheral.state === 'disconnected';
               return resolve(peripheral.state);
             }
           };
