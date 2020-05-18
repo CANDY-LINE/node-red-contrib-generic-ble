@@ -45,14 +45,22 @@ class BluezBindings extends EventEmitter {
     debug('BluezBindings instance created!');
   }
 
-  startScanning(/* never used */ serviceUuids, allowDuplicates) {
+  async startScanning(/* never used */ serviceUuids, allowDuplicates) {
     if (this._initialized) {
       this._scanFilterDuplicates = !allowDuplicates;
       if (this._scanning) {
         debug(`[startScanning] Scan already ongoing...`);
       } else {
         debug(`[startScanning] Start Scanning...`);
-        this.hciAdapter.StartDiscovery();
+        try {
+          await this.hciAdapter.StartDiscovery();
+        } catch (err) {
+          debug(
+            `[ERROR] startScanning => err.message:${
+              err.message
+            }, err.toString:${err.toString()}`
+          );
+        }
       }
     } else {
       this.once('poweredOn', () => {
@@ -64,10 +72,18 @@ class BluezBindings extends EventEmitter {
     }
   }
 
-  stopScanning() {
+  async stopScanning() {
     if (this._initialized) {
       debug(`[startScanning] Stop Scanning...`);
-      this.hciAdapter.StopDiscovery();
+      try {
+        await this.hciAdapter.StopDiscovery();
+      } catch (err) {
+        debug(
+          `[ERROR] stopScanning => err.message:${
+            err.message
+          }, err.toString:${err.toString()}`
+        );
+      }
     }
   }
 
