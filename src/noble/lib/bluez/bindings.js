@@ -37,7 +37,6 @@ class BluezBindings extends EventEmitter {
 
     this.bus = dbus.systemBus();
 
-    this._state = null;
     this._scanFilterDuplicates = null;
     this._scanning = false;
     this.hciObjectPath = `/org/bluez/${process.env.HCIDEVICE || 'hci0'}`;
