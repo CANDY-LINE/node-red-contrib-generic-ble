@@ -504,7 +504,7 @@ module.exports = function (RED) {
         return;
       }
       // perform write here right now
-      return await Promise.all(
+      await Promise.all(
         writables.map((w) => {
           // {uuid:'characteristic-uuid-to-write', data:Buffer()}
           return new Promise((resolve, reject) => {
@@ -594,75 +594,74 @@ module.exports = function (RED) {
       );
       return Object.keys(readObj).length > 0 ? readObj : null;
     }
-    subscribe(uuids = '', period = 0) {
-      return this.connectPeripheral().then((state) => {
-        if (state !== 'connected') {
-          this.log(
-            `[subscribe] Peripheral:${this.uuid} is NOT ready. state=>${state}`
-          );
-          return Promise.resolve();
-        }
-        uuids = uuids
-          .split(',')
-          .map((uuid) => uuid.trim())
-          .filter((uuid) => uuid);
-        const notifiables = this.characteristics.filter((c) => {
-          if (c.notifiable) {
-            if (uuids.length === 0) {
-              return true;
-            }
-            return uuids.indexOf(c.uuid) >= 0;
+    async subscribe(uuids = '', period = 0) {
+      const state = await this.connectPeripheral();
+      if (state !== 'connected') {
+        this.log(
+          `[subscribe] Peripheral:${this.uuid} is NOT ready. state=>${state}`
+        );
+        return Promise.resolve();
+      }
+      uuids = uuids
+        .split(',')
+        .map((uuid) => uuid.trim())
+        .filter((uuid) => uuid);
+      const notifiables = this.characteristics.filter((c) => {
+        if (c.notifiable) {
+          if (uuids.length === 0) {
+            return true;
           }
-        });
-        debugCfg(
-          `characteristics => ${JSON.stringify(
-            this.characteristics.map((c) => {
-              return {
-                uuid: c.uuid,
-                notifiable: c.notifiable,
-                readable: c.readable,
-                writable: c.writable,
-                writeWithoutResponse: c.writeWithoutResponse,
-              };
-            })
-          )}`
-        );
-        debugCfg(`notifiables.length => ${notifiables.length}`);
-        if (notifiables.length === 0) {
-          return false;
+          return uuids.indexOf(c.uuid) >= 0;
         }
-        return Promise.all(
-          notifiables.map((r) => {
-            r.addDataListener((data, isNotification) => {
-              if (isNotification) {
-                let readObj = {
-                  notification: true,
-                };
-                readObj[r.uuid] = data;
-                this.emit('ble-notify', this.uuid, readObj);
-              }
-            });
-            r.object.subscribe((err) => {
-              if (err) {
-                this.emit('error', err);
-                this.log(`subscription error: ${err.message}`);
-              }
-            });
-            if (period > 0) {
-              setTimeout(() => {
-                r.object.unsubscribe((err) => {
-                  if (err) {
-                    this.emit('error', err);
-                    this.log(`unsubscription error: ${err.message}`);
-                  } else {
-                    this.emit('connected');
-                  }
-                });
-              }, 5000);
-            }
-          })
-        );
       });
+      debugCfg(
+        `characteristics => ${JSON.stringify(
+          this.characteristics.map((c) => {
+            return {
+              uuid: c.uuid,
+              notifiable: c.notifiable,
+              readable: c.readable,
+              writable: c.writable,
+              writeWithoutResponse: c.writeWithoutResponse,
+            };
+          })
+        )}`
+      );
+      debugCfg(`notifiables.length => ${notifiables.length}`);
+      if (notifiables.length === 0) {
+        return false;
+      }
+      await Promise.all(
+        notifiables.map((r) => {
+          r.addDataListener((data, isNotification) => {
+            if (isNotification) {
+              let readObj = {
+                notification: true,
+              };
+              readObj[r.uuid] = data;
+              this.emit('ble-notify', this.uuid, readObj);
+            }
+          });
+          r.object.subscribe((err) => {
+            if (err) {
+              this.emit('error', err);
+              this.log(`subscription error: ${err.message}`);
+            }
+          });
+          if (period > 0) {
+            setTimeout(() => {
+              r.object.unsubscribe((err) => {
+                if (err) {
+                  this.emit('error', err);
+                  this.log(`unsubscription error: ${err.message}`);
+                } else {
+                  this.emit('connected');
+                }
+              });
+            }, 5000);
+          }
+        })
+      );
     }
   }
   RED.nodes.registerType('Generic BLE', GenericBLENode);
