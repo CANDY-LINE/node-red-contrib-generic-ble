@@ -398,6 +398,36 @@ class BluezBindings extends EventEmitter {
     debug(
       `write:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},dashedCharacteristicUuid=>${dashedCharacteristicUuid},data=>${data},withoutResponse=>${withoutResponse}`
     );
+    const discoveredCharacteristics = await this._listCharacteristics(
+      deviceUuid,
+      serviceUuid,
+      [dashedCharacteristicUuid]
+    );
+    const characteristicObjectPath = Object.keys(discoveredCharacteristics)[0];
+    if (characteristicObjectPath) {
+      const chracteristic = await this._getCharacteristicInterface(
+        characteristicObjectPath
+      );
+      if (Buffer.isBuffer(data)) {
+        data = data.data;
+      }
+      await chracteristic.WriteValue(data, {
+        type: withoutResponse ? 'command' : 'request',
+      });
+    }
+    debug(
+      `write:characteristicObjectPath=>${characteristicObjectPath}, data=>${JSON.stringify(
+        data
+      )}, withoutResponse=>${withoutResponse}`
+    );
+    this.emit(
+      'write',
+      deviceUuid,
+      serviceUuid,
+      characteristicUuid,
+      data,
+      withoutResponse
+    );
   }
 
   async notify(deviceUuid, serviceUuid, characteristicUuid, notify) {
