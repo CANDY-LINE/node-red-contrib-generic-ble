@@ -170,7 +170,10 @@ async function toDetailedObject(peripheral, RED) {
   switch (peripheral.state) {
     case 'disconnected': {
       await new Promise((resolve, reject) => {
-        peripheral.once('connect', () => {
+        peripheral.once('connect', (err) => {
+          if (err) {
+            return reject(err);
+          }
           peripheral.discoverAllServicesAndCharacteristics((err, services) => {
             if (err) {
               return reject(err);
@@ -365,13 +368,17 @@ module.exports = function (RED) {
           }
           if (!peripheral._connectHandlerSet) {
             peripheral._connectHandlerSet = true;
-            peripheral.once('connect', () => {
+            peripheral.once('connect', (err) => {
+              if (err) {
+                this.log(`<preparePeripheral:connect> error:${err.message}`);
+                return;
+              }
               peripheral._connectHandlerSet = false;
               peripheral.discoverAllServicesAndCharacteristics(
                 (err, services) => {
                   if (err) {
                     this.log(
-                      `<discoverAllServicesAndCharacteristics> error:${err.message}`
+                      `<preparePeripheral:discoverAllServicesAndCharacteristics> error:${err.message}`
                     );
                     return;
                   }
