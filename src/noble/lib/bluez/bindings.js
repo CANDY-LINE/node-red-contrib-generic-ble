@@ -197,19 +197,25 @@ class BluezBindings extends EventEmitter {
     return `/org/bluez/hci0/dev_${uuid[0]}${uuid[1]}_${uuid[2]}${uuid[3]}_${uuid[4]}${uuid[5]}_${uuid[6]}${uuid[7]}_${uuid[8]}${uuid[9]}_${uuid[10]}${uuid[11]}`;
   }
 
-  async _getDeviceObject(objectPath) {
+  async _getProxyObject(objectPath) {
     return this.bus.getProxyObject('org.bluez', objectPath);
   }
 
   async _getDeviceInterface(objectPath) {
-    return (await this._getDeviceObject(objectPath)).getInterface(
+    return (await this._getProxyObject(objectPath)).getInterface(
       'org.bluez.Device1'
     );
   }
 
   async _getDevicePropertiesInterface(objectPath) {
-    return (await this._getDeviceObject(objectPath)).getInterface(
+    return (await this._getProxyObject(objectPath)).getInterface(
       'org.freedesktop.DBus.Properties'
+    );
+  }
+
+  async _getCharacteristicInterface(objectPath) {
+    return (await this._getProxyObject(objectPath)).getInterface(
+      'org.bluez.GattCharacteristic1'
     );
   }
 
