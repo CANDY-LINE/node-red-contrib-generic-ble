@@ -22,6 +22,14 @@ You can access each <code>Buffer object</code> data in the same form as array el
 <p>
 Expects a message used for triggering <code>Read</code> operation or subscribing <code>Notify</code> events.
 <dl>
+<dt>For <code>Connect</code> operation:</dt>
+<dd>
+In order to connect a peripheral device, set <code>msg.topic</code> to <code>connect</code>.
+</dd>
+<dt>For <code>Disonnect</code> operation:</dt>
+<dd>
+In order to disconnect a peripheral device, set <code>msg.topic</code> to <code>disconnect</code>.
+</dd>
 <dt>For <code>Read</code> operation:</dt>
 <dd>
 You can set one or more characteristic uuids separated by comma (CSV) to query to <code>msg.topic</code>.
@@ -79,6 +87,16 @@ The acceptable writable <code>value</code> type is one of:
   <li><code>int</code> value</li>
 </ul>
 This node translates these values into a Buffer object.
+
+This node accepts the peripheral connecting/disconnecting command as well.
+<dt>For <code>Connect</code> operation:</dt>
+<dd>
+In order to connect a peripheral device, set <code>msg.topic</code> to <code>connect</code>.
+</dd>
+<dt>For <code>Disonnect</code> operation:</dt>
+<dd>
+In order to disconnect a peripheral device, set <code>msg.topic</code> to <code>disconnect</code>.
+</dd>
 </p>
 </script>
 

@@ -353,7 +353,7 @@ module.exports = function (RED) {
       });
     }
 
-    connectPeripheral() {
+    async connectPeripheral() {
       debugCfg(
         `<connectPeripheral:${this.uuid}> noble._peripherals=>${Object.keys(
           noble._peripherals
@@ -362,7 +362,7 @@ module.exports = function (RED) {
       const peripheral = noble._peripherals[this.uuid];
       if (!peripheral) {
         this.emit('disconnected');
-        return Promise.resolve();
+        return;
       }
       let connecting = peripheral.state === 'connecting';
       debug(
@@ -431,7 +431,7 @@ module.exports = function (RED) {
         }
       }
       if (connecting) {
-        return new Promise((resolve) => {
+        return await new Promise((resolve) => {
           let retry = 0;
           const connectedHandler = () => {
             ++retry;
@@ -448,11 +448,41 @@ module.exports = function (RED) {
           setTimeout(connectedHandler, 500);
         });
       } else {
-        return Promise.resolve(peripheral.state);
+        return peripheral.state;
       }
     }
-    shutdown() {
-      return Promise.all(this.characteristics.map((c) => c.unsubscribe()));
+    async disconnectPeripheral() {
+      debugCfg(
+        `<disconnectPeripheral:${this.uuid}> noble._peripherals=>${Object.keys(
+          noble._peripherals
+        )}`
+      );
+      const peripheral = noble._peripherals[this.uuid];
+      if (!peripheral) {
+        debugCfg(
+          `<disconnectPeripheral:${this.uuid}> peripheral is already gone.`
+        );
+        this.emit('disconnected');
+        return;
+      }
+      if (peripheral.state === 'disconnected') {
+        debugCfg(
+          `<disconnectPeripheral:${this.uuid}> peripheral is already disconnected.`
+        );
+        this.emit('disconnected');
+        return;
+      }
+      if (!peripheral._disconnectedHandlerSet) {
+        peripheral._disconnectedHandlerSet = true;
+        peripheral.once('disconnect', () => {
+          this.emit('disconnected');
+          peripheral._disconnectedHandlerSet = false;
+        });
+      }
+      peripheral.disconnect();
+    }
+    async shutdown() {
+      await Promise.all(this.characteristics.map((c) => c.unsubscribe()));
     }
     register(node) {
       this.nodes[node.id] = node;
@@ -726,7 +756,11 @@ module.exports = function (RED) {
             // ignore
           }
           try {
-            if (obj.notify) {
+            if (msg.topic === 'connect') {
+              await this.genericBleNode.connectPeripheral();
+            } else if (msg.topic === 'disconnect') {
+              await this.genericBleNode.disconnectPeripheral();
+            } else if (obj.notify) {
               await this.genericBleNode.subscribe(msg.topic, obj.period);
               debugOut(`<${this.genericBleNode.uuid}> subscribe: OK`);
             } else {
