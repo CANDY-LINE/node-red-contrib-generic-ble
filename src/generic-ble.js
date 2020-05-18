@@ -27,6 +27,7 @@ const debugOut = debugLogger(
   'node-red-contrib-generic-ble:index:generic-ble-out'
 );
 const debugCfg = debugLogger('node-red-contrib-generic-ble:index:generic-ble');
+const debugApi = debugLogger('node-red-contrib-generic-ble:index:api');
 
 // Workaround for a Jest Issue
 // https://github.com/kulshekhar/ts-jest/issues/727#issuecomment-422747294
@@ -795,7 +796,7 @@ module.exports = function (RED) {
   RED.nodes.registerType('Generic BLE out', GenericBLEOutNode);
 
   RED.events.on('runtime-event', (ev) => {
-    debug(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
+    debugApi(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
     if (ev.id === 'runtime-state' && Object.keys(configBleDevices).length > 0) {
       stopBLEScanning(RED);
       bleDevices.flushAll();
@@ -808,7 +809,7 @@ module.exports = function (RED) {
     '/__blestate',
     RED.auth.needsPermission('generic-ble.read'),
     async (req, res) => {
-      debug(`${req.method}:${req.originalUrl}`);
+      debugApi(`${req.method}:${req.originalUrl}`);
       return res.status(200).send(genericBleState).end();
     }
   );
@@ -818,7 +819,7 @@ module.exports = function (RED) {
     '/__blescan/:sw',
     RED.auth.needsPermission('generic-ble.write'),
     async (req, res) => {
-      debug(
+      debugApi(
         `${req.method}:${req.originalUrl}, genericBleState.scanning:${genericBleState.scanning}`
       );
       const { sw } = req.params;
@@ -843,7 +844,7 @@ module.exports = function (RED) {
     '/__bledevlist',
     RED.auth.needsPermission('generic-ble.read'),
     async (req, res) => {
-      debug(`${req.method}:${req.originalUrl}`);
+      debugApi(`${req.method}:${req.originalUrl}`);
       try {
         const body = (
           await Promise.all(
@@ -860,7 +861,7 @@ module.exports = function (RED) {
             })
           )
         ).filter((obj) => obj);
-        debug('/__bledevlist', JSON.stringify(body, null, 2));
+        debugApi('/__bledevlist', JSON.stringify(body, null, 2));
         res.json(body);
       } catch (err) {
         RED.log.error(
@@ -880,7 +881,7 @@ module.exports = function (RED) {
     '/__bledev/:address',
     RED.auth.needsPermission('generic-ble.read'),
     async (req, res) => {
-      debug(`${req.method}:${req.originalUrl}`);
+      debugApi(`${req.method}:${req.originalUrl}`);
       const address = req.params.address;
       if (!address) {
         return res
@@ -907,7 +908,7 @@ module.exports = function (RED) {
 
       try {
         const bleDevice = await toDetailedObject(peripheral, RED);
-        debug(
+        debugApi(
           `/__bledev/${address} OUTPUT`,
           JSON.stringify(bleDevice, null, 2)
         );
