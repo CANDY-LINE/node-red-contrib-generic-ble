@@ -355,9 +355,9 @@ module.exports = function (RED) {
 
     preparePeripheral() {
       debugCfg(
-        `<preparePeripheral> this.uuid:${
-          this.uuid
-        }, noble._peripherals=>${Object.keys(noble._peripherals)}`
+        `<preparePeripheral:${this.uuid}> noble._peripherals=>${Object.keys(
+          noble._peripherals
+        )}`
       );
       const peripheral = noble._peripherals[this.uuid];
       if (!peripheral) {
@@ -365,6 +365,9 @@ module.exports = function (RED) {
         return Promise.resolve();
       }
       let connecting = peripheral.state === 'connecting';
+      debug(
+        `<preparePeripheral${this.uuid}> peripheral.state=>${peripheral.state}`
+      );
       switch (peripheral.state) {
         case 'disconnected': {
           this.emit('disconnected');
