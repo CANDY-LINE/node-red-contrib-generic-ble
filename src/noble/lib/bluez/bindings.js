@@ -174,6 +174,7 @@ class BluezBindings extends EventEmitter {
           err.message
         }, err.toString:${err.toString()}`
       );
+      this.emit('connect', deviceUuid, err);
     }
   }
 
@@ -188,6 +189,7 @@ class BluezBindings extends EventEmitter {
           err.message
         }, err.toString:${err.toString()}`
       );
+      this.emit('disconnect', deviceUuid); // swallow err
     }
   }
 
