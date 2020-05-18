@@ -353,9 +353,9 @@ module.exports = function (RED) {
       });
     }
 
-    preparePeripheral() {
+    connectPeripheral() {
       debugCfg(
-        `<preparePeripheral:${this.uuid}> noble._peripherals=>${Object.keys(
+        `<connectPeripheral:${this.uuid}> noble._peripherals=>${Object.keys(
           noble._peripherals
         )}`
       );
@@ -366,7 +366,7 @@ module.exports = function (RED) {
       }
       let connecting = peripheral.state === 'connecting';
       debug(
-        `<preparePeripheral${this.uuid}> peripheral.state=>${peripheral.state}`
+        `<connectPeripheral${this.uuid}> peripheral.state=>${peripheral.state}`
       );
       switch (peripheral.state) {
         case 'disconnected': {
@@ -382,7 +382,7 @@ module.exports = function (RED) {
             peripheral._connectHandlerSet = true;
             peripheral.once('connect', (err) => {
               if (err) {
-                this.log(`<preparePeripheral:connect> error:${err.message}`);
+                this.log(`<connectPeripheral:connect> error:${err.message}`);
                 return;
               }
               peripheral._connectHandlerSet = false;
@@ -390,7 +390,7 @@ module.exports = function (RED) {
                 (err, services) => {
                   if (err) {
                     this.log(
-                      `<preparePeripheral:discoverAllServicesAndCharacteristics> error:${err.message}`
+                      `<connectPeripheral:discoverAllServicesAndCharacteristics> error:${err.message}`
                     );
                     return;
                   }
@@ -469,7 +469,7 @@ module.exports = function (RED) {
       if (!dataObj) {
         return;
       }
-      const state = await this.preparePeripheral();
+      const state = await this.connectPeripheral();
       if (state !== 'connected') {
         debugCfg(
           `[write] Peripheral:${this.uuid} is NOT ready. state=>${state}`
@@ -527,7 +527,7 @@ module.exports = function (RED) {
       );
     }
     async read(uuids = '') {
-      const state = await this.preparePeripheral();
+      const state = await this.connectPeripheral();
       if (state !== 'connected') {
         debugCfg(
           `[read] Peripheral:${this.uuid} is NOT ready. state=>${state}`
@@ -595,7 +595,7 @@ module.exports = function (RED) {
       return Object.keys(readObj).length > 0 ? readObj : null;
     }
     subscribe(uuids = '', period = 0) {
-      return this.preparePeripheral().then((state) => {
+      return this.connectPeripheral().then((state) => {
         if (state !== 'connected') {
           this.log(
             `[subscribe] Peripheral:${this.uuid} is NOT ready. state=>${state}`
