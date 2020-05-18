@@ -417,8 +417,17 @@ class BluezBindings extends EventEmitter {
       )}`
     );
     if (interfaces.includes('org.bluez.Device1')) {
-      this.emit('miss', /*peripheralUuid*/ objectPath);
+      this.onDeviceMissed(objectPath);
     }
+  }
+
+  async onDeviceMissed(peripheralUuid) {
+    debug(`<onDeviceMissed> peripheralUuid:${peripheralUuid}`);
+
+    // Device Properties Change Listener
+    const props = await this.getDevicePropertiesInterface(peripheralUuid);
+    props.removeListener('PropertiesChanged');
+    this.emit('miss', peripheralUuid);
   }
 
   async onAdapterPropertiesChanged(
