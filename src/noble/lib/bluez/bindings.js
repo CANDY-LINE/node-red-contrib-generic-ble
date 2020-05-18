@@ -147,17 +147,32 @@ class BluezBindings extends EventEmitter {
     return defaultValue;
   }
 
-  async getDeviceObject(/*deviceUuid*/ objectPath) {
+  // /org/bluez/hci0/dev_11_22_33_DD_EE_FF => 112233ddeeff
+  toUuid(objectPath) {
+    return objectPath
+      .split('/')[4]
+      .substring(4)
+      .replace(/_/g, '')
+      .toLowerCase();
+  }
+
+  toObjectPath(peripheralUuid) {
+    // 112233ddeeff => /org/bluez/hci0/dev_11_22_33_DD_EE_FF
+    const uuid = peripheralUuid.toUpperCase();
+    return `/org/bluez/hci0/dev_${uuid[0]}${uuid[1]}_${uuid[2]}${uuid[3]}_${uuid[4]}${uuid[5]}_${uuid[6]}${uuid[7]}_${uuid[8]}${uuid[9]}_${uuid[10]}${uuid[11]}`;
+  }
+
+  async getDeviceObject(objectPath) {
     return this.bus.getProxyObject('org.bluez', objectPath);
   }
 
-  async getDeviceInterface(/*deviceUuid*/ objectPath) {
+  async getDeviceInterface(objectPath) {
     return (await this.getDeviceObject(objectPath)).getInterface(
       'org.bluez.Device1'
     );
   }
 
-  async getDevicePropertiesInterface(/*deviceUuid*/ objectPath) {
+  async getDevicePropertiesInterface(objectPath) {
     return (await this.getDeviceObject(objectPath)).getInterface(
       'org.freedesktop.DBus.Properties'
     );
@@ -165,7 +180,8 @@ class BluezBindings extends EventEmitter {
 
   async connect(deviceUuid) {
     debug(`connect:deviceUuid=>${deviceUuid}`);
-    const deviceInterface = await this.getDeviceInterface(deviceUuid);
+    const objectPath = this.toObjectPath(deviceUuid);
+    const deviceInterface = await this.getDeviceInterface(objectPath);
     try {
       await deviceInterface.Connect();
     } catch (err) {
@@ -176,7 +192,7 @@ class BluezBindings extends EventEmitter {
       );
       this.emit('connect', deviceUuid, err);
       try {
-        await this.hciAdapter.RemoveDevice(deviceUuid);
+        await this.hciAdapter.RemoveDevice(objectPath);
       } catch (err) {
         debug(
           `[${deviceUuid}]<connect> Error while removing the device: ${err.message}, ${err.type}`
@@ -187,7 +203,8 @@ class BluezBindings extends EventEmitter {
 
   async disconnect(deviceUuid) {
     debug(`disconnect:deviceUuid=>${deviceUuid}`);
-    const deviceInterface = await this.getDeviceInterface(deviceUuid);
+    const objectPath = this.toObjectPath(deviceUuid);
+    const deviceInterface = await this.getDeviceInterface(objectPath);
     try {
       await deviceInterface.Disconnect();
     } catch (err) {
@@ -202,7 +219,8 @@ class BluezBindings extends EventEmitter {
 
   async discoverServices(deviceUuid, uuids) {
     debug(`discoverServices:deviceUuid=>${deviceUuid},uuids=>${uuids}`);
-    const props = await this.getDevicePropertiesInterface(deviceUuid);
+    const objectPath = this.toObjectPath(deviceUuid);
+    const props = await this.getDevicePropertiesInterface(objectPath);
     const servicesResolved = (
       await props.Get('org.bluez.Device1', 'ServicesResolved')
     ).value;
@@ -210,7 +228,7 @@ class BluezBindings extends EventEmitter {
       debug(
         `discoverServices:deviceUuid=>${deviceUuid}, servicesResolved=>${servicesResolved}`
       );
-      this.onServicesResolved(props, deviceUuid);
+      this.onServicesResolved(deviceUuid, props);
     }
   }
 
@@ -218,29 +236,36 @@ class BluezBindings extends EventEmitter {
     debug(
       `discoverCharacteristics:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},characteristicUuids=>${characteristicUuids}`
     );
+    const objectPath = this.toObjectPath(deviceUuid);
     setTimeout(async () => {
       debug(
         `[${deviceUuid}] Collecting characteristsics for the service ${serviceUuid}`
       );
-      const objectPathPrefix = `${deviceUuid}/service`;
+      const objectPathPrefix = `${objectPath}/service`;
       const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
       const serviceObjectPaths = Object.keys(bluezObjects).filter(
-        (objectPath) => objectPath.indexOf(objectPathPrefix) === 0
+        (serviceObjectPath) => serviceObjectPath.indexOf(objectPathPrefix) === 0
       );
-      const serviceObjectPath = serviceObjectPaths.filter((objectPath) => {
-        const serviceObject = bluezObjects[objectPath];
-        return (
-          serviceObject['org.bluez.GattService1'] &&
-          serviceObject['org.bluez.GattService1'].UUID.value === serviceUuid
-        );
-      })[0];
+      const serviceObjectPath = serviceObjectPaths.filter(
+        (serviceObjectPath) => {
+          const serviceObject = bluezObjects[serviceObjectPath];
+          return (
+            serviceObject['org.bluez.GattService1'] &&
+            serviceObject['org.bluez.GattService1'].UUID.value === serviceUuid
+          );
+        }
+      )[0];
       const characteristicPathPrefix = `${serviceObjectPath}/char`;
       const discoveredCharacteristics = serviceObjectPaths
         .filter(
-          (objectPath) => objectPath.indexOf(characteristicPathPrefix) === 0
+          (serviceObjectPath) =>
+            serviceObjectPath.indexOf(characteristicPathPrefix) === 0
         )
-        .map((objectPath) => {
-          const chr = bluezObjects[objectPath]['org.bluez.GattCharacteristic1'];
+        .map((characteristicObjectPath) => {
+          const chr =
+            bluezObjects[characteristicObjectPath][
+              'org.bluez.GattCharacteristic1'
+            ];
           if (!chr) {
             // org.bluez.GattDescriptor1
             return null;
@@ -320,15 +345,16 @@ class BluezBindings extends EventEmitter {
     }
   }
 
-  async onDeviceDiscovered(peripheralUuid, device) {
+  async onDeviceDiscovered(objectPath, device) {
     debug(
-      `<onDeviceDiscovered> peripheralUuid:${peripheralUuid}, alias:${
+      `<onDeviceDiscovered> objectPath:${objectPath}, alias:${
         device.Alias.value || 'n/a'
       }, device: ${JSON.stringify(device)}`
     );
+    const peripheralUuid = this.toUuid(objectPath);
 
     // Device Properties Change Listener
-    const props = await this.getDevicePropertiesInterface(peripheralUuid);
+    const props = await this.getDevicePropertiesInterface(objectPath);
     props.on('PropertiesChanged', async (
       /*string*/ interfaceName,
       /*obj*/ changedProps,
@@ -351,7 +377,7 @@ class BluezBindings extends EventEmitter {
           changedProps.ServicesResolved &&
           changedProps.ServicesResolved.value
         ) {
-          this.onServicesResolved(props, peripheralUuid);
+          this.onServicesResolved(peripheralUuid, props);
         }
         if (changedProps.RSSI) {
           this.emit('rssiUpdate', peripheralUuid, changedProps.RSSI.value);
@@ -361,7 +387,7 @@ class BluezBindings extends EventEmitter {
             `[${peripheralUuid}]<PropertiesChanged> RSSI is invalidated. Removing the device.`
           );
           try {
-            await this.hciAdapter.RemoveDevice(peripheralUuid);
+            await this.hciAdapter.RemoveDevice(objectPath);
           } catch (err) {
             debug(
               `[${peripheralUuid}]<PropertiesChanged> Error while removing the device: ${err.message}, ${err.type}`
@@ -410,11 +436,11 @@ class BluezBindings extends EventEmitter {
   }
 
   async onServicesResolved(
-    /*getDevicePropertiesInterface()*/ props,
-    /*peripheralUuid*/ objectPath
+    peripheralUuid,
+    /*getDevicePropertiesInterface()*/ props
   ) {
     const serviceUuids = (await props.Get('org.bluez.Device1', 'UUIDs')).value;
-    this.emit('servicesDiscover', objectPath, serviceUuids);
+    this.emit('servicesDiscover', peripheralUuid, serviceUuids);
   }
 
   async onDevicesServicesCharacteristicsMissed(
@@ -427,7 +453,8 @@ class BluezBindings extends EventEmitter {
       )}`
     );
     if (interfaces.includes('org.bluez.Device1')) {
-      this.onDeviceMissed(objectPath);
+      const peripheralUuid = this.toUuid(objectPath);
+      this.onDeviceMissed(peripheralUuid);
     }
   }
 
