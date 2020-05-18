@@ -365,7 +365,7 @@ class BluezBindings extends EventEmitter {
     });
 
     const rssi = this.option(device, 'RSSI');
-    const address = device.Address.value;
+    const address = (device.Address.value || '').toLowerCase();
     const addressType = device.AddressType.value;
     const connectable = !device.Blocked.value;
     const manufacturerData = device.ManufacturerData
