@@ -480,7 +480,10 @@ module.exports = function (RED) {
           this.characteristics.map((c) => {
             return {
               uuid: c.uuid,
-              properties: c.properties,
+              notifiable: c.notifiable,
+              readable: c.readable,
+              writable: c.writable,
+              writeWithoutResponse: c.writeWithoutResponse,
             };
           })
         )}`
@@ -542,7 +545,10 @@ module.exports = function (RED) {
           this.characteristics.map((c) => {
             return {
               uuid: c.uuid,
-              properties: c.properties,
+              notifiable: c.notifiable,
+              readable: c.readable,
+              writable: c.writable,
+              writeWithoutResponse: c.writeWithoutResponse,
             };
           })
         )}`
@@ -607,7 +613,10 @@ module.exports = function (RED) {
             this.characteristics.map((c) => {
               return {
                 uuid: c.uuid,
-                properties: c.properties,
+                notifiable: c.notifiable,
+                readable: c.readable,
+                writable: c.writable,
+                writeWithoutResponse: c.writeWithoutResponse,
               };
             })
           )}`
