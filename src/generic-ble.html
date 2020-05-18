@@ -386,6 +386,8 @@
       $.getJSON('__blestate', function(genericBleState) {
         if (genericBleState.scanning) {
           startFetchBleDevices();
+        } else {
+          stopFetchDevices();
         }
         $('#node-config-input-scanning')
             .prop('checked', genericBleState.scanning)
