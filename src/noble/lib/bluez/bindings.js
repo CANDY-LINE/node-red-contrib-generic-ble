@@ -247,58 +247,82 @@ class BluezBindings extends EventEmitter {
     }
   }
 
+  async _listCharacteristics(deviceUuid, serviceUuid, characteristicUuids) {
+    debug(
+      `[${deviceUuid}] Collecting characteristsics for the service ${serviceUuid}`
+    );
+    const objectPath = this._toObjectPath(deviceUuid);
+    const objectPathPrefix = `${objectPath}/service`;
+    const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
+    const serviceObjectPaths = Object.keys(bluezObjects).filter(
+      (serviceObjectPath) => serviceObjectPath.indexOf(objectPathPrefix) === 0
+    );
+    if (serviceObjectPaths.length === 0) {
+      return null;
+    }
+    const serviceObjectPath = serviceObjectPaths.filter((serviceObjectPath) => {
+      const serviceObject = bluezObjects[serviceObjectPath];
+      return (
+        serviceObject['org.bluez.GattService1'] &&
+        serviceObject['org.bluez.GattService1'].UUID.value === serviceUuid
+      );
+    })[0];
+    if (!serviceObjectPath) {
+      return null;
+    }
+    const characteristicPathPrefix = `${serviceObjectPath}/char`;
+    const discoveredCharacteristics = {};
+    serviceObjectPaths
+      .filter(
+        (serviceObjectPath) =>
+          serviceObjectPath.indexOf(characteristicPathPrefix) === 0
+      )
+      .forEach((characteristicObjectPath) => {
+        const chr =
+          bluezObjects[characteristicObjectPath][
+            'org.bluez.GattCharacteristic1'
+          ];
+        if (!chr) {
+          // org.bluez.GattDescriptor1
+          return;
+        }
+        if (
+          characteristicUuids.length > 0 &&
+          !characteristicUuids.includes(chr.UUID.value)
+        ) {
+          return;
+        }
+        discoveredCharacteristics[characteristicObjectPath] = chr;
+      });
+    return discoveredCharacteristics;
+  }
+
   async discoverCharacteristics(deviceUuid, serviceUuid, characteristicUuids) {
     debug(
       `discoverCharacteristics:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},characteristicUuids=>${characteristicUuids}`
     );
+    let timeout = 0;
+    let discoveredCharacteristics = await this._listCharacteristics(
+      deviceUuid,
+      serviceUuid,
+      characteristicUuids
+    );
+    if (!discoveredCharacteristics) {
+      timeout = CHRARACTERISTICS_DISCOVERY_TIMEOUT_MS;
+    }
     setTimeout(async () => {
-      debug(
-        `[${deviceUuid}] Collecting characteristsics for the service ${serviceUuid}`
-      );
-      const objectPath = this.toObjectPath(deviceUuid);
-      const objectPathPrefix = `${objectPath}/service`;
-      const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
-      const serviceObjectPaths = Object.keys(bluezObjects).filter(
-        (serviceObjectPath) => serviceObjectPath.indexOf(objectPathPrefix) === 0
-      );
-      const serviceObjectPath = serviceObjectPaths.filter(
-        (serviceObjectPath) => {
-          const serviceObject = bluezObjects[serviceObjectPath];
-          return (
-            serviceObject['org.bluez.GattService1'] &&
-            serviceObject['org.bluez.GattService1'].UUID.value === serviceUuid
-          );
-        }
-      )[0];
-      const characteristicPathPrefix = `${serviceObjectPath}/char`;
-      const discoveredCharacteristics = serviceObjectPaths
-        .filter(
-          (serviceObjectPath) =>
-            serviceObjectPath.indexOf(characteristicPathPrefix) === 0
-        )
-        .map((characteristicObjectPath) => {
-          const chr =
-            bluezObjects[characteristicObjectPath][
-              'org.bluez.GattCharacteristic1'
-            ];
-          if (!chr) {
-            // org.bluez.GattDescriptor1
-            return null;
-          }
-          if (
-            characteristicUuids.length > 0 &&
-            !characteristicUuids.includes(chr.UUID.value)
-          ) {
-            return null;
-          }
-          return chr;
-        })
-        .filter((chr) => chr);
+      if (!discoveredCharacteristics) {
+        discoveredCharacteristics = await this._listCharacteristics(
+          deviceUuid,
+          serviceUuid,
+          characteristicUuids
+        );
+      }
       this.emit(
         'characteristicsDiscover',
         deviceUuid,
         serviceUuid,
-        discoveredCharacteristics.map((chr) => {
+        Object.values(discoveredCharacteristics).map((chr) => {
           return {
             uuid: chr.UUID.value,
             properties: chr.Flags.value,
@@ -308,7 +332,7 @@ class BluezBindings extends EventEmitter {
       debug(
         `[${deviceUuid}] OK. Found ${discoveredCharacteristics.length} Characteristics.`
       );
-    }, CHRARACTERISTICS_DISCOVERY_TIMEOUT_MS);
+    }, timeout);
   }
 
   async read(deviceUuid, serviceUuid, characteristicUuid) {
