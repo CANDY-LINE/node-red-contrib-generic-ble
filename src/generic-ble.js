@@ -27,8 +27,6 @@ if (process.env.NODE_ENV !== 'test') {
   debug('Requiring "source-map-support/register"...');
   require('source-map-support/register');
 }
-const LOG_ENABLE_BUILD_FLAG = false;
-const TRACE = process.env.GENERIC_BLE_TRACE === 'true';
 const bleDevices = new NodeCache({
   stdTTL: 10 * 60 * 1000,
   checkperiod: 60 * 1000,
@@ -50,10 +48,10 @@ function getAddressOrUUID(peripheral) {
   return peripheral.address;
 }
 
-function deleteBleDevice(addressOrUUID, RED) {
+function deleteBleDevice(addressOrUUID) {
   const value = bleDevices.del(addressOrUUID);
-  if (value && TRACE) {
-    RED.log.info(`[GenericBLE:TRACE] Delete => ${addressOrUUID}`);
+  if (value) {
+    debug(`[GenericBLE] Delete => ${addressOrUUID}`);
   }
 }
 
@@ -90,20 +88,18 @@ function valToBuffer(hexOrIntArray, len = 1) {
   return Buffer.alloc(0);
 }
 
-function onDiscoverFunc(RED) {
+function onDiscoverFunc() {
   return (peripheral) => {
     const addressOrUUID = getAddressOrUUID(peripheral);
     if (!addressOrUUID) {
       return;
     } else if (peripheral.connectable) {
       bleDevices.set(addressOrUUID, peripheral.uuid);
-      if (LOG_ENABLE_BUILD_FLAG && TRACE) {
-        RED.log.info(
-          `[GenericBLE:DISCOVER:TRACE] <${addressOrUUID}> ${peripheral.advertisement.localName}`
-        );
-      }
+      debug(
+        `[GenericBLE:DISCOVER] <${addressOrUUID}> ${peripheral.advertisement.localName}`
+      );
     } else {
-      deleteBleDevice(addressOrUUID, RED);
+      deleteBleDevice(addressOrUUID);
     }
   };
 }
@@ -138,7 +134,7 @@ function startBLEScanning(RED) {
     return;
   }
   if (!onDiscover) {
-    onDiscover = onDiscoverFunc(RED);
+    onDiscover = onDiscoverFunc();
   }
   if (!onStateChange) {
     onStateChange = onStateChangeFunc(RED);
@@ -458,35 +454,29 @@ module.exports = function (RED) {
       }
       const state = await this.preparePeripheral();
       if (state !== 'connected') {
-        this.log(
-          `[write] Peripheral:${this.uuid} is NOT ready. state=>${state}`
-        );
+        debug(`[write] Peripheral:${this.uuid} is NOT ready. state=>${state}`);
         return;
       }
       let writables = this.characteristics.filter(
         (c) => c.writable || c.writeWithoutResponse
       );
-      if (TRACE) {
-        this.log(
-          `characteristics => ${JSON.stringify(
-            this.characteristics.map((c) => {
-              const obj = Object.assign({}, c);
-              delete obj.obj;
-              return obj;
-            })
-          )}`
-        );
-        this.log(`writables.length => ${writables.length}`);
-      }
+      debug(
+        `characteristics => ${JSON.stringify(
+          this.characteristics.map((c) => {
+            const obj = Object.assign({}, c);
+            delete obj.obj;
+            return obj;
+          })
+        )}`
+      );
+      debug(`writables.length => ${writables.length}`);
       if (writables.length === 0) {
         return;
       }
       const uuidList = Object.keys(dataObj);
       writables = writables.filter((c) => uuidList.indexOf(c.uuid) >= 0);
-      if (TRACE) {
-        this.log(`UUIDs to write => ${uuidList}`);
-        this.log(`writables.length => ${writables.length}`);
-      }
+      debug(`UUIDs to write => ${uuidList}`);
+      debug(`writables.length => ${writables.length}`);
       if (writables.length === 0) {
         return;
       }
@@ -496,21 +486,15 @@ module.exports = function (RED) {
           // {uuid:'characteristic-uuid-to-write', data:Buffer()}
           return new Promise((resolve, reject) => {
             const buf = valToBuffer(dataObj[w.uuid]);
-            if (TRACE) {
-              this.log(
-                `<Write> uuid => ${w.uuid}, data => ${buf}, writeWithoutResponse => ${w.writeWithoutResponse}`
-              );
-            }
+            debug(
+              `<Write> uuid => ${w.uuid}, data => ${buf}, writeWithoutResponse => ${w.writeWithoutResponse}`
+            );
             w.object.write(buf, w.writeWithoutResponse, (err) => {
               if (err) {
-                if (TRACE) {
-                  this.log(`<Write> ${w.uuid} => FAIL`);
-                }
+                debug(`<Write> ${w.uuid} => FAIL`);
                 return reject(err);
               }
-              if (TRACE) {
-                this.log(`<Write> ${w.uuid} => OK`);
-              }
+              debug(`<Write> ${w.uuid} => OK`);
               resolve(true);
             });
           });
@@ -520,9 +504,7 @@ module.exports = function (RED) {
     async read(uuids = '') {
       const state = await this.preparePeripheral();
       if (state !== 'connected') {
-        this.log(
-          `[read] Peripheral:${this.uuid} is NOT ready. state=>${state}`
-        );
+        debug(`[read] Peripheral:${this.uuid} is NOT ready. state=>${state}`);
         return null;
       }
       uuids = uuids
@@ -537,18 +519,16 @@ module.exports = function (RED) {
           return uuids.indexOf(c.uuid) >= 0;
         }
       });
-      if (TRACE) {
-        this.log(
-          `characteristics => ${JSON.stringify(
-            this.characteristics.map((c) => {
-              const obj = Object.assign({}, c);
-              delete obj.obj;
-              return obj;
-            })
-          )}`
-        );
-        this.log(`readables.length => ${readables.length}`);
-      }
+      debug(
+        `characteristics => ${JSON.stringify(
+          this.characteristics.map((c) => {
+            const obj = Object.assign({}, c);
+            delete obj.obj;
+            return obj;
+          })
+        )}`
+      );
+      debug(`readables.length => ${readables.length}`);
       if (readables.length === 0) {
         return null;
       }
@@ -571,14 +551,10 @@ module.exports = function (RED) {
           return new Promise((resolve, reject) => {
             r.object.read((err, data) => {
               if (err) {
-                if (TRACE) {
-                  this.log(`<Read> ${r.uuid} => FAIL`);
-                }
+                debug(`<Read> ${r.uuid} => FAIL`);
                 return reject(err);
               }
-              if (TRACE) {
-                this.log(`<Read> ${r.uuid} => ${JSON.stringify(data)}`);
-              }
+              debug(`<Read> ${r.uuid} => ${JSON.stringify(data)}`);
               readObj[r.uuid] = data;
               resolve();
             });
@@ -607,18 +583,16 @@ module.exports = function (RED) {
             return uuids.indexOf(c.uuid) >= 0;
           }
         });
-        if (TRACE) {
-          this.log(
-            `characteristics => ${JSON.stringify(
-              this.characteristics.map((c) => {
-                let obj = Object.assign({}, c);
-                delete obj.obj;
-                return obj;
-              })
-            )}`
-          );
-          this.log(`notifiables.length => ${notifiables.length}`);
-        }
+        debug(
+          `characteristics => ${JSON.stringify(
+            this.characteristics.map((c) => {
+              let obj = Object.assign({}, c);
+              delete obj.obj;
+              return obj;
+            })
+          )}`
+        );
+        debug(`notifiables.length => ${notifiables.length}`);
         if (notifiables.length === 0) {
           return false;
         }
@@ -708,9 +682,9 @@ module.exports = function (RED) {
         this.genericBleNode.register(this);
 
         this.on('input', async (msg) => {
-          if (TRACE) {
-            this.log(`input arrived!`);
-          }
+          debug(
+            `[GenericBLEInNode] input arrived! msg=>${JSON.stringify(msg)}`
+          );
           let obj = msg.payload || {};
           try {
             if (typeof obj === 'string') {
@@ -782,17 +756,16 @@ module.exports = function (RED) {
           });
         });
         this.genericBleNode.register(this);
-        this.on('input', (msg) => {
-          this.genericBleNode
-            .write(msg.payload)
-            .then(() => {
-              if (TRACE) {
-                this.log(`<${this.genericBleNode.uuid}> write: OK`);
-              }
-            })
-            .catch((err) => {
-              this.error(`<${this.genericBleNode.uuid}> write: (err:${err})`);
-            });
+        this.on('input', async (msg) => {
+          debug(
+            `[GenericBLEOutNode] input arrived! msg=>${JSON.stringify(msg)}`
+          );
+          try {
+            await this.genericBleNode.write(msg.payload);
+            debug(`<${this.genericBleNode.uuid}> write: OK`);
+          } catch (err) {
+            this.error(`<${this.genericBleNode.uuid}> write: (err:${err})`);
+          }
         });
         this.on('close', () => {
           if (this.genericBleNode) {
@@ -806,9 +779,7 @@ module.exports = function (RED) {
   RED.nodes.registerType('Generic BLE out', GenericBLEOutNode);
 
   RED.events.on('runtime-event', (ev) => {
-    if (TRACE) {
-      RED.log.info(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
-    }
+    debug(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
     if (ev.id === 'runtime-state' && Object.keys(configBleDevices).length > 0) {
       stopBLEScanning(RED);
       bleDevices.flushAll();
@@ -873,9 +844,7 @@ module.exports = function (RED) {
             })
           )
         ).filter((obj) => obj);
-        if (TRACE) {
-          RED.log.info('/__bledevlist', JSON.stringify(body, null, 2));
-        }
+        debug('/__bledevlist', JSON.stringify(body, null, 2));
         res.json(body);
       } catch (err) {
         RED.log.error(
@@ -922,12 +891,10 @@ module.exports = function (RED) {
 
       try {
         const bleDevice = await toDetailedObject(peripheral, RED);
-        if (TRACE) {
-          RED.log.info(
-            `/__bledev/${address} OUTPUT`,
-            JSON.stringify(bleDevice, null, 2)
-          );
-        }
+        debug(
+          `/__bledev/${address} OUTPUT`,
+          JSON.stringify(bleDevice, null, 2)
+        );
         return res.json(bleDevice);
       } catch (err) {
         RED.log.error(
