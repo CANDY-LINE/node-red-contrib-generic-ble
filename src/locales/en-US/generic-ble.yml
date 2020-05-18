@@ -29,4 +29,3 @@ generic-ble:
     subscribed: subscribed
     unsubscribed: unsubscribed
     error: error
-    timeout: timeout

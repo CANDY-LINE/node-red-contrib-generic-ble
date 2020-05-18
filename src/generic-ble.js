@@ -330,7 +330,7 @@ module.exports = function (RED) {
         configBleDevices[key] = this;
       }
       this.nodes = {};
-      ['connected', 'disconnected', 'error', 'timeout'].forEach((ev) => {
+      ['connected', 'disconnected', 'error'].forEach((ev) => {
         this.on(ev, () => {
           try {
             Object.keys(this.nodes).forEach((id) => {
@@ -440,7 +440,7 @@ module.exports = function (RED) {
             } else if (retry < 10) {
               setTimeout(connectedHandler, 500);
             } else {
-              this.emit('timeout');
+              this.emit('disconnected');
               peripheral.state === 'disconnected';
               return resolve(peripheral.state);
             }
@@ -705,7 +705,7 @@ module.exports = function (RED) {
             text: `generic-ble.status.connected`,
           });
         });
-        ['disconnected', 'error', 'timeout'].forEach((ev) => {
+        ['disconnected', 'error'].forEach((ev) => {
           this.on(ev, () => {
             this.status({
               fill: 'red',
@@ -780,7 +780,7 @@ module.exports = function (RED) {
             text: `generic-ble.status.connected`,
           });
         });
-        ['disconnected', 'error', 'timeout'].forEach((ev) => {
+        ['disconnected', 'error'].forEach((ev) => {
           this.on(ev, () => {
             this.status({
               fill: 'red',
