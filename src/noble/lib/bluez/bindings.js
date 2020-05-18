@@ -175,6 +175,13 @@ class BluezBindings extends EventEmitter {
         }, err.toString:${err.toString()}`
       );
       this.emit('connect', deviceUuid, err);
+      try {
+        await this.hciAdapter.RemoveDevice(deviceUuid);
+      } catch (err) {
+        debug(
+          `[${deviceUuid}]<connect> Error while removing the device: ${err.message}, ${err.type}`
+        );
+      }
     }
   }
 
