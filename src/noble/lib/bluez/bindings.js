@@ -207,7 +207,7 @@ class BluezBindings extends EventEmitter {
     );
   }
 
-  async _getDevicePropertiesInterface(objectPath) {
+  async _getPropertiesInterface(objectPath) {
     return (await this._getProxyObject(objectPath)).getInterface(
       'org.freedesktop.DBus.Properties'
     );
@@ -261,7 +261,7 @@ class BluezBindings extends EventEmitter {
   async discoverServices(deviceUuid, uuids) {
     debug(`discoverServices:deviceUuid=>${deviceUuid},uuids=>${uuids}`);
     const objectPath = this._toObjectPath(deviceUuid);
-    const props = await this._getDevicePropertiesInterface(objectPath);
+    const props = await this._getPropertiesInterface(objectPath);
     const servicesResolved = (
       await props.Get('org.bluez.Device1', 'ServicesResolved')
     ).value;
@@ -473,7 +473,7 @@ class BluezBindings extends EventEmitter {
     const peripheralUuid = this._toUuid(objectPath);
 
     // Device Properties Change Listener
-    const props = await this._getDevicePropertiesInterface(objectPath);
+    const props = await this._getPropertiesInterface(objectPath);
     props.on('PropertiesChanged', async (
       /*string*/ interfaceName,
       /*obj*/ changedProps,
@@ -556,7 +556,7 @@ class BluezBindings extends EventEmitter {
 
   async onServicesResolved(
     peripheralUuid,
-    /*_getDevicePropertiesInterface()*/ props
+    /*_getPropertiesInterface()*/ props
   ) {
     const serviceUuids = (await props.Get('org.bluez.Device1', 'UUIDs')).value;
     this.emit('servicesDiscover', peripheralUuid, serviceUuids);
