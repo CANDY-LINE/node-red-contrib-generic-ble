@@ -366,7 +366,7 @@
 
       function startFetchBleDevices() {
         function task() {
-          getBleDevices(that);
+          getBleDevices(getBleDevice());
           if (state.fetchBleDevicesTask) {
             state.fetchBleDevicesTask = setTimeout(task, 5000);
           }
