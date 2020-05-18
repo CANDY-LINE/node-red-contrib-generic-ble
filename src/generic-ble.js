@@ -477,9 +477,10 @@ module.exports = function (RED) {
       debugCfg(
         `characteristics => ${JSON.stringify(
           this.characteristics.map((c) => {
-            const obj = Object.assign({}, c);
-            delete obj.obj;
-            return obj;
+            return {
+              uuid: c.uuid,
+              properties: c.properties,
+            };
           })
         )}`
       );
@@ -538,9 +539,10 @@ module.exports = function (RED) {
       debugCfg(
         `characteristics => ${JSON.stringify(
           this.characteristics.map((c) => {
-            const obj = Object.assign({}, c);
-            delete obj.obj;
-            return obj;
+            return {
+              uuid: c.uuid,
+              properties: c.properties,
+            };
           })
         )}`
       );
