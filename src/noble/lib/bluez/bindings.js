@@ -318,20 +318,25 @@ class BluezBindings extends EventEmitter {
           characteristicUuids
         );
       }
-      this.emit(
-        'characteristicsDiscover',
-        deviceUuid,
-        serviceUuid,
-        Object.values(discoveredCharacteristics).map((chr) => {
+      if (discoveredCharacteristics) {
+        const resultChrs = Object.values(discoveredCharacteristics).map((chr) => {
           return {
             uuid: chr.UUID.value,
             properties: chr.Flags.value,
           };
-        })
-      );
-      debug(
-        `[${deviceUuid}] OK. Found ${discoveredCharacteristics.length} Characteristics.`
-      );
+        });
+        this.emit(
+          'characteristicsDiscover',
+          deviceUuid,
+          serviceUuid,
+          resultChrs
+        );
+        debug(
+          `[${deviceUuid}] OK. Found ${resultChrs.length} Characteristics.`
+        );
+      } else {
+        debug(`[${deviceUuid}] No Characteristics.`);
+      }
     }, timeout);
   }
 
