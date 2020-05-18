@@ -370,7 +370,6 @@ module.exports = function (RED) {
         this.emit('disconnected');
         return;
       }
-      let connecting = peripheral.state === 'connecting';
       debug(
         `<connectPeripheral${this.uuid}> peripheral.state=>${peripheral.state}`
       );
@@ -389,8 +388,10 @@ module.exports = function (RED) {
             peripheral.once('connect', (err) => {
               if (err) {
                 this.log(`<connectPeripheral:connect> error:${err.message}`);
+                this.emit('disconnected');
                 return;
               }
+              this.emit('connected');
               peripheral._connectHandlerSet = false;
               peripheral.discoverAllServicesAndCharacteristics(
                 (err, services) => {
@@ -400,7 +401,6 @@ module.exports = function (RED) {
                     );
                     return;
                   }
-                  this.emit('connected');
                   this.characteristics = services
                     .reduce((prev, curr) => {
                       return prev.concat(curr.characteristics);
@@ -412,7 +412,6 @@ module.exports = function (RED) {
             peripheral.connect(); // peripheral.state => connecting
             this.emit('connecting');
           }
-          connecting = true;
           break;
         }
         case 'connected': {
@@ -436,26 +435,6 @@ module.exports = function (RED) {
         default: {
           break;
         }
-      }
-      if (connecting) {
-        return await new Promise((resolve) => {
-          let retry = 0;
-          const connectedHandler = () => {
-            ++retry;
-            if (peripheral.state === 'connected') {
-              return resolve(peripheral.state);
-            } else if (retry < 10) {
-              setTimeout(connectedHandler, 500);
-            } else {
-              this.emit('disconnected');
-              peripheral.state === 'disconnected';
-              return resolve(peripheral.state);
-            }
-          };
-          setTimeout(connectedHandler, 500);
-        });
-      } else {
-        return peripheral.state;
       }
     }
     async disconnectPeripheral() {
@@ -855,7 +834,8 @@ module.exports = function (RED) {
             await this.genericBleNode.write(msg.payload);
             debugOut(`<${this.genericBleNode.uuid}> write: OK`);
           } catch (err) {
-            this.error(`<${this.genericBleNode.uuid}> write: (err:${err})`);
+            debugOut(`<${this.genericBleNode.uuid}> write: (err:${err})`);
+            this.error(err);
           }
         });
         this.on('close', () => {
