@@ -604,9 +604,10 @@ module.exports = function (RED) {
         debugCfg(
           `characteristics => ${JSON.stringify(
             this.characteristics.map((c) => {
-              let obj = Object.assign({}, c);
-              delete obj.obj;
-              return obj;
+              return {
+                uuid: c.uuid,
+                properties: c.properties,
+              };
             })
           )}`
         );
