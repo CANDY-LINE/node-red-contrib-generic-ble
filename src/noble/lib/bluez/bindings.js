@@ -408,11 +408,10 @@ class BluezBindings extends EventEmitter {
       const chracteristic = await this._getCharacteristicInterface(
         characteristicObjectPath
       );
-      if (Buffer.isBuffer(data)) {
-        data = data.data;
-      }
+      data = data.toJSON().data;
+      const type = withoutResponse ? 'command' : 'request';
       await chracteristic.WriteValue(data, {
-        type: withoutResponse ? 'command' : 'request',
+        type: new dbus.Variant('s', type),
       });
     }
     debug(
