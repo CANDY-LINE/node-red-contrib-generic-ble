@@ -251,11 +251,11 @@ class BluezBindings extends EventEmitter {
     debug(
       `discoverCharacteristics:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},characteristicUuids=>${characteristicUuids}`
     );
-    const objectPath = this.toObjectPath(deviceUuid);
     setTimeout(async () => {
       debug(
         `[${deviceUuid}] Collecting characteristsics for the service ${serviceUuid}`
       );
+      const objectPath = this.toObjectPath(deviceUuid);
       const objectPathPrefix = `${objectPath}/service`;
       const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
       const serviceObjectPaths = Object.keys(bluezObjects).filter(
@@ -291,17 +291,19 @@ class BluezBindings extends EventEmitter {
           ) {
             return null;
           }
-          return {
-            uuid: chr.UUID.value,
-            properties: chr.Flags.value,
-          };
+          return chr;
         })
         .filter((chr) => chr);
       this.emit(
         'characteristicsDiscover',
         deviceUuid,
         serviceUuid,
-        discoveredCharacteristics
+        discoveredCharacteristics.map((chr) => {
+          return {
+            uuid: chr.UUID.value,
+            properties: chr.Flags.value,
+          };
+        })
       );
       debug(
         `[${deviceUuid}] OK. Found ${discoveredCharacteristics.length} Characteristics.`
