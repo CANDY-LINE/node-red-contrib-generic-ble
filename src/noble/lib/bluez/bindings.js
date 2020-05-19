@@ -48,7 +48,8 @@ class BluezBindings extends EventEmitter {
     if (!uuid || typeof uuid !== 'string') {
       return uuid;
     }
-    if (uuid && uuid.length === 32) {
+    uuid = this._to128bitUuid(uuid);
+    if (uuid.length === 32) {
       uuid = `${uuid.substring(0, 8)}-${uuid.substring(8, 12)}-${uuid.substring(
         12,
         16
@@ -59,7 +60,28 @@ class BluezBindings extends EventEmitter {
 
   _stripDashes(uuid) {
     if (typeof uuid === 'string') {
-      uuid = uuid.split('-').join('');
+      uuid = uuid.split('-').join('').toLowerCase();
+    }
+    return this._to16bitUuid(uuid);
+  }
+
+  _to128bitUuid(uuid) {
+    // Bluetooth Base UUID(00000000-0000-1000-8000-00805F9B34FB)
+    // Device Name (w/o dashes) : 2a00 => 00002a0000001000800000805f9b34fb
+    if (uuid.length === 4) {
+      uuid = `0000${uuid}-0000-1000-8000-00805f9b34fb`;
+    }
+    return uuid;
+  }
+
+  _to16bitUuid(uuid) {
+    // Bluetooth Base UUID(00000000-0000-1000-8000-00805F9B34FB)
+    // Device Name (w/o dashes) : 00002a0000001000800000805f9b34fb => 2a00
+    if (
+      uuid.indexOf('0000') === 0 &&
+      uuid.indexOf('00001000800000805f9b34fb') === 8
+    ) {
+      return uuid.substring(4, 8);
     }
     return uuid;
   }
