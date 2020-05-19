@@ -152,7 +152,14 @@ function onStateChangeFunc(RED) {
 function onErrorFunc(RED) {
   return (err) => {
     debug(`[GenericBLE:ERROR] ${err.message}, ${err.stack}`);
-    RED.log.error(err);
+    if (err.type === 'org.freedesktop.DBus.Error.AccessDenied') {
+      RED.log.error(
+        `BlueZ Permission Error. See 'Installation Note' in README at https://flows.nodered.org/node/node-red-contrib-generic-ble for addressing the issue.`
+      );
+    } else {
+      RED.log.error(err);
+    }
+    Object.values(configBleDevices).forEach((node) => node.emit('error'));
   };
 }
 
@@ -910,16 +917,9 @@ module.exports = function (RED) {
   RED.events.on('runtime-event', (ev) => {
     debugApi(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
     if (ev.id === 'runtime-state' && Object.keys(configBleDevices).length > 0) {
-      if (noble.initialized) {
-        stopBLEScanning(RED);
-        bleDevices.flushAll();
-        startBLEScanning(RED);
-      } else {
-        RED.log.error(
-          `BlueZ Permission Error. See 'Installation Note' in README at https://flows.nodered.org/node/node-red-contrib-generic-ble for addressing the issue.`
-        );
-        Object.values(configBleDevices).forEach((node) => node.emit('error'));
-      }
+      stopBLEScanning(RED);
+      bleDevices.flushAll();
+      startBLEScanning(RED);
     }
   });
 
