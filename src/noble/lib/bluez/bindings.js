@@ -308,7 +308,7 @@ class BluezBindings extends EventEmitter {
       `[${deviceUuid}] Collecting characteristsics for the service ${serviceUuid}`
     );
     const dashedCharacteristicUuids = (characteristicUuids || []).map(
-      this._addDashes
+      this._addDashes.bind(this)
     );
     const objectPath = this._toObjectPath(deviceUuid);
     const objectPathPrefix = `${objectPath}/service`;
