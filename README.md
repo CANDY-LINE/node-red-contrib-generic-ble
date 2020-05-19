@@ -190,19 +190,3 @@ $ NODE_ENV=development npm run build
 $ NODE_ENV=development npm pack
 ```
 
-## HCI Dump Debugging (Raspbian/Ubuntu/Debian)
-
-```
-sudo apt-get update
-sudo apt-get install bluez-hcidump
-```
-
-then
-
-```
-sudo hcidump -t -x
-```
-
-## Enabling trace log
-
-Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise log in `/var/log/syslog`.
