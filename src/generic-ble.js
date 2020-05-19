@@ -489,6 +489,7 @@ module.exports = function (RED) {
           break;
         }
       }
+      return peripheral.state;
     }
     async disconnectPeripheral() {
       debugCfg(
