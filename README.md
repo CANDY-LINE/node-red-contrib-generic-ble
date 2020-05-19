@@ -3,14 +3,15 @@ node-red-contrib-generic-ble
 
 A Node-RED node for providing access to generic BLE peripheral devices via GATT.
 
-As of v4.0.0, this node is optmized for Linux with BlueZ 5.
+As of v4.0.0, this node is optmized for Linux with BlueZ 5 D-Bus API (HCI socket is no longer used on Linux).
+macOS and Windows should work as nothing is modified for these platforms.
 
 Supported operations are as follows:
 
 - Read
 - Write
 - Write without Response
-- Notify
+- Notify (Subscribing the Notify event)
 
 In this version, the node status values are as follows:
 
@@ -21,39 +22,50 @@ In this version, the node status values are as follows:
 - `disconnecting` when the configured BLE peripheral device is being disconnecting
 - `error` when unexpected error occurs
 
+Known issue for Linux BlueZ D-Bus API:
+
+- It seems the local name in advertisement packet isn't transferred to `LocalName` property in org.bluez.Device1 BlueZ D-Bus API. With HCI socket implementaion, the local name was resolved. So the local name can be resolved on macOS and Windows. 
+
 # How to use
 
 ## How to configure a new BLE peripheral device
 
 At first, drag either a `generic ble in` node or a `generic ble out` node to the workspace from the node palette and double-click the node. And you can find the following dialog. Here, click the pencil icon (`1`) to add a new BLE peripheral or edit the existing one.
 
-![ble in node](images/ble1.png)
+![ble out node](images/ble1.png)
 
-Then the new config node dialog appears like this.
+Then the new config node dialog appears as shown below.
+
+The `BLE Scanning` shows whether or not BLE scanning is going on. In order to start BLE scanning, check it (`2`).
 
 ![ble config node](images/ble2.png)
 
-The `Scan Result` shows the scanned BLE peripherals. It can be empty when no peripherals are found.
-
-In order for the dialog to list your device, turn BLE on prior to open the dialog. Close the dialog then re-open it if you'd like to get the latest scan result.
-
-By default, you have to enter either MAC address or UUID manually to configure your BLE peripheral. However, by checking `Select from scan result`(`2`), you can choose the peripheral if it exists in the scan result.
+As soon as you check it, `Scan Result` select box and `Apply` button appear. The scan results are automatically fufilled in the select box. The content will be refreshed every 10 seconds.
 
 ![ble config node](images/ble3.png)
 
-When you choose the peripheral, `GATT Characteristics` shows all characteristics discovered in it, and `Local Name`, `MAC` and `UUID` are automatically resolved as well.
+Chosoe one of the listed devices and then click `Apply` to populate `Local Name`, `MAC` and `UUID` input text boxes. Clicking `Apply` button also triggers GATT characteristics discovery as well.
 
-If you cannot find your peripheral in the `Scan Result`, you can reload the result by closing this dialog and re-opening it as described above.
+The following picure shows the `Apply` button clicking result. `GATT Characteristics` has a characteristic list of the selected device. When you see `(not available)` message in the box, check if the device is NOT sleeping (a sleeping device fails to respond to connect request) and click `Apply` again.
 
-Click `Add` (`3`) when the information on the dialog looks good.
+`GATT Characteristics` must be populated as the node uses the list to verify if a given characteristic UUID is valid on performing `Read`, `Write` and `Subscribe` requests.
+
+Click `Add` (`3`) to save the information when everything is ok.
 
 ![ble config node](images/ble4.png)
 
-Click `Done` (`4`) to finish the `ble in` node settings.
+OK. Now back to `Generic BLE out` node.
+Click `Done` (`4`) to finish the `Generic BLE out` node settings.
+
+You can import an example flow from the menu icon(`三`) > Import > Examples > node-red-contrib-generic-ble > 01-read-write.
+
+![ble config node](images/ble5.png)
 
 ## How to translate gatttool command into flow
 
 In this example, we show how to describe `gatttool` commands for characteristic value write and read with Generic BLE nodes.
+
+**NOTICE: As of BlueZ 5, gatttool is deprecated. gatttool will be removed in the future relesase.**
 
 ### Characteristics Value Write
 
