@@ -136,7 +136,7 @@ function onStateChangeFunc(RED) {
 function onErrorFunc(RED) {
   return (err) => {
     debug(`[GenericBLE:ERROR] ${err.message}, ${err.stack}`);
-    if (err.type === 'org.freedesktop.DBus.Error.AccessDenied') {
+    if (!noble.initialized) {
       RED.log.error(
         `BlueZ Permission Error. See 'Installation Note' in README at https://flows.nodered.org/node/node-red-contrib-generic-ble for addressing the issue.`
       );

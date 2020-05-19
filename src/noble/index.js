@@ -58,7 +58,9 @@ class PeripheralRemovableNoble extends Noble {
     }
   }
   onError(err) {
-    this.initialized = false;
+    if (err.type === 'org.freedesktop.DBus.Error.AccessDenied') {
+      this.initialized = false;
+    }
     this.emit('error', err);
   }
 }
