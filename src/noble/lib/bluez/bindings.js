@@ -682,6 +682,17 @@ class BluezBindings extends EventEmitter {
         debug(`Powered=>${changedProps.Powered.value}`);
         if (!changedProps.Powered.value) {
           this.emit('stateChange', 'poweredOff');
+          setTimeout(async () => {
+            debug(`Trying to turn on the adapter...`);
+            const powerOn = new dbus.Variant('b', true);
+            try {
+              await this.hciProps.Set(interfaceName, 'Powered', powerOn);
+            } catch (err) {
+              debug(
+                `Error while turning on the adapter. err.message:${err.message}, type:${err.type}`
+              );
+            }
+          }, 5 * 1000);
         }
       }
       // Skip to show other props
