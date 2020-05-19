@@ -111,6 +111,7 @@ class BluezBindings extends EventEmitter {
       debug(`init: => already initialzied. Skip!`);
       return;
     }
+    debug(`initializing....`);
 
     this.onSigIntBinded = this.onSigInt.bind(this);
     /* Add exit handlers after `init()` has completed. If no adaptor
@@ -119,60 +120,67 @@ class BluezBindings extends EventEmitter {
     process.on('SIGINT', this.onSigIntBinded);
     process.on('exit', this.onExit.bind(this));
 
-    this.bluezService = await this.bus.getProxyObject('org.bluez', '/');
-    this.bluezObjectManager = this.bluezService.getInterface(
-      'org.freedesktop.DBus.ObjectManager'
-    );
-    const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
-    debug(`Detected Object Paths:${Object.keys(bluezObjects)}`);
-    if (!bluezObjects[this.hciObjectPath]) {
-      this.emit('stateChange', 'error');
+    try {
+      this.bluezService = await this.bus.getProxyObject('org.bluez', '/');
+      this.bluezObjectManager = this.bluezService.getInterface(
+        'org.freedesktop.DBus.ObjectManager'
+      );
+      const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
+      debug(`Detected Object Paths:${Object.keys(bluezObjects)}`);
+      if (!bluezObjects[this.hciObjectPath]) {
+        debug(
+          `Missing Bluetooth Object, Path:${
+            this.hciObjectPath
+          }, Valid Paths:${Object.keys(bluezObjects)}}`
+        );
+        throw new Error(
+          `Missing Bluetooth Object, Path:${
+            this.hciObjectPath
+          }, Valid Paths:${Object.keys(bluezObjects)}}`
+        );
+      }
+      this.hciObject = await this.bus.getProxyObject(
+        'org.bluez',
+        this.hciObjectPath
+      );
+      this.hciProps = this.hciObject.getInterface(
+        'org.freedesktop.DBus.Properties'
+      );
+      this.hciAdapter = this.hciObject.getInterface('org.bluez.Adapter1');
+      this._scanning = (
+        await this.hciProps.Get('org.bluez.Adapter1', 'Discovering')
+      ).value;
+      if (this._scanning) {
+        this.onScanStarted();
+      }
+
+      // Devices/Services/Characteristics Discovered/Missed
+      this.bluezObjectManager.on(
+        'InterfacesAdded',
+        this.onDevicesServicesCharacteristicsDiscovered.bind(this)
+      );
+      this.bluezObjectManager.on(
+        'InterfacesRemoved',
+        this.onDevicesServicesCharacteristicsMissed.bind(this)
+      );
+
+      // Adapter Properties Change Listener
+      this.hciProps.on(
+        'PropertiesChanged',
+        this.onAdapterPropertiesChanged.bind(this)
+      );
+
+      // init finished
+      this._initialized = true;
+      debug(`async init() => done`);
+      this.emit('stateChange', 'poweredOn');
+    } catch (err) {
       debug(
-        `Missing Bluetooth Object, Path:${
-          this.hciObjectPath
-        }, Valid Paths:${Object.keys(bluezObjects)}}`
+        `async init() => error { message:${err.message}, type: ${err.type} }`
       );
-      throw new Error(
-        `Missing Bluetooth Object, Path:${
-          this.hciObjectPath
-        }, Valid Paths:${Object.keys(bluezObjects)}}`
-      );
+      this.emit('stateChange', 'error');
+      this.emit('error', err);
     }
-    this.hciObject = await this.bus.getProxyObject(
-      'org.bluez',
-      this.hciObjectPath
-    );
-    this.hciProps = this.hciObject.getInterface(
-      'org.freedesktop.DBus.Properties'
-    );
-    this.hciAdapter = this.hciObject.getInterface('org.bluez.Adapter1');
-    this._scanning = (
-      await this.hciProps.Get('org.bluez.Adapter1', 'Discovering')
-    ).value;
-    if (this._scanning) {
-      this.onScanStarted();
-    }
-
-    // Devices/Services/Characteristics Discovered/Missed
-    this.bluezObjectManager.on(
-      'InterfacesAdded',
-      this.onDevicesServicesCharacteristicsDiscovered.bind(this)
-    );
-    this.bluezObjectManager.on(
-      'InterfacesRemoved',
-      this.onDevicesServicesCharacteristicsMissed.bind(this)
-    );
-
-    // Adapter Properties Change Listener
-    this.hciProps.on(
-      'PropertiesChanged',
-      this.onAdapterPropertiesChanged.bind(this)
-    );
-
-    // init finished
-    this._initialized = true;
-    debug(`async init() => done`);
-    this.emit('stateChange', 'poweredOn');
   }
 
   option(proxy, prop, defaultValue = null) {

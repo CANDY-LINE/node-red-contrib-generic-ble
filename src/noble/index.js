@@ -37,6 +37,7 @@ class PeripheralRemovableNoble extends Noble {
   constructor(bindings) {
     super(bindings);
     bindings.on('miss', this.onMiss.bind(this));
+    bindings.on('error', this.onError.bind(this));
   }
   onMiss(uuid) {
     debug(`<onMiss> this.initialized => ${this.initialized}`);
@@ -53,6 +54,10 @@ class PeripheralRemovableNoble extends Noble {
       }
       debug(`Peripheral(uuid:${uuid}) has gone.`);
     }
+  }
+  onError(err) {
+    this.initialized = false;
+    this.emit('error', err);
   }
 }
 
