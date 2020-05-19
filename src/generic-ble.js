@@ -236,7 +236,6 @@ async function toDetailedObject(peripheral, RED) {
                     c.properties.indexOf('writeWithoutResponse') >= 0,
                 };
                 if (
-                  !peripheral.advertisement.localName &&
                   peripheral.state === 'connected' &&
                   c.type === 'org.bluetooth.characteristic.gap.device_name'
                 ) {
