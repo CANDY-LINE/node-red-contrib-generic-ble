@@ -447,9 +447,12 @@ module.exports = function (RED) {
               peripheral._connectHandlerSet = false;
               peripheral.discoverAllServicesAndCharacteristics(
                 (err, services) => {
+                  debug(
+                    `<connectPeripheral${this.uuid}:discoverAllServicesAndCharacteristics> Callback OK!`
+                  );
                   if (err) {
                     this.log(
-                      `<connectPeripheral:discoverAllServicesAndCharacteristics> error:${err.message}`
+                      `<connectPeripheral${this.uuid}:discoverAllServicesAndCharacteristics> error:${err.message}`
                     );
                     return;
                   }
