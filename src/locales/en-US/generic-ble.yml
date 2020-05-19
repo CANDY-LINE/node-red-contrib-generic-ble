@@ -31,3 +31,4 @@ generic-ble:
     error: error
     connecting: connecting
     disconnecting: disconnecting
+    missing: missing

@@ -42,6 +42,7 @@ class PeripheralRemovableNoble extends Noble {
   onMiss(uuid) {
     debug(`<onMiss> this.initialized => ${this.initialized}`);
     if (this._peripherals[uuid]) {
+      const peripheral = this._peripherals[uuid];
       delete this._peripherals[uuid];
       delete this._services[uuid];
       delete this._characteristics[uuid];
@@ -53,6 +54,7 @@ class PeripheralRemovableNoble extends Noble {
         this._discoveredPeripheralUUids.splice(previouslyDiscoverdIndex, 1);
       }
       debug(`Peripheral(uuid:${uuid}) has gone.`);
+      this.emit('miss', peripheral);
     }
   }
   onError(err) {

@@ -43,8 +43,9 @@ const configBleDevices = {};
 const genericBleState = {
   scanning: false,
 };
-let onDiscover;
-let onStateChange;
+const handlers = {
+  // global event handlers
+};
 
 function getAddressOrUUID(peripheral) {
   if (!peripheral) {
@@ -96,7 +97,7 @@ function valToBuffer(hexOrIntArray, len = 1) {
   return Buffer.alloc(0);
 }
 
-function onDiscoverFunc() {
+function onDiscoverFunc(RED) {
   return (peripheral) => {
     const addressOrUUID = getAddressOrUUID(peripheral);
     if (!addressOrUUID) {
@@ -106,9 +107,29 @@ function onDiscoverFunc() {
       debug(
         `[GenericBLE:DISCOVER] <${addressOrUUID}> ${peripheral.advertisement.localName}`
       );
+      RED.nodes.eachNode((node) => {
+        if (node.type === 'Generic BLE' && peripheral.uuid === node.uuid) {
+          RED.nodes.getNode(node.id).discovered();
+        }
+      });
     } else {
       deleteBleDevice(addressOrUUID);
     }
+  };
+}
+
+function onMissFunc(RED) {
+  return (peripheral) => {
+    const addressOrUUID = getAddressOrUUID(peripheral);
+    deleteBleDevice(addressOrUUID);
+    debug(
+      `[GenericBLE:MISS] <${addressOrUUID}> ${peripheral.advertisement.localName}`
+    );
+    RED.nodes.eachNode((node) => {
+      if (node.type === 'Generic BLE' && node.uuid === peripheral.uuid) {
+        RED.nodes.getNode(node.id).missed();
+      }
+    });
   };
 }
 
@@ -128,6 +149,13 @@ function onStateChangeFunc(RED) {
   };
 }
 
+function onErrorFunc(RED) {
+  return (err) => {
+    debug(`[GenericBLE:ERROR] ${err.message}, ${err.stack}`);
+    RED.log.error(err);
+  };
+}
+
 function stopBLEScanning(RED) {
   if (!genericBleState.scanning) {
     return;
@@ -141,16 +169,29 @@ function startBLEScanning(RED) {
   if (genericBleState.scanning) {
     return;
   }
-  if (!onDiscover) {
-    onDiscover = onDiscoverFunc();
+  if (!handlers.onDiscover) {
+    handlers.onDiscover = onDiscoverFunc(RED);
   }
-  if (!onStateChange) {
-    onStateChange = onStateChangeFunc(RED);
+  if (!handlers.onMiss) {
+    handlers.onMiss = onMissFunc(RED);
   }
-  noble.removeListener('stateChange', onStateChange);
-  noble.removeListener('discover', onDiscover);
-  noble.addListener('stateChange', onStateChange);
-  noble.addListener('discover', onDiscover);
+  if (!handlers.onStateChange) {
+    handlers.onStateChange = onStateChangeFunc(RED);
+  }
+  if (!handlers.onError) {
+    handlers.onError = onErrorFunc(RED);
+  }
+
+  noble.removeListener('discover', handlers.onDiscover);
+  noble.removeListener('miss', handlers.onMiss);
+  noble.removeListener('stateChange', handlers.onStateChange);
+  noble.removeListener('error', handlers.onError);
+
+  noble.addListener('discover', handlers.onDiscover);
+  noble.addListener('miss', handlers.onMiss);
+  noble.addListener('stateChange', handlers.onStateChange);
+  noble.addListener('error', handlers.onError);
+
   if (noble.state === 'poweredOn') {
     noble.startScanning([], true);
     genericBleState.scanning = true;
@@ -276,8 +317,6 @@ async function toDetailedObject(peripheral, RED) {
 }
 
 module.exports = function (RED) {
-  // Start Noble Initialization
-  RED.log.debug(`noble.state=>${noble.state}`);
   function toCharacteristic(c) {
     const self = {
       uuid: c.uuid,
@@ -336,6 +375,7 @@ module.exports = function (RED) {
         'error',
         'connecting',
         'disconnecting',
+        'missing',
       ].forEach((ev) => {
         this.on(ev, () => {
           try {
@@ -347,7 +387,6 @@ module.exports = function (RED) {
           }
         });
       });
-      this.emit('disconnected');
       this.on('close', (done) => {
         if (genericBleState.scanning) {
           stopBLEScanning();
@@ -357,8 +396,27 @@ module.exports = function (RED) {
         );
         this.shutdown().then(done).catch(done);
       });
+      process.nextTick(() => {
+        if (noble.initialized) {
+          this.emit('missing');
+        }
+      });
     }
-
+    async discovered() {
+      debugCfg(
+        `<discovered:${this.uuid}> noble._peripherals=>${Object.keys(
+          noble._peripherals
+        )}`
+      );
+      const peripheral = noble._peripherals[this.uuid];
+      if (peripheral) {
+        this.emit(peripheral.state || 'disconnected');
+      }
+    }
+    async missed() {
+      debugCfg(`<missed:${this.uuid}>`);
+      this.emit('missing');
+    }
     async connectPeripheral() {
       debugCfg(
         `<connectPeripheral:${this.uuid}> noble._peripherals=>${Object.keys(
@@ -367,7 +425,7 @@ module.exports = function (RED) {
       );
       const peripheral = noble._peripherals[this.uuid];
       if (!peripheral) {
-        this.emit('disconnected');
+        this.emit('missing');
         return;
       }
       debug(
@@ -448,7 +506,7 @@ module.exports = function (RED) {
         debugCfg(
           `<disconnectPeripheral:${this.uuid}> peripheral is already gone.`
         );
-        this.emit('disconnected');
+        this.emit('missing');
         return;
       }
       if (peripheral.state === 'disconnected') {
@@ -721,7 +779,7 @@ module.exports = function (RED) {
             text: `generic-ble.status.connected`,
           });
         });
-        ['disconnected', 'error'].forEach((ev) => {
+        ['disconnected', 'error', 'missing'].forEach((ev) => {
           this.on(ev, () => {
             this.status({
               fill: 'red',
@@ -809,7 +867,7 @@ module.exports = function (RED) {
             text: `generic-ble.status.connected`,
           });
         });
-        ['disconnected', 'error'].forEach((ev) => {
+        ['disconnected', 'error', 'missing'].forEach((ev) => {
           this.on(ev, () => {
             this.status({
               fill: 'red',
@@ -852,9 +910,16 @@ module.exports = function (RED) {
   RED.events.on('runtime-event', (ev) => {
     debugApi(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
     if (ev.id === 'runtime-state' && Object.keys(configBleDevices).length > 0) {
-      stopBLEScanning(RED);
-      bleDevices.flushAll();
-      startBLEScanning(RED);
+      if (noble.initialized) {
+        stopBLEScanning(RED);
+        bleDevices.flushAll();
+        startBLEScanning(RED);
+      } else {
+        RED.log.error(
+          `BlueZ Permission Error. See 'Installation Note' in README at https://flows.nodered.org/node/node-red-contrib-generic-ble for addressing the issue.`
+        );
+        Object.values(configBleDevices).forEach((node) => node.emit('error'));
+      }
     }
   });
 
