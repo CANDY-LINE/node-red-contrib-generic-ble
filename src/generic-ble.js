@@ -58,8 +58,8 @@ function getAddressOrUUID(peripheral) {
 }
 
 function deleteBleDevice(addressOrUUID) {
-  const value = bleDevices.del(addressOrUUID);
-  if (value) {
+  const uuid = bleDevices.del(addressOrUUID);
+  if (uuid) {
     debug(`[GenericBLE] Delete => ${addressOrUUID}`);
   }
 }
