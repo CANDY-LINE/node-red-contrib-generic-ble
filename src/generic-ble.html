@@ -163,14 +163,11 @@
   const LIST_BLE_DEVICE_INTERVAL_MS = 10 * 1000;
   const LIST_BLE_DEVICE_DELAY_MS = 5 * 1000;
   var charBuff = [];
-  function getAddressOrUUID(peripheral) {
+  function getUuid(peripheral) {
     if (!peripheral) {
       return null;
     }
-    if (!peripheral.address || peripheral.address === 'unknown') {
-      return peripheral.uuid;
-    }
-    return peripheral.address;
+    return peripheral.uuid;
   }
   const state = {
     fetchBleDevicesTask: null
@@ -325,7 +322,7 @@
 
         $.ajax({
           cache: false,
-          url: '__bledev/' + encodeURIComponent(getAddressOrUUID(selected)),
+          url: '__bledev/' + encodeURIComponent(getUuid(selected)),
           dataType: 'json',
           success: function(bleDevice) {
             spin.remove();

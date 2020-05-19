@@ -16,7 +16,6 @@
  */
 
 import noble from './noble';
-import NodeCache from 'node-cache';
 import debugLogger from 'debug';
 
 const debug = debugLogger('node-red-contrib-generic-ble:index');
@@ -35,10 +34,6 @@ if (process.env.NODE_ENV !== 'test') {
   debug('Requiring "source-map-support/register"...');
   require('source-map-support/register');
 }
-const bleDevices = new NodeCache({
-  stdTTL: 10 * 60 * 1000,
-  checkperiod: 60 * 1000,
-});
 const configBleDevices = {};
 const genericBleState = {
   scanning: false,
@@ -55,13 +50,6 @@ function getAddressOrUUID(peripheral) {
     return peripheral.uuid;
   }
   return peripheral.address;
-}
-
-function deleteBleDevice(addressOrUUID) {
-  const uuid = bleDevices.del(addressOrUUID);
-  if (uuid) {
-    debug(`[GenericBLE] Delete => ${addressOrUUID}`);
-  }
 }
 
 function valToBuffer(hexOrIntArray, len = 1) {
@@ -103,7 +91,6 @@ function onDiscoverFunc(RED) {
     if (!addressOrUUID) {
       return;
     } else if (peripheral.connectable) {
-      bleDevices.set(addressOrUUID, peripheral.uuid);
       debug(
         `[GenericBLE:DISCOVER] <${addressOrUUID}> ${peripheral.advertisement.localName}`
       );
@@ -112,8 +99,6 @@ function onDiscoverFunc(RED) {
           RED.nodes.getNode(node.id).discovered();
         }
       });
-    } else {
-      deleteBleDevice(addressOrUUID);
     }
   };
 }
@@ -121,7 +106,6 @@ function onDiscoverFunc(RED) {
 function onMissFunc(RED) {
   return (peripheral) => {
     const addressOrUUID = getAddressOrUUID(peripheral);
-    deleteBleDevice(addressOrUUID);
     debug(
       `[GenericBLE:MISS] <${addressOrUUID}> ${peripheral.advertisement.localName}`
     );
@@ -918,7 +902,6 @@ module.exports = function (RED) {
     debugApi(`[GenericBLE] <runtime-event> ${JSON.stringify(ev)}`);
     if (ev.id === 'runtime-state' && Object.keys(configBleDevices).length > 0) {
       stopBLEScanning(RED);
-      bleDevices.flushAll();
       startBLEScanning(RED);
     }
   });
@@ -967,15 +950,12 @@ module.exports = function (RED) {
       try {
         const body = (
           await Promise.all(
-            bleDevices.keys().map((k) => {
+            Object.keys(noble._peripherals).map((uuid) => {
               // load the live object for invoking functions
               // as cached object is disconnected from noble context
-              const uuid = bleDevices.get(k);
               const apiObject = toApiObject(noble._peripherals[uuid]);
               if (apiObject) {
                 return apiObject;
-              } else {
-                deleteBleDevice(uuid, RED);
               }
             })
           )
@@ -997,18 +977,11 @@ module.exports = function (RED) {
   );
   // __bledev endpoint
   RED.httpAdmin.get(
-    '/__bledev/:address',
+    '/__bledev/:uuid',
     RED.auth.needsPermission('generic-ble.read'),
     async (req, res) => {
       debugApi(`${req.method}:${req.originalUrl}`);
-      const address = req.params.address;
-      if (!address) {
-        return res
-          .status(404)
-          .send({ status: 404, message: 'missing peripheral' })
-          .end();
-      }
-      const uuid = bleDevices.get(address);
+      const { uuid } = req.params;
       if (!uuid) {
         return res
           .status(404)
@@ -1028,13 +1001,13 @@ module.exports = function (RED) {
       try {
         const bleDevice = await toDetailedObject(peripheral, RED);
         debugApi(
-          `/__bledev/${address} OUTPUT`,
+          `/__bledev/${uuid} OUTPUT`,
           JSON.stringify(bleDevice, null, 2)
         );
         return res.json(bleDevice);
       } catch (err) {
         RED.log.error(
-          `/__bledev/${address} err:${err}\n=>${err.stack || err.message}`
+          `/__bledev/${uuid} err:${err}\n=>${err.stack || err.message}`
         );
         if (!res._headerSent) {
           return res
