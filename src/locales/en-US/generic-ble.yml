@@ -13,7 +13,6 @@ generic-ble:
     notification: Emit notify events
     customType: (Custom Type)
     unnamedChr: <Unnamed>
-    muteNotifyEvents: Mute notify events
     scanning: BLE Scanning
     applyBleDevice: Apply
     noSignal: no signal

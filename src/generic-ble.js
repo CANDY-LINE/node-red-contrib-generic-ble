@@ -186,6 +186,8 @@ function startBLEScanning(RED) {
   if (noble.state === 'poweredOn') {
     noble.startScanning([], true);
     genericBleState.scanning = true;
+  } else {
+    debug(`noble.state=>${noble.state}`);
   }
 }
 
@@ -359,7 +361,6 @@ module.exports = function (RED) {
       this.localName = n.localName;
       this.address = n.address;
       this.uuid = n.uuid;
-      this.muteNotifyEvents = n.muteNotifyEvents;
       this.characteristics = [];
       const key = getAddressOrUUID(n);
       if (key) {

@@ -210,8 +210,6 @@
         "localName": "CC2650 SensorTag",
         "address": "11:22:33:aa:bb:cc",
         "uuid": "112233aabbcc",
-        "muteNotifyEvents": true,
-        "operationTimeout": "5000",
         "characteristics": [
             {
                 "uuid": "2a50",
