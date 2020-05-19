@@ -20,9 +20,6 @@ import debugLogger from 'debug';
 import dbus from 'dbus-next';
 
 const debug = debugLogger('node-red-contrib-generic-ble:noble:bluez');
-const CHRARACTERISTICS_DISCOVERY_TIMEOUT_MS = parseInt(
-  process.env.CHRARACTERISTICS_DISCOVERY_TIMEOUT_MS || '500'
-);
 
 // Workaround for a Jest Issue
 // https://github.com/kulshekhar/ts-jest/issues/727#issuecomment-422747294
@@ -360,48 +357,30 @@ class BluezBindings extends EventEmitter {
     debug(
       `discoverCharacteristics:deviceUuid=>${deviceUuid},serviceUuid=>${serviceUuid},characteristicUuids=>${characteristicUuids}`
     );
-    let timeout = 0;
-    let discoveredCharacteristics = await this._listCharacteristics(
+    const discoveredCharacteristics = await this._listCharacteristics(
       deviceUuid,
       serviceUuid,
       characteristicUuids
     );
-    if (!discoveredCharacteristics) {
-      timeout = CHRARACTERISTICS_DISCOVERY_TIMEOUT_MS;
-    }
-    setTimeout(async () => {
-      if (!discoveredCharacteristics) {
-        discoveredCharacteristics = await this._listCharacteristics(
-          deviceUuid,
-          serviceUuid,
-          characteristicUuids
-        );
+    const resultChrs = Object.values(discoveredCharacteristics || {}).map(
+      (chr) => {
+        return {
+          uuid: this._stripDashes(chr.UUID.value),
+          properties: chr.Flags.value,
+        };
       }
-      const resultChrs = Object.values(discoveredCharacteristics || {}).map(
-        (chr) => {
-          return {
-            uuid: this._stripDashes(chr.UUID.value),
-            properties: chr.Flags.value,
-          };
-        }
+    );
+    debug(`resultChrs => ${JSON.stringify(resultChrs)}`);
+    try {
+      this.emit('characteristicsDiscover', deviceUuid, serviceUuid, resultChrs);
+      debug(
+        `[${deviceUuid}] OK. Found ${resultChrs.length} Characteristics. characteristicsDiscover event`
       );
-      debug(`resultChrs => ${JSON.stringify(resultChrs)}`);
-      try {
-        this.emit(
-          'characteristicsDiscover',
-          deviceUuid,
-          serviceUuid,
-          resultChrs
-        );
-        debug(
-          `[${deviceUuid}] OK. Found ${resultChrs.length} Characteristics.`
-        );
-      } catch (err) {
-        debug(
-          `Failed to emit 'characteristicsDiscover' event. message:${err.message}`
-        );
-      }
-    }, timeout);
+    } catch (err) {
+      debug(
+        `Failed to emit 'characteristicsDiscover' event. message:${err.message}`
+      );
+    }
   }
 
   async read(deviceUuid, serviceUuid, characteristicUuid) {

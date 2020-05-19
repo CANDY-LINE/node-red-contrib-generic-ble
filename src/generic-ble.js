@@ -215,6 +215,9 @@ async function toDetailedObject(peripheral, RED) {
           };
           peripheral.once('disconnect', discoveryInterrupted);
           peripheral.discoverAllServicesAndCharacteristics((err, services) => {
+            debug(
+              `<toDetailedObject${peripheral.uuid}:discoverAllServicesAndCharacteristics> Callback OK!`
+            );
             peripheral.removeListener('disconnect', discoveryInterrupted);
             if (err) {
               return reject(err);

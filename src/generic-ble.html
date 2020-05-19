@@ -161,7 +161,8 @@
     return peripheral.uuid;
   }
   const state = {
-    fetchBleDevicesTask: null
+    fetchBleDevicesTask: null,
+    lastBledevRequest: null
   };
   RED.nodes.registerType('Generic BLE',{
     category: 'config',
@@ -187,9 +188,15 @@
     },
     oneditcancel: function() {
       state.fetchBleDevicesTask = null;
+      if (state.lastBledevRequest) {
+        state.lastBledevRequest.abort();
+      }
     },
     oneditsave: function() {
       state.fetchBleDevicesTask = null;
+      if (state.lastBledevRequest) {
+        state.lastBledevRequest.abort();
+      }
       var address = $('#node-config-input-address').val();
       if (address) {
         $('#node-config-input-address').val(address.toLowerCase());
@@ -283,7 +290,6 @@
         return current ? toDeviceKey(current) : '';
       }
 
-      var lastBledevRequest = null;
       function applyBleDevice() {
         var selected = getBleDevice();
         if (!selected) {
@@ -299,16 +305,16 @@
           {style:'display:block; margin-left:auto; margin-right:auto;'})
           .appendTo($('#node-config-input-characteristics-container'));
 
-        if (lastBledevRequest) {
-          lastBledevRequest.abort();
-          lastBledevRequest = null;
+        if (state.lastBledevRequest) {
+          state.lastBledevRequest.abort();
+          state.lastBledevRequest = null;
         }
-        lastBledevRequest = $.ajax({
+        state.lastBledevRequest = $.ajax({
           cache: false,
           url: '__bledev/' + encodeURIComponent(getUuid(selected)),
           dataType: 'json',
           success: function(bleDevice) {
-            lastBledevRequest = null;
+            state.lastBledevRequest = null;
             spin.remove();
             if (getBleDeviceKey() === selectedId) {
               clearCharacteristics();
@@ -333,7 +339,7 @@
             }
           },
           error: function () {
-            lastBledevRequest = null;
+            state.lastBledevRequest = null;
             spin.remove();
             if (getBleDeviceKey() === selectedId) {
               clearCharacteristics();
