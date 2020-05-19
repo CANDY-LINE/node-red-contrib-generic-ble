@@ -183,7 +183,7 @@ class BluezBindings extends EventEmitter {
     }
   }
 
-  option(proxy, prop, defaultValue = null) {
+  _option(proxy, prop, defaultValue = null) {
     if (proxy[prop]) {
       return proxy[prop].value;
     }
@@ -592,7 +592,7 @@ class BluezBindings extends EventEmitter {
       }
     });
 
-    const rssi = this.option(device, 'RSSI');
+    const rssi = this._option(device, 'RSSI');
     const address = (device.Address.value || '').toLowerCase();
     const addressType = device.AddressType.value;
     const connectable = !device.Blocked.value;
@@ -612,9 +612,9 @@ class BluezBindings extends EventEmitter {
         })
       : null;
     const advertisement = {
-      localName: this.option(device, 'Alias'),
-      txPowerLevel: this.option(device, 'TxPower'),
-      serviceUuids: this.option(device, 'UUIDs', []),
+      localName: this._option(device, 'Alias'),
+      txPowerLevel: this._option(device, 'TxPower'),
+      serviceUuids: this._option(device, 'UUIDs', []),
       manufacturerData: manufacturerData ? Buffer.from(manufacturerData) : null,
       serviceData,
     };
