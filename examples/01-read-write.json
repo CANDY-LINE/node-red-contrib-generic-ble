@@ -1,91 +1,93 @@
 [
     {
-        "id": "31e26832.b13058",
+        "id": "8e787ad.6aa1688",
         "type": "tab",
         "label": "Generic BLE Example",
         "disabled": false,
-        "info": "This flow shows BLE Read/Write example.\n"
+        "info": "This flow shows BLE Read/Write example.\n\nTI's CC2650 user's guide is abailable at https://processors.wiki.ti.com/index.php/CC2650_SensorTag_User%27s_Guide#Use_of_buttons\n\nCC2650's base UUID is f0000000-0451-4000-b000-000000000000. Replace last 0000 in f0000000 with the sensor's UUID in order to find the 128-bit characteristic UUID."
     },
     {
-        "id": "72e93d17.88e32c",
+        "id": "4f0acd3.30d5234",
         "type": "Generic BLE in",
-        "z": "31e26832.b13058",
+        "z": "8e787ad.6aa1688",
         "name": "",
-        "genericBle": "bee5eec.96bf31",
+        "genericBle": "22ee5c9e.9aa894",
         "useString": false,
         "notification": true,
-        "x": 450,
-        "y": 320,
+        "x": 570,
+        "y": 360,
         "wires": [
             [
-                "ef614de2.5caa4"
+                "feeba80a.a3064"
             ]
         ]
     },
     {
-        "id": "d0252715.dac4b8",
+        "id": "94a959c7.4c4c7",
         "type": "inject",
-        "z": "31e26832.b13058",
-        "name": "Get Battery Level",
-        "topic": "2a19",
+        "z": "8e787ad.6aa1688",
+        "name": "Get Temperature (AA01)",
+        "topic": "f000aa0104514000b000000000000000",
         "payload": "",
         "payloadType": "date",
         "repeat": "",
         "crontab": "",
         "once": false,
-        "x": 200,
-        "y": 220,
+        "onceDelay": "",
+        "x": 180,
+        "y": 300,
         "wires": [
             [
-                "72e93d17.88e32c"
+                "4f0acd3.30d5234"
             ]
         ]
     },
     {
-        "id": "ef614de2.5caa4",
+        "id": "feeba80a.a3064",
         "type": "debug",
-        "z": "31e26832.b13058",
+        "z": "8e787ad.6aa1688",
         "name": "",
         "active": true,
         "console": "false",
         "complete": "false",
-        "x": 690,
+        "x": 770,
         "y": 360,
         "wires": []
     },
     {
-        "id": "73fbb96b.2b7cf8",
+        "id": "7efff245.e4d254",
         "type": "Generic BLE out",
-        "z": "31e26832.b13058",
+        "z": "8e787ad.6aa1688",
         "name": "",
-        "genericBle": "bee5eec.96bf31",
-        "x": 450,
-        "y": 400,
+        "genericBle": "22ee5c9e.9aa894",
+        "x": 790,
+        "y": 180,
         "wires": []
     },
     {
-        "id": "66eb9698.1366b8",
+        "id": "769a559a.dc9a4c",
         "type": "inject",
-        "z": "31e26832.b13058",
-        "name": "Write Transient Data",
+        "z": "8e787ad.6aa1688",
+        "name": "Start Temperature Measurement",
         "topic": "",
-        "payload": "{\"f000aa0204514000b000000000000000\":\"ca\"}",
+        "payload": "{\"f000aa0204514000b000000000000000\":\"01\"}",
         "payloadType": "json",
         "repeat": "",
         "crontab": "",
         "once": false,
-        "x": 210,
-        "y": 460,
+        "onceDelay": "",
+        "x": 510,
+        "y": 120,
         "wires": [
             [
-                "73fbb96b.2b7cf8"
+                "7efff245.e4d254"
             ]
         ]
     },
     {
-        "id": "2b7c6888.26cb88",
+        "id": "174514e3.b64d63",
         "type": "inject",
-        "z": "31e26832.b13058",
+        "z": "8e787ad.6aa1688",
         "name": "Get All Readable Attributes",
         "topic": "",
         "payload": "",
@@ -93,120 +95,128 @@
         "repeat": "",
         "crontab": "",
         "once": false,
-        "x": 230,
-        "y": 140,
+        "x": 190,
+        "y": 200,
         "wires": [
             [
-                "72e93d17.88e32c"
+                "4f0acd3.30d5234"
             ]
         ]
     },
     {
-        "id": "1589318.4ea604f",
+        "id": "e4653fa6.1df4f8",
         "type": "inject",
-        "z": "31e26832.b13058",
-        "name": "Poll Notify Events",
-        "topic": "2a19",
+        "z": "8e787ad.6aa1688",
+        "name": "Start Temperature Notify Events for 5 seconds",
+        "topic": "f000aa0104514000b000000000000000",
         "payload": "{\"notify\":true,\"period\":5000}",
         "payloadType": "json",
         "repeat": "",
         "crontab": "",
         "once": false,
-        "x": 200,
-        "y": 300,
+        "onceDelay": "",
+        "x": 250,
+        "y": 340,
         "wires": [
             [
-                "72e93d17.88e32c"
+                "4f0acd3.30d5234"
             ]
         ]
     },
     {
-        "id": "164faa57.c92a66",
+        "id": "81b85e32.1b8c68",
         "type": "inject",
-        "z": "31e26832.b13058",
-        "name": "Read Trransient Data",
-        "topic": "f000aa0204514000b000000000000000",
+        "z": "8e787ad.6aa1688",
+        "name": "Connect a CC2650 SensorTag",
+        "topic": "connect",
         "payload": "",
         "payloadType": "date",
         "repeat": "",
         "crontab": "",
         "once": false,
-        "x": 220,
-        "y": 360,
+        "onceDelay": "",
+        "x": 500,
+        "y": 80,
         "wires": [
             [
-                "72e93d17.88e32c"
+                "7efff245.e4d254"
             ]
         ]
     },
     {
-        "id": "bee5eec.96bf31",
+        "id": "ea53fb2c.8f1cb8",
+        "type": "inject",
+        "z": "8e787ad.6aa1688",
+        "name": "Disonnect a CC2650 SensorTag",
+        "topic": "disconnect",
+        "payload": "",
+        "payloadType": "date",
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "",
+        "x": 210,
+        "y": 440,
+        "wires": [
+            [
+                "4f0acd3.30d5234"
+            ]
+        ]
+    },
+    {
+        "id": "fca7f32.52ff19",
+        "type": "comment",
+        "z": "8e787ad.6aa1688",
+        "name": "Perform after connected",
+        "info": "",
+        "x": 190,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "42bd68d3.b93bc8",
+        "type": "comment",
+        "z": "8e787ad.6aa1688",
+        "name": "Perform after Temperature Measurement Started",
+        "info": "",
+        "x": 260,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "39802692.3d633a",
+        "type": "comment",
+        "z": "8e787ad.6aa1688",
+        "name": "Disconnect a peripheral device",
+        "info": "",
+        "x": 210,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "d3cf629c.017a98",
+        "type": "comment",
+        "z": "8e787ad.6aa1688",
+        "name": "Set up a peripheral device",
+        "info": "",
+        "x": 490,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "22ee5c9e.9aa894",
         "type": "Generic BLE",
         "z": "",
         "localName": "CC2650 SensorTag",
-        "address": "88:99:00:00:FF:FF",
-        "uuid": "666e850ba45c4952b8bed27a8133ecb2",
+        "address": "11:22:33:aa:bb:cc",
+        "uuid": "112233aabbcc",
         "muteNotifyEvents": true,
         "operationTimeout": "5000",
         "characteristics": [
             {
-                "uuid": "2a23",
-                "name": "System ID",
-                "type": "org.bluetooth.characteristic.system_id",
-                "notifiable": false,
-                "readable": true,
-                "writable": false,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "2a24",
-                "name": "Model Number String",
-                "type": "org.bluetooth.characteristic.model_number_string",
-                "notifiable": false,
-                "readable": true,
-                "writable": false,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "2a25",
-                "name": "Serial Number String",
-                "type": "org.bluetooth.characteristic.serial_number_string",
-                "notifiable": false,
-                "readable": true,
-                "writable": false,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "2a26",
-                "name": "Firmware Revision String",
-                "type": "org.bluetooth.characteristic.firmware_revision_string",
-                "notifiable": false,
-                "readable": true,
-                "writable": false,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "2a27",
-                "name": "Hardware Revision String",
-                "type": "org.bluetooth.characteristic.hardware_revision_string",
-                "notifiable": false,
-                "readable": true,
-                "writable": false,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "2a28",
-                "name": "Software Revision String",
-                "type": "org.bluetooth.characteristic.software_revision_string",
-                "notifiable": false,
-                "readable": true,
-                "writable": false,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "2a29",
-                "name": "Manufacturer Name String",
-                "type": "org.bluetooth.characteristic.manufacturer_name_string",
+                "uuid": "2a50",
+                "name": "PnP ID",
+                "type": "org.bluetooth.characteristic.pnp_id",
                 "notifiable": false,
                 "readable": true,
                 "writable": false,
@@ -222,30 +232,84 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "2a50",
-                "name": "PnP ID",
-                "type": "org.bluetooth.characteristic.pnp_id",
+                "uuid": "2a29",
+                "name": "Manufacturer Name String",
+                "type": "org.bluetooth.characteristic.manufacturer_name_string",
                 "notifiable": false,
                 "readable": true,
                 "writable": false,
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "2a19",
-                "name": "Battery Level",
-                "type": "org.bluetooth.characteristic.battery_level",
-                "notifiable": true,
+                "uuid": "2a28",
+                "name": "Software Revision String",
+                "type": "org.bluetooth.characteristic.software_revision_string",
+                "notifiable": false,
                 "readable": true,
                 "writable": false,
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000aa0104514000b000000000000000",
+                "uuid": "2a27",
+                "name": "Hardware Revision String",
+                "type": "org.bluetooth.characteristic.hardware_revision_string",
+                "notifiable": false,
+                "readable": true,
+                "writable": false,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "2a26",
+                "name": "Firmware Revision String",
+                "type": "org.bluetooth.characteristic.firmware_revision_string",
+                "notifiable": false,
+                "readable": true,
+                "writable": false,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "2a25",
+                "name": "Serial Number String",
+                "type": "org.bluetooth.characteristic.serial_number_string",
+                "notifiable": false,
+                "readable": true,
+                "writable": false,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "2a24",
+                "name": "Model Number String",
+                "type": "org.bluetooth.characteristic.model_number_string",
+                "notifiable": false,
+                "readable": true,
+                "writable": false,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "2a23",
+                "name": "System ID",
+                "type": "org.bluetooth.characteristic.system_id",
+                "notifiable": false,
+                "readable": true,
+                "writable": false,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "ffe1",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": true,
-                "readable": true,
+                "readable": false,
                 "writable": false,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "f000aa0304514000b000000000000000",
+                "name": "<Unnamed>",
+                "type": "(Custom Type)",
+                "notifiable": false,
+                "readable": true,
+                "writable": true,
                 "writeWithoutResponse": false
             },
             {
@@ -258,7 +322,25 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000aa0304514000b000000000000000",
+                "uuid": "f000aa0104514000b000000000000000",
+                "name": "<Unnamed>",
+                "type": "(Custom Type)",
+                "notifiable": true,
+                "readable": true,
+                "writable": false,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "f000aa2304514000b000000000000000",
+                "name": "<Unnamed>",
+                "type": "(Custom Type)",
+                "notifiable": false,
+                "readable": true,
+                "writable": true,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "f000aa2204514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": false,
@@ -276,7 +358,7 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000aa2204514000b000000000000000",
+                "uuid": "f000aa4404514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": false,
@@ -285,7 +367,7 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000aa2304514000b000000000000000",
+                "uuid": "f000aa4204514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": false,
@@ -303,7 +385,7 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000aa4204514000b000000000000000",
+                "uuid": "f000aa6604514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": false,
@@ -312,52 +394,7 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000aa4404514000b000000000000000",
-                "name": "<Unnamed>",
-                "type": "(Custom Type)",
-                "notifiable": false,
-                "readable": true,
-                "writable": true,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "f000aa8104514000b000000000000000",
-                "name": "<Unnamed>",
-                "type": "(Custom Type)",
-                "notifiable": true,
-                "readable": true,
-                "writable": false,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "f000aa8204514000b000000000000000",
-                "name": "<Unnamed>",
-                "type": "(Custom Type)",
-                "notifiable": false,
-                "readable": true,
-                "writable": true,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "f000aa8304514000b000000000000000",
-                "name": "<Unnamed>",
-                "type": "(Custom Type)",
-                "notifiable": false,
-                "readable": true,
-                "writable": true,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "f000aa7104514000b000000000000000",
-                "name": "<Unnamed>",
-                "type": "(Custom Type)",
-                "notifiable": true,
-                "readable": true,
-                "writable": false,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "f000aa7204514000b000000000000000",
+                "uuid": "f000aa6504514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": false,
@@ -375,16 +412,25 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "ffe1",
+                "uuid": "f000aa7204514000b000000000000000",
+                "name": "<Unnamed>",
+                "type": "(Custom Type)",
+                "notifiable": false,
+                "readable": true,
+                "writable": true,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "f000aa7104514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": true,
-                "readable": false,
+                "readable": true,
                 "writable": false,
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000aa6504514000b000000000000000",
+                "uuid": "f000aa8304514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": false,
@@ -393,7 +439,7 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000aa6604514000b000000000000000",
+                "uuid": "f000aa8204514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": false,
@@ -402,7 +448,16 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000ac0104514000b000000000000000",
+                "uuid": "f000aa8104514000b000000000000000",
+                "name": "<Unnamed>",
+                "type": "(Custom Type)",
+                "notifiable": true,
+                "readable": true,
+                "writable": false,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "f000ac0304514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": false,
@@ -420,29 +475,11 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000ac0304514000b000000000000000",
+                "uuid": "f000ac0104514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": false,
                 "readable": true,
-                "writable": true,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "f000ccc104514000b000000000000000",
-                "name": "<Unnamed>",
-                "type": "(Custom Type)",
-                "notifiable": true,
-                "readable": true,
-                "writable": false,
-                "writeWithoutResponse": false
-            },
-            {
-                "uuid": "f000ccc204514000b000000000000000",
-                "name": "<Unnamed>",
-                "type": "(Custom Type)",
-                "notifiable": false,
-                "readable": false,
                 "writable": true,
                 "writeWithoutResponse": false
             },
@@ -456,31 +493,22 @@
                 "writeWithoutResponse": false
             },
             {
-                "uuid": "f000ffc104514000b000000000000000",
-                "name": "<Unnamed>",
-                "type": "(Custom Type)",
-                "notifiable": true,
-                "readable": false,
-                "writable": true,
-                "writeWithoutResponse": true
-            },
-            {
-                "uuid": "f000ffc204514000b000000000000000",
-                "name": "<Unnamed>",
-                "type": "(Custom Type)",
-                "notifiable": true,
-                "readable": false,
-                "writable": true,
-                "writeWithoutResponse": true
-            },
-            {
-                "uuid": "f000ffc304514000b000000000000000",
+                "uuid": "f000ccc204514000b000000000000000",
                 "name": "<Unnamed>",
                 "type": "(Custom Type)",
                 "notifiable": false,
                 "readable": false,
                 "writable": true,
-                "writeWithoutResponse": true
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "f000ccc104514000b000000000000000",
+                "name": "<Unnamed>",
+                "type": "(Custom Type)",
+                "notifiable": true,
+                "readable": true,
+                "writable": false,
+                "writeWithoutResponse": false
             },
             {
                 "uuid": "f000ffc404514000b000000000000000",
@@ -489,6 +517,33 @@
                 "notifiable": true,
                 "readable": true,
                 "writable": false,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "f000ffc304514000b000000000000000",
+                "name": "<Unnamed>",
+                "type": "(Custom Type)",
+                "notifiable": false,
+                "readable": false,
+                "writable": true,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "f000ffc204514000b000000000000000",
+                "name": "<Unnamed>",
+                "type": "(Custom Type)",
+                "notifiable": true,
+                "readable": false,
+                "writable": true,
+                "writeWithoutResponse": false
+            },
+            {
+                "uuid": "f000ffc104514000b000000000000000",
+                "name": "<Unnamed>",
+                "type": "(Custom Type)",
+                "notifiable": true,
+                "readable": false,
+                "writable": true,
                 "writeWithoutResponse": false
             }
         ]

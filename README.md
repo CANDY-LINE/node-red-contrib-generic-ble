@@ -1,7 +1,9 @@
 node-red-contrib-generic-ble
 ===
 
-A Node-RED node for providing access to generic BLE devices via GATT.
+A Node-RED node for providing access to generic BLE peripheral devices via GATT.
+
+As of v4.0.0, this node is optmized for Linux with BlueZ 5.
 
 Supported operations are as follows:
 
@@ -10,9 +12,18 @@ Supported operations are as follows:
 - Write without Response
 - Notify
 
+In this version, the node status values are as follows:
+
+- `missing` the configured BLE peripheral device is missing.　When the device is discovered, the state transitions to `disconnected`. The `disconnected` device may transiton to `missing` again when RSSI is invalidated (Linux only)
+- `disconnected` when the configured BLE peripheral device is found but not conncted
+- `connecting` when the configured BLE peripheral device is being connecting
+- `connected` when the configured BLE peripheral device is connected
+- `disconnecting` when the configured BLE peripheral device is being disconnecting
+- `error` when unexpected error occurs
+
 # How to use
 
-## How to configure a new BLE peripheral
+## How to configure a new BLE peripheral device
 
 At first, drag either a `generic ble in` node or a `generic ble out` node to the workspace from the node palette and double-click the node. And you can find the following dialog. Here, click the pencil icon (`1`) to add a new BLE peripheral or edit the existing one.
 
@@ -149,11 +160,22 @@ See `info` tab for detail on the editor UI.
 
 # Example Flow
 
-You can import [the example flow](examples/01-read-write.json) on Node-RED UI. You need to change Generic BLE config node named `nRF5x` or add a new config node for your device.
+You can import [the example flow](examples/01-read-write.json) on Node-RED UI.
 
-# How to install
+# Installation Note (Linux)
 
-This will take approx. 3 minutes on Raspberry Pi 3.
+The Node-RED process owner must belong to `bluetooth` group.
+For example, if you're going to run the process by `pi` user, run the following command.
+
+```
+sudo usermod -G bluetooth -a pi
+```
+
+Then reboot the OS so that the policy changes take effect.
+
+```
+sudo reboot
+```
 
 ## Node-RED users
 
@@ -189,70 +211,3 @@ $ NODE_ENV=development npm run build
 # package
 $ NODE_ENV=development npm pack
 ```
-
-## HCI Dump Debugging (Raspbian/Ubuntu/Debian)
-
-```
-sudo apt-get update
-sudo apt-get install bluez-hcidump
-```
-
-then
-
-```
-sudo hcidump -t -x
-```
-
-## Enabling trace log
-
-Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise log in `/var/log/syslog`.
-
-# Revision History
-
-* 3.1.0
-  - Support Node.js v10.x LTS (Fix #14 and #17)
-
-* 3.0.0
-  - Refactor entire architecture
-  - Peripheral connections are retained until it disconnects
-  - Characteristic subscriptions are retained while the ongoing flows are running (will be unsubscribed on stopping them though)
-  - The max number of concurrent BLE connections is 5 or 6 according to [this document](https://github.com/noble/noble#maximum-simultaneous-connections)
-
-* 2.0.4
-  - Fix an issue where this node don't work with noble@1.9.x
-
-* 2.0.3
-  - Fix an issue where noble looses a reference to a peripheral after it is disconnected
-
-* 2.0.2
-  - Fix an issue where Write operation cannot be performed properly (#4)
-
-* 2.0.1
-  - Fix an issue where `Select from scan result` failed to list characteristics
-
-* 2.0.0
-  - Add `Poll Notify Events` message support so that Generic BLE out node can start to subscribe the given characteristic events
-  - Support characteristic query by one or more uuids
-  - Add `Mute Notify Events` to `Generic BLE` config node for this node to avoid unnecessary device connection for event subscription
-  - Replace `RED.log` functions with node logging functions as possible to offer precise logging control via UI
-  - Add `Operation Timeout` to `Generic BLE` config node to set the waiting time for Read/Write/Notify response **per characteristic** rather than per device
-  - `GENERIC_BLE_OPERATION_WAIT_MS` is introduced for default `Operation Timeout` value
-  - Remove `Listening Period` from `Generic BLE` config node
-  - `GENERIC_BLE_NOTIFY_WAIT_MS` is removed
-
-* 1.0.2
-  - Improve README
-  - Add an example flow file available from the editor UI
-
-* 1.0.1
-  - Fix an issue where custom characteristics cannot be listed on the Generic BLE config node dialog
-
-* 1.0.0
-  - Fix an issue where some devices cannot be discovered within a specific time window even after they can be connected
-  - Fix an issue where the Scan Result select widget didn't show the same item as the stored device info
-  - Update Scan Result option list whenever Local Name is resolved
-  - Improve stability by fixing minor bugs
-
-* 0.1.0
-  - Initial Release (alpha)
-  - `node-red` keyword is not yet added
