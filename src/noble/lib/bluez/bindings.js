@@ -364,8 +364,21 @@ class BluezBindings extends EventEmitter {
         }
       );
       debug(`resultChrs => ${JSON.stringify(resultChrs)}`);
-      this.emit('characteristicsDiscover', deviceUuid, serviceUuid, resultChrs);
-      debug(`[${deviceUuid}] OK. Found ${resultChrs.length} Characteristics.`);
+      try {
+        this.emit(
+          'characteristicsDiscover',
+          deviceUuid,
+          serviceUuid,
+          resultChrs
+        );
+        debug(
+          `[${deviceUuid}] OK. Found ${resultChrs.length} Characteristics.`
+        );
+      } catch (err) {
+        debug(
+          `Failed to emit 'characteristicsDiscover' event. message:${err.message}`
+        );
+      }
     }, timeout);
   }
 
