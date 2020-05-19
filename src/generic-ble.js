@@ -888,8 +888,14 @@ module.exports = function (RED) {
         this.on('input', async (msg) => {
           debugOut(`input arrived! msg=>${JSON.stringify(msg)}`);
           try {
-            await this.genericBleNode.write(msg.payload);
-            debugOut(`<${this.genericBleNode.uuid}> write: OK`);
+            if (msg.topic === 'connect') {
+              await this.genericBleNode.connectPeripheral();
+            } else if (msg.topic === 'disconnect') {
+              await this.genericBleNode.disconnectPeripheral();
+            } else {
+              await this.genericBleNode.write(msg.payload);
+              debugOut(`<${this.genericBleNode.uuid}> write: OK`);
+            }
           } catch (err) {
             debugOut(`<${this.genericBleNode.uuid}> write: (err:${err})`);
             this.error(err);
