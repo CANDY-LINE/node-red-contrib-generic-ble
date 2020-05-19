@@ -305,6 +305,7 @@
         return current ? toDeviceKey(current) : '';
       }
 
+      var lastBledevRequest = null;
       function applyBleDevice() {
         var selected = getBleDevice();
         if (!selected) {
@@ -320,11 +321,16 @@
           {style:'display:block; margin-left:auto; margin-right:auto;'})
           .appendTo($('#node-config-input-characteristics-container'));
 
-        $.ajax({
+        if (lastBledevRequest) {
+          lastBledevRequest.abort();
+          lastBledevRequest = null;
+        }
+        lastBledevRequest = $.ajax({
           cache: false,
           url: '__bledev/' + encodeURIComponent(getUuid(selected)),
           dataType: 'json',
           success: function(bleDevice) {
+            lastBledevRequest = null;
             spin.remove();
             if (getBleDeviceKey() === selectedId) {
               clearCharacteristics();
@@ -349,6 +355,7 @@
             }
           },
           error: function () {
+            lastBledevRequest = null;
             spin.remove();
             if (getBleDeviceKey() === selectedId) {
               clearCharacteristics();
