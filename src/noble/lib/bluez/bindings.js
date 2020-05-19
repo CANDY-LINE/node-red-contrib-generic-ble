@@ -582,9 +582,11 @@ class BluezBindings extends EventEmitter {
           try {
             await this.hciAdapter.RemoveDevice(objectPath);
           } catch (err) {
-            debug(
-              `[${peripheralUuid}]<PropertiesChanged> Error while removing the device: ${err.message}, ${err.type}`
-            );
+            if (err.type !== 'org.bluez.Error.DoesNotExist') {
+              debug(
+                `[${peripheralUuid}]<PropertiesChanged> Error while removing the device: ${err.message}, ${err.type}`
+              );
+            }
           }
         }
       }
