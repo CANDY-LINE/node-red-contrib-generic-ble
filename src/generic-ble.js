@@ -812,10 +812,10 @@ module.exports = function (RED) {
               await this.genericBleNode.disconnectPeripheral();
             } else if (obj.notify) {
               await this.genericBleNode.subscribe(msg.topic, obj.period);
-              debugOut(`<${this.genericBleNode.uuid}> subscribe: OK`);
+              debugIn(`<${this.genericBleNode.uuid}> subscribe: OK`);
             } else {
               const readObj = await this.genericBleNode.read(msg.topic);
-              debugOut(`<${this.genericBleNode.uuid}> read: OK`);
+              debugIn(`<${this.genericBleNode.uuid}> read: OK`);
               if (!readObj) {
                 this.warn(
                   `<${this.genericBleNode.uuid}> tpoic[${msg.topic}]: (no data)`
@@ -834,6 +834,9 @@ module.exports = function (RED) {
               });
             }
           } catch (err) {
+            debugIn(
+              `<${this.genericBleNode.uuid}> tpoic[${msg.topic}]: (err:${err}, stack:${err.stack})`
+            );
             this.error(
               `<${this.genericBleNode.uuid}> tpoic[${msg.topic}]: (err:${err}, stack:${err.stack})`
             );
