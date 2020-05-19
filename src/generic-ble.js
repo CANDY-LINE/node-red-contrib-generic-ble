@@ -538,14 +538,14 @@ module.exports = function (RED) {
     // }
     async write(dataObj) {
       if (!dataObj) {
-        return;
+        throw new Error(`Nothing to write`);
       }
       const state = await this.connectPeripheral();
       if (state !== 'connected') {
         debugCfg(
           `[write] Peripheral:${this.uuid} is NOT ready. state=>${state}`
         );
-        return;
+        throw new Error(`Not yet connected.`);
       }
       let writables = this.characteristics.filter(
         (c) => c.writable || c.writeWithoutResponse
@@ -603,7 +603,7 @@ module.exports = function (RED) {
         debugCfg(
           `[read] Peripheral:${this.uuid} is NOT ready. state=>${state}`
         );
-        return null;
+        throw new Error(`Not yet connected.`);
       }
       uuids = uuids
         .split(',')
@@ -671,7 +671,7 @@ module.exports = function (RED) {
         this.log(
           `[subscribe] Peripheral:${this.uuid} is NOT ready. state=>${state}`
         );
-        return Promise.resolve();
+        throw new Error(`Not yet connected.`);
       }
       uuids = uuids
         .split(',')
@@ -700,7 +700,7 @@ module.exports = function (RED) {
       );
       debugCfg(`notifiables.length => ${notifiables.length}`);
       if (notifiables.length === 0) {
-        return false;
+        return;
       }
       await Promise.all(
         notifiables.map((r) => {
@@ -818,7 +818,7 @@ module.exports = function (RED) {
               debugOut(`<${this.genericBleNode.uuid}> read: OK`);
               if (!readObj) {
                 this.warn(
-                  `<${this.genericBleNode.uuid}> read[${msg.topic}]: (no data)`
+                  `<${this.genericBleNode.uuid}> tpoic[${msg.topic}]: (no data)`
                 );
                 return;
               }
@@ -835,7 +835,7 @@ module.exports = function (RED) {
             }
           } catch (err) {
             this.error(
-              `<${this.genericBleNode.uuid}> read[${msg.topic}]: (err:${err}, stack:${err.stack})`
+              `<${this.genericBleNode.uuid}> tpoic[${msg.topic}]: (err:${err}, stack:${err.stack})`
             );
           }
         });
