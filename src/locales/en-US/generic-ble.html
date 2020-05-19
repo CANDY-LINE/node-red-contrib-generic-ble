@@ -25,10 +25,12 @@ Expects a message used for triggering <code>Read</code> operation or subscribing
 <dt>For <code>Connect</code> operation:</dt>
 <dd>
 In order to connect a peripheral device, set <code>msg.topic</code> to <code>connect</code>.
+<code>msg.payload</code> is always ignored.
 </dd>
 <dt>For <code>Disonnect</code> operation:</dt>
 <dd>
 In order to disconnect a peripheral device, set <code>msg.topic</code> to <code>disconnect</code>.
+<code>msg.payload</code> is always ignored.
 </dd>
 <dt>For <code>Read</code> operation:</dt>
 <dd>
@@ -92,10 +94,12 @@ This node accepts the peripheral connecting/disconnecting command as well.
 <dt>For <code>Connect</code> operation:</dt>
 <dd>
 In order to connect a peripheral device, set <code>msg.topic</code> to <code>connect</code>.
+<code>msg.payload</code> is always ignored.
 </dd>
 <dt>For <code>Disonnect</code> operation:</dt>
 <dd>
 In order to disconnect a peripheral device, set <code>msg.topic</code> to <code>disconnect</code>.
+<code>msg.payload</code> is always ignored.
 </dd>
 </p>
 </script>
