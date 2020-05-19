@@ -1,7 +1,9 @@
 node-red-contrib-generic-ble
 ===
 
-A Node-RED node for providing access to generic BLE devices via GATT.
+A Node-RED node for providing access to generic BLE peripheral devices via GATT.
+
+As of v4.0.0, this node is optmized for Linux with BlueZ 5.
 
 Supported operations are as follows:
 
@@ -10,9 +12,18 @@ Supported operations are as follows:
 - Write without Response
 - Notify
 
+In this version, the node status values are as follows:
+
+- `missing` the configured BLE peripheral device is missing.　When the device is discovered, the state transitions to `disconnected`. The `disconnected` device may transiton to `missing` again when RSSI is invalidated (Linux only)
+- `disconnected` when the configured BLE peripheral device is found but not conncted
+- `connecting` when the configured BLE peripheral device is being connecting
+- `connected` when the configured BLE peripheral device is connected
+- `disconnecting` when the configured BLE peripheral device is being disconnecting
+- `error` when unexpected error occurs
+
 # How to use
 
-## How to configure a new BLE peripheral
+## How to configure a new BLE peripheral device
 
 At first, drag either a `generic ble in` node or a `generic ble out` node to the workspace from the node palette and double-click the node. And you can find the following dialog. Here, click the pencil icon (`1`) to add a new BLE peripheral or edit the existing one.
 
@@ -149,11 +160,22 @@ See `info` tab for detail on the editor UI.
 
 # Example Flow
 
-You can import [the example flow](examples/01-read-write.json) on Node-RED UI. You need to change Generic BLE config node named `nRF5x` or add a new config node for your device.
+You can import [the example flow](examples/01-read-write.json) on Node-RED UI.
 
-# How to install
+# Installation Note (Linux)
 
-This will take approx. 3 minutes on Raspberry Pi 3.
+The Node-RED process owner must belong to `bluetooth` group.
+For example, if you're going to run the process by `pi` user, run the following command.
+
+```
+sudo usermod -G bluetooth -a pi
+```
+
+Then reboot the OS so that the policy changes take effect.
+
+```
+sudo reboot
+```
 
 ## Node-RED users
 
@@ -189,4 +211,3 @@ $ NODE_ENV=development npm run build
 # package
 $ NODE_ENV=development npm pack
 ```
-
