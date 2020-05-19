@@ -40,9 +40,20 @@ class PeripheralRemovableNoble extends Noble {
     bindings.on('error', this.onError.bind(this));
   }
   onMiss(uuid) {
-    debug(`<onMiss> this.initialized => ${this.initialized}`);
+    debug(`<onMiss:${uuid}> this.initialized => ${this.initialized}`);
     if (this._peripherals[uuid]) {
       const peripheral = this._peripherals[uuid];
+      debug(`<onMiss:${uuid}> peripheral.state => ${peripheral.state}`);
+      if (peripheral.state === 'connected') {
+        peripheral.once('disconnect', () => {
+          debug(
+            `<onMiss:${uuid}:peripheral:disconnect> peripheral disconnected.`
+          );
+          this.onMiss(uuid);
+        });
+        peripheral.disconnect();
+        return;
+      }
       delete this._peripherals[uuid];
       delete this._services[uuid];
       delete this._characteristics[uuid];

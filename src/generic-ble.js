@@ -210,7 +210,12 @@ async function toDetailedObject(peripheral, RED) {
           if (err) {
             return reject(err);
           }
+          const discoveryInterrupted = () => {
+            return reject(new Error(`Missing Peripheral Device`));
+          };
+          peripheral.once('disconnect', discoveryInterrupted);
           peripheral.discoverAllServicesAndCharacteristics((err, services) => {
+            peripheral.removeListener('disconnect', discoveryInterrupted);
             if (err) {
               return reject(err);
             }
