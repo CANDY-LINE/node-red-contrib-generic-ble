@@ -143,13 +143,6 @@
     <input type="checkbox" id="node-config-input-muteNotifyEvents" style="display: inline-block; width: auto; vertical-align: top;">
     <label for="node-config-input-muteNotifyEvents" style="width: 70%;" data-i18n="generic-ble.label.muteNotifyEvents"></label>
   </div>
-  <div class='form-row'>
-    <label for='node-config-input-operationTimeout'>
-      <i class='fa fa-tag'></i>
-      <span data-i18n='generic-ble.label.operationTimeout'></span>
-    </label>
-    <input type='text' id='node-config-input-operationTimeout' data-i18n='[placeholder]generic-ble.placeholder.operationTimeout'>
-  </div>
   <div class='form-row node-config-input-characteristics-container-row'>
     <i class='fa fa-gear'></i> <span data-i18n='generic-ble.label.characteristics'></span>
     <ol id='node-config-input-characteristics-container'></ol>
@@ -158,8 +151,6 @@
 
 <script type="text/javascript">
   'use strict';
-  const MAX_MILLIS = 60 * 1000;
-  const MIN_MILLIS = 300;
   const LIST_BLE_DEVICE_INTERVAL_MS = 10 * 1000;
   const LIST_BLE_DEVICE_DELAY_MS = 5 * 1000;
   var charBuff = [];
@@ -179,7 +170,6 @@
       address: { value: '', required: false },
       uuid: { value: '', required: false },
       muteNotifyEvents: { value: false, required: false },
-      operationTimeout: { value: '', required: false },
       // characteristic
       // {
       //   "uuid": "2a19",
@@ -207,18 +197,6 @@
       var uuid = $('#node-config-input-uuid').val();
       if (uuid) {
         $('#node-config-input-uuid').val(uuid.toLowerCase());
-      }
-      var operationTimeout = $('#node-config-input-operationTimeout').val();
-      if (operationTimeout) {
-        operationTimeout = parseInt(operationTimeout);
-        if (operationTimeout < MIN_MILLIS) {
-          operationTimeout = MIN_MILLIS;
-        } else if (operationTimeout > MAX_MILLIS) {
-          operationTimeout = MAX_MILLIS;
-        } else if (isNaN(operationTimeout)){
-          operationTimeout = '';
-        }
-        $('#node-config-input-operationTimeout').val(operationTimeout);
       }
       this.characteristics = charBuff;
     },

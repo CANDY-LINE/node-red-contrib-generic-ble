@@ -357,7 +357,6 @@ module.exports = function (RED) {
       this.address = n.address;
       this.uuid = n.uuid;
       this.muteNotifyEvents = n.muteNotifyEvents;
-      this.operationTimeout = n.operationTimeout;
       this.characteristics = [];
       const key = getAddressOrUUID(n);
       if (key) {

@@ -8,7 +8,6 @@ generic-ble:
     unnamed: (Unnamed)
     address: MAC
     uuid: UUID
-    operationTimeout: Operation Timeout
     characteristics: GATT Characteristics
     notAvailable: (not available)
     notification: Emit notify events
@@ -22,7 +21,6 @@ generic-ble:
     localName: BLE device name
     address: aa:11:bb:22:cc:33 (case insensitive)
     uuid: (optional, e.g. 46788f85-c8a9-4f57-a9b1-f1df906c1ad6)
-    operationTimeout: (milliseconds, between 300 and 60000 millisecs)
   status:
     connected: connected
     disconnected: disconnected
