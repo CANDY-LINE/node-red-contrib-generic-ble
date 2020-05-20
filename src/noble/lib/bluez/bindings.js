@@ -89,8 +89,23 @@ class BluezBindings extends EventEmitter {
       if (this._scanning) {
         debug(`[startScanning] Scan already ongoing...`);
       } else {
-        debug(`[startScanning] Start Scanning...`);
         try {
+          const powered = (
+            await this.hciProps.Get('org.bluez.Adapter1', 'Powered')
+          ).value;
+          if (!powered) {
+            debug(`[startScanning] Turning the adapter on...`);
+            await this.hciProps.Set(
+              'org.bluez.Adapter1',
+              'Powered',
+              new dbus.Variant('b', true)
+            );
+          }
+          debug(`[startScanning] Setting discovery filter...`);
+          await this.hciAdapter.SetDiscoveryFilter({
+            DuplicateData: new dbus.Variant('b', !this._scanFilterDuplicates),
+          });
+          debug(`[startScanning] Start Scanning...`);
           await this.hciAdapter.StartDiscovery();
         } catch (err) {
           debug(
