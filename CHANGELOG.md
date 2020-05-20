@@ -1,9 +1,9 @@
 # Revision History
 
 * 4.0.0
-  - The node category is now Network rather than Input and Output.
+  - The node category is now `Network` rather than `Input` and `Output`.
   - Improve stability on Linux by introducing BlueZ 5 D-Bus API
-    - On Linux, this node no longer depends on HCI socket library.
+    - On Linux, this node is no longer dependent on the HCI socket library, which has lots of problematic issues that caused inconsistent results with old BlueZ CLI tools.
     - Note that when Node-RED process is run by non-root user, add the user to `bluetooth` group so to access BlueZ D-Bus API. For example, run `sudo usermod -G bluetooth -a pi` prior to starting the process if it's run by `pi` user.
     - BlueZ's BLE scanning seems to detect devices having `random` address type. But not sure if such devices work with this node properly.
     - Tested on Raspbian (4.19.97-v7l+) and Raspberry Pi 3/4.

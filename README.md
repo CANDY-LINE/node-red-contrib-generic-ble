@@ -1,19 +1,19 @@
 node-red-contrib-generic-ble
 ===
 
-A Node-RED node for providing access to generic BLE peripheral devices via GATT.
+A Node-RED node for providing access to generic BLE **peripheral** devices via GATT.
 
 As of v4.0.0, this node is optmized for Linux with BlueZ 5 D-Bus API (HCI socket is no longer used on Linux).
-macOS and Windows should work as nothing is modified for these platforms.
+macOS and Windows should still work as nothing is modified for these platforms.
 
 Supported operations are as follows:
 
 - Read
 - Write
 - Write without Response
-- Notify (Subscribing the Notify event)
+- Notify (Subscribing the Notify events)
 
-In this version, the node status values are as follows:
+The node status modes are as follows:
 
 - `missing` the configured BLE peripheral device is missing.　When the device is discovered, the state transitions to `disconnected`. The `disconnected` device may transiton to `missing` again when RSSI is invalidated (Linux only)
 - `disconnected` when the configured BLE peripheral device is found but not conncted
@@ -22,15 +22,16 @@ In this version, the node status values are as follows:
 - `disconnecting` when the configured BLE peripheral device is being disconnecting
 - `error` when unexpected error occurs
 
-Known issue for Linux BlueZ D-Bus API:
+Known issues for Linux BlueZ D-Bus API:
 
-- It seems the local name in advertisement packet isn't transferred to `LocalName` property in org.bluez.Device1 BlueZ D-Bus API. With HCI socket implementaion, the local name was resolved. So the local name can be resolved on macOS and Windows. 
+- Unlike the oler version, **you must set the process owner's permission properly and manually**. Non-root user's Node-RED process will fail to get this node working. Read `Installation Note (Linux)` below.
+- It seems the local name in advertisement packet isn't transferred to `LocalName` property in org.bluez.Device1 BlueZ D-Bus API. With the HCI socket implementaion, the local name was resolved. So the local name can be resolved on macOS and Windows.
 
 # How to use
 
 ## How to configure a new BLE peripheral device
 
-At first, drag either a `generic ble in` node or a `generic ble out` node to the workspace from the node palette and double-click the node. And you can find the following dialog. Here, click the pencil icon (`1`) to add a new BLE peripheral or edit the existing one.
+At first, drag either a `Generic BLE in` node or a `Generic BLE out` node to the workspace from the node palette and double-click the node. And you can find the following dialog. Here, click the pencil icon (`1`) to add a new BLE peripheral or edit the existing one.
 
 ![ble out node](images/ble1.png)
 
@@ -46,20 +47,20 @@ As soon as you check it, `Scan Result` select box and `Apply` button appear. The
 
 Chosoe one of the listed devices and then click `Apply` to populate `Local Name`, `MAC` and `UUID` input text boxes. Clicking `Apply` button also triggers GATT characteristics discovery as well.
 
-The following picure shows the `Apply` button clicking result. `GATT Characteristics` has a characteristic list of the selected device. When you see `(not available)` message in the box, check if the device is NOT sleeping (a sleeping device fails to respond to connect request) and click `Apply` again.
+The following picure shows the `Apply` button clicking results. `GATT Characteristics` has a characteristic list of the selected device. When you see `(not available)` message in the box, check if the device is NOT sleeping (a sleeping device fails to respond to a connect request) and click `Apply` again.
 
 `GATT Characteristics` must be populated as the node uses the list to verify if a given characteristic UUID is valid on performing `Read`, `Write` and `Subscribe` requests.
 
-Click `Add` (`3`) to save the information when everything is ok.
+Click `Add` (`3`) to save the information when everything is OK.
 
 ![ble config node](images/ble4.png)
 
-OK. Now back to `Generic BLE out` node.
+Now back to `Generic BLE out` node.
 Click `Done` (`4`) to finish the `Generic BLE out` node settings.
 
-You can import an example flow from the menu icon(`三`) > Import > Examples > node-red-contrib-generic-ble > 01-read-write.
-
 ![ble config node](images/ble5.png)
+
+You can also import an example flow from the menu icon(`三`) > Import > Examples > node-red-contrib-generic-ble > 01-read-write for learning more about this node.
 
 ## How to translate gatttool command into flow
 
@@ -176,7 +177,7 @@ You can import [the example flow](examples/01-read-write.json) on Node-RED UI.
 
 # Installation Note (Linux)
 
-The Node-RED process owner must belong to `bluetooth` group.
+The Node-RED process owner must belong to `bluetooth` group in order to access BlueZ D-Bus API, otherwise this node doesn't work at all because of bluetoothd permission issue.
 For example, if you're going to run the process by `pi` user, run the following command.
 
 ```
@@ -197,7 +198,7 @@ cd ~/.node-red
 npm install node-red-contrib-generic-ble
 ```
 
-Then restart Node-RED process.
+Then restart Node-RED process. Again, for Linux users, read the above chapter `Installation Note (Linux)` to get this node working.
 
 ## CANDY RED users
 
