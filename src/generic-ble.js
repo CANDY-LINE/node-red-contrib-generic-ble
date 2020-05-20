@@ -492,6 +492,11 @@ module.exports = function (RED) {
           this.emit('connected');
           break;
         }
+        case 'disconnecting':
+        case 'connecting': {
+          this.emit(peripheral.state);
+          break;
+        }
         default: {
           break;
         }
