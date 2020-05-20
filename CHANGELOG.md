@@ -1,5 +1,8 @@
 # Revision History
 
+* 4.0.1
+  - Fix Module Loading Error
+
 * 4.0.0
   - The node category is now `Network` rather than `Input` and `Output`.
   - Improve stability on Linux by introducing BlueZ 5 D-Bus API
