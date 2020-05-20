@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import Noble from '../../node_modules/@abandonware/noble/lib/noble';
+import Noble from '@abandonware/noble/lib/noble';
 import os from 'os';
 import debugLogger from 'debug';
 
