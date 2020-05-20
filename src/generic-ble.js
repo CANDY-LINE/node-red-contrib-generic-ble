@@ -738,7 +738,12 @@ module.exports = function (RED) {
                   this.emit('error', err);
                   this.log(`unsubscription error: ${err.message}`);
                 } else {
-                  this.emit('connected');
+                  const peripheral = noble._peripherals[this.uuid];
+                  if (peripheral) {
+                    this.emit(peripheral.state);
+                  } else {
+                    this.emit('missing');
+                  }
                 }
               });
             }, 5000);
