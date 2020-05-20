@@ -38,6 +38,11 @@ class BluezBindings extends EventEmitter {
     this._scanning = false;
     this.hciObjectPath = `/org/bluez/${process.env.HCIDEVICE || 'hci0'}`;
 
+    // Remove entry on onDevicesServicesCharacteristicsMissed()
+    this.objectStore = {
+      // key: objectPath, value: any
+    };
+
     debug('BluezBindings instance created!');
   }
 
@@ -493,8 +498,14 @@ class BluezBindings extends EventEmitter {
       const props = await this._getPropertiesInterface(
         characteristicObjectPath
       );
-      if (!props.notificationHandeler) {
-        props.notificationHandeler = async (
+      if (!this.objectStore[characteristicObjectPath]) {
+        this.objectStore[characteristicObjectPath] = {};
+      }
+      const objectStore = this.objectStore[characteristicObjectPath] || {};
+      this.objectStore[characteristicObjectPath] = objectStore;
+      if (!objectStore.notificationHandeler) {
+        debug(`Setting objectStore.notificationHandeler`);
+        objectStore.notificationHandeler = async (
           /*string*/ interfaceName,
           /*obj*/ changedProps,
           /*string[]*/ invalidatedProps
@@ -512,21 +523,44 @@ class BluezBindings extends EventEmitter {
                 serviceUuid,
                 characteristicUuid,
                 Buffer.from(changedProps.Value.value),
-                true
+                objectStore.notifying
               );
             }
+            debug(
+              `[${characteristicObjectPath}]<PropertiesChanged> GattCharacteristic1 changedProps=>${JSON.stringify(
+                changedProps
+              )}`
+            );
           }
         };
+        props.on('PropertiesChanged', objectStore.notificationHandeler);
       }
-
+      const notifying = (
+        await props.Get('org.bluez.GattCharacteristic1', 'Notifying')
+      ).value;
+      debug(
+        `${deviceUuid}, subscribing(${characteristicUuid})? => ${notifying}`
+      );
       if (subscribe) {
         await chracteristic.StartNotify();
-        props.on('PropertiesChanged', props.notificationHandeler);
+        objectStore.notifying = true;
+        debug(
+          `${deviceUuid}, START subscribing(${characteristicUuid}) Notify events`
+        );
       } else {
         await chracteristic.StopNotify();
-        props.removeListener('PropertiesChanged', props.notificationHandeler);
-        delete props.notificationHandeler;
+        objectStore.notifying = false;
+        debug(
+          `${deviceUuid}, STOP subscribing(${characteristicUuid}) Notify events`
+        );
       }
+      this.emit(
+        'notify',
+        deviceUuid,
+        serviceUuid,
+        characteristicUuid,
+        subscribe
+      );
     }
     debug(
       `notify:characteristicObjectPath=>${characteristicObjectPath}, subscribe?=>${subscribe}`
@@ -670,6 +704,7 @@ class BluezBindings extends EventEmitter {
         interfaces
       )}`
     );
+    delete this.objectStore[objectPath];
     if (interfaces.includes('org.bluez.Device1')) {
       const peripheralUuid = this._toUuid(objectPath);
       this.onDeviceMissed(peripheralUuid);
