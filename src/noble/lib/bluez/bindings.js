@@ -83,37 +83,44 @@ class BluezBindings extends EventEmitter {
     return uuid;
   }
 
+  async _startDiscovery() {
+    try {
+      const powered = (await this.hciProps.Get('org.bluez.Adapter1', 'Powered'))
+        .value;
+      if (!powered) {
+        debug(`[_startDiscovery] Turning the adapter on...`);
+        await this.hciProps.Set(
+          'org.bluez.Adapter1',
+          'Powered',
+          new dbus.Variant('b', true)
+        );
+      }
+      debug(`[_startDiscovery] Setting discovery filter...`);
+      await this.hciAdapter.SetDiscoveryFilter({
+        DuplicateData: new dbus.Variant('b', !this._scanFilterDuplicates),
+      });
+      debug(`[_startDiscovery] Start Scanning...`);
+      await this.hciAdapter.StartDiscovery();
+    } catch (err) {
+      debug(
+        `[ERROR] _startDiscovery => err.message:${
+          err.message
+        }, err.toString:${err.toString()}`
+      );
+      if (!this._scanning) {
+        // failed to power on
+        this.emit('stateChange', 'poweredOff');
+      }
+    }
+  }
+
   async startScanning(/* never used */ serviceUuids, allowDuplicates) {
     if (this._initialized) {
       this._scanFilterDuplicates = !allowDuplicates;
       if (this._scanning) {
         debug(`[startScanning] Scan already ongoing...`);
       } else {
-        try {
-          const powered = (
-            await this.hciProps.Get('org.bluez.Adapter1', 'Powered')
-          ).value;
-          if (!powered) {
-            debug(`[startScanning] Turning the adapter on...`);
-            await this.hciProps.Set(
-              'org.bluez.Adapter1',
-              'Powered',
-              new dbus.Variant('b', true)
-            );
-          }
-          debug(`[startScanning] Setting discovery filter...`);
-          await this.hciAdapter.SetDiscoveryFilter({
-            DuplicateData: new dbus.Variant('b', !this._scanFilterDuplicates),
-          });
-          debug(`[startScanning] Start Scanning...`);
-          await this.hciAdapter.StartDiscovery();
-        } catch (err) {
-          debug(
-            `[ERROR] startScanning => err.message:${
-              err.message
-            }, err.toString:${err.toString()}`
-          );
-        }
+        await this._startDiscovery();
       }
     } else {
       this.once('poweredOn', () => {
@@ -696,12 +703,10 @@ class BluezBindings extends EventEmitter {
       if (changedProps.Powered) {
         debug(`Powered=>${changedProps.Powered.value}`);
         if (!changedProps.Powered.value) {
-          this.emit('stateChange', 'poweredOff');
+          this._scanning = false;
           setTimeout(async () => {
-            debug(`Trying to turn on the adapter...`);
-            const powerOn = new dbus.Variant('b', true);
             try {
-              await this.hciProps.Set(interfaceName, 'Powered', powerOn);
+              await this._startDiscovery();
             } catch (err) {
               debug(
                 `Error while turning on the adapter. err.message:${err.message}, type:${err.type}`
@@ -716,6 +721,7 @@ class BluezBindings extends EventEmitter {
 
   async onScanStarted() {
     debug(`<onScanStarted> fired`);
+    this._scanning = true;
     const bluezObjects = await this.bluezObjectManager.GetManagedObjects();
     // Invoke DevicesDiscovered event listerner if devices already exists
     const deviceObjectPathPrefix = `${this.hciObjectPath}/dev_`;
@@ -742,6 +748,7 @@ class BluezBindings extends EventEmitter {
 
   onScanStopepd() {
     debug(`[onScanStopepd] fired`);
+    this._scanning = false;
     this.emit('scanStop');
   }
 
