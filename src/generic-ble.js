@@ -392,6 +392,7 @@ module.exports = function (RED) {
         Object.keys(configBleDevices).forEach(
           (k) => delete configBleDevices[k]
         );
+        this.removeAllListeners('ble-notify');
         this.shutdown().then(done).catch(done);
       });
       process.nextTick(() => {
