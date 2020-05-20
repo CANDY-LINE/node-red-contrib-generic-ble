@@ -1,48 +1,73 @@
 node-red-contrib-generic-ble
 ===
 
-A Node-RED node for providing access to generic BLE devices via GATT.
+A Node-RED node for providing access to generic BLE **peripheral** devices via GATT.
+
+As of v4.0.0, this node is optmized for Linux with BlueZ 5 D-Bus API (HCI socket is no longer used on Linux).
+macOS and Windows should still work as nothing is modified for these platforms.
 
 Supported operations are as follows:
 
 - Read
 - Write
 - Write without Response
-- Notify
+- Notify (Subscribing the Notify events)
+
+The node status modes are as follows:
+
+- `missing` the configured BLE peripheral device is missing.　When the device is discovered, the state transitions to `disconnected`. The `disconnected` device may transiton to `missing` again when RSSI is invalidated (Linux only)
+- `disconnected` when the configured BLE peripheral device is found but not conncted
+- `connecting` when the configured BLE peripheral device is being connecting
+- `connected` when the configured BLE peripheral device is connected
+- `disconnecting` when the configured BLE peripheral device is being disconnecting
+- `error` when unexpected error occurs
+
+Known issues for Linux BlueZ D-Bus API:
+
+- Unlike the oler version, **you must set the process owner's permission properly and manually**. Non-root user's Node-RED process will fail to get this node working. Read `Installation Note (Linux)` below.
+- It seems the local name in advertisement packet isn't transferred to `LocalName` property in org.bluez.Device1 BlueZ D-Bus API. With the HCI socket implementaion, the local name was resolved. So the local name can be resolved on macOS and Windows.
+- `Bluetooth: hci0: hardware error 0x03` error sometimes occurs (and logged in syslog). When it's observed, all devices are disconnected and cahches are gone. The node tries to power on the BLE adapter again.
 
 # How to use
 
-## How to configure a new BLE peripheral
+## How to configure a new BLE peripheral device
 
-At first, drag either a `generic ble in` node or a `generic ble out` node to the workspace from the node palette and double-click the node. And you can find the following dialog. Here, click the pencil icon (`1`) to add a new BLE peripheral or edit the existing one.
+At first, drag either a `Generic BLE in` node or a `Generic BLE out` node to the workspace from the node palette and double-click the node. And you can find the following dialog. Here, click the pencil icon (`1`) to add a new BLE peripheral or edit the existing one.
 
-![ble in node](images/ble1.png)
+![ble out node](images/ble1.png)
 
-Then the new config node dialog appears like this.
+Then the new config node dialog appears as shown below.
+
+The `BLE Scanning` shows whether or not BLE scanning is going on. In order to start BLE scanning, check it (`2`).
 
 ![ble config node](images/ble2.png)
 
-The `Scan Result` shows the scanned BLE peripherals. It can be empty when no peripherals are found.
-
-In order for the dialog to list your device, turn BLE on prior to open the dialog. Close the dialog then re-open it if you'd like to get the latest scan result.
-
-By default, you have to enter either MAC address or UUID manually to configure your BLE peripheral. However, by checking `Select from scan result`(`2`), you can choose the peripheral if it exists in the scan result.
+As soon as you check it, `Scan Result` select box and `Apply` button appear. The scan results are automatically fufilled in the select box. The content will be refreshed every 10 seconds.
 
 ![ble config node](images/ble3.png)
 
-When you choose the peripheral, `GATT Characteristics` shows all characteristics discovered in it, and `Local Name`, `MAC` and `UUID` are automatically resolved as well.
+Chosoe one of the listed devices and then click `Apply` to populate `Local Name`, `MAC` and `UUID` input text boxes. Clicking `Apply` button also triggers GATT characteristics discovery as well.
 
-If you cannot find your peripheral in the `Scan Result`, you can reload the result by closing this dialog and re-opening it as described above.
+The following picure shows the `Apply` button clicking results. `GATT Characteristics` has a characteristic list of the selected device. When you see `(not available)` message in the box, check if the device is NOT sleeping (a sleeping device fails to respond to a connect request) and click `Apply` again.
 
-Click `Add` (`3`) when the information on the dialog looks good.
+`GATT Characteristics` must be populated as the node uses the list to verify if a given characteristic UUID is valid on performing `Read`, `Write` and `Subscribe` requests.
+
+Click `Add` (`3`) to save the information when everything is OK.
 
 ![ble config node](images/ble4.png)
 
-Click `Done` (`4`) to finish the `ble in` node settings.
+Now back to `Generic BLE out` node.
+Click `Done` (`4`) to finish the `Generic BLE out` node settings.
+
+![ble config node](images/ble5.png)
+
+You can also import an example flow from the menu icon(`三`) > Import > Examples > node-red-contrib-generic-ble > 01-read-write for learning more about this node.
 
 ## How to translate gatttool command into flow
 
 In this example, we show how to describe `gatttool` commands for characteristic value write and read with Generic BLE nodes.
+
+**NOTICE: As of BlueZ 5, gatttool is deprecated. gatttool will be removed in the future relesase.**
 
 ### Characteristics Value Write
 
@@ -149,11 +174,22 @@ See `info` tab for detail on the editor UI.
 
 # Example Flow
 
-You can import [the example flow](examples/01-read-write.json) on Node-RED UI. You need to change Generic BLE config node named `nRF5x` or add a new config node for your device.
+You can import [the example flow](examples/01-read-write.json) on Node-RED UI.
 
-# How to install
+# Installation Note (Linux)
 
-This will take approx. 3 minutes on Raspberry Pi 3.
+The Node-RED process owner must belong to `bluetooth` group in order to access BlueZ D-Bus API, otherwise this node doesn't work at all because of bluetoothd permission issue.
+For example, if you're going to run the process by `pi` user, run the following command.
+
+```
+sudo usermod -G bluetooth -a pi
+```
+
+Then reboot the OS so that the policy changes take effect.
+
+```
+sudo reboot
+```
 
 ## Node-RED users
 
@@ -163,7 +199,7 @@ cd ~/.node-red
 npm install node-red-contrib-generic-ble
 ```
 
-Then restart Node-RED process.
+Then restart Node-RED process. Again, for Linux users, read the above chapter `Installation Note (Linux)` to get this node working.
 
 ## CANDY RED users
 
@@ -189,70 +225,3 @@ $ NODE_ENV=development npm run build
 # package
 $ NODE_ENV=development npm pack
 ```
-
-## HCI Dump Debugging (Raspbian/Ubuntu/Debian)
-
-```
-sudo apt-get update
-sudo apt-get install bluez-hcidump
-```
-
-then
-
-```
-sudo hcidump -t -x
-```
-
-## Enabling trace log
-
-Set `GENERIC_BLE_TRACE=true` on starting Node-RED and you can find the precise log in `/var/log/syslog`.
-
-# Revision History
-
-* 3.1.0
-  - Support Node.js v10.x LTS (Fix #14 and #17)
-
-* 3.0.0
-  - Refactor entire architecture
-  - Peripheral connections are retained until it disconnects
-  - Characteristic subscriptions are retained while the ongoing flows are running (will be unsubscribed on stopping them though)
-  - The max number of concurrent BLE connections is 5 or 6 according to [this document](https://github.com/noble/noble#maximum-simultaneous-connections)
-
-* 2.0.4
-  - Fix an issue where this node don't work with noble@1.9.x
-
-* 2.0.3
-  - Fix an issue where noble looses a reference to a peripheral after it is disconnected
-
-* 2.0.2
-  - Fix an issue where Write operation cannot be performed properly (#4)
-
-* 2.0.1
-  - Fix an issue where `Select from scan result` failed to list characteristics
-
-* 2.0.0
-  - Add `Poll Notify Events` message support so that Generic BLE out node can start to subscribe the given characteristic events
-  - Support characteristic query by one or more uuids
-  - Add `Mute Notify Events` to `Generic BLE` config node for this node to avoid unnecessary device connection for event subscription
-  - Replace `RED.log` functions with node logging functions as possible to offer precise logging control via UI
-  - Add `Operation Timeout` to `Generic BLE` config node to set the waiting time for Read/Write/Notify response **per characteristic** rather than per device
-  - `GENERIC_BLE_OPERATION_WAIT_MS` is introduced for default `Operation Timeout` value
-  - Remove `Listening Period` from `Generic BLE` config node
-  - `GENERIC_BLE_NOTIFY_WAIT_MS` is removed
-
-* 1.0.2
-  - Improve README
-  - Add an example flow file available from the editor UI
-
-* 1.0.1
-  - Fix an issue where custom characteristics cannot be listed on the Generic BLE config node dialog
-
-* 1.0.0
-  - Fix an issue where some devices cannot be discovered within a specific time window even after they can be connected
-  - Fix an issue where the Scan Result select widget didn't show the same item as the stored device info
-  - Update Scan Result option list whenever Local Name is resolved
-  - Improve stability by fixing minor bugs
-
-* 0.1.0
-  - Initial Release (alpha)
-  - `node-red` keyword is not yet added

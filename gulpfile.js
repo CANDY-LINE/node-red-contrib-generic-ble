@@ -16,32 +16,56 @@
  */
 
 const gulp        = require('gulp');
-const util        = require("gulp-util");
 const babel       = require('gulp-babel');
-const uglify      = require('gulp-uglify');
+const uglify      = require('gulp-uglify-es').default;
 const del         = require('del');
-const jshint      = require('gulp-jshint');
-const mocha       = require('gulp-mocha');
+const eslint      = require('gulp-eslint');
+const jest        = require('gulp-jest').default;
 const sourcemaps  = require('gulp-sourcemaps');
-const gulpif      = require('gulp-if');
+const gulpIf      = require('gulp-if');
 const htmlmin     = require('gulp-htmlmin');
 const cleancss    = require('gulp-clean-css');
 const less        = require('gulp-less');
-const manifest    = require('gulp-manifest');
 const yaml        = require('gulp-yaml');
+const prettier    = require('gulp-prettier');
 
-const minified = process.env.NODE_ENV !== 'development';
-const sourcemapEnabled = !minified;
-
-gulp.task('lint', () => {
-  return gulp.src([
-    './tests/**/*.js',
-    './src/**/*.js'
-  ])
-  .pipe(jshint())
-  .pipe(jshint.reporter('jshint-stylish'))
-  .pipe(jshint.reporter('fail'));
+gulp.task('lintSrcs', () => {
+  return gulp.src(['./src/**/*.js'])
+  .pipe(
+    eslint({
+      useEslintrc: true,
+      fix: true,
+    })
+  )
+  .pipe(eslint.format())
+  .pipe(prettier())
+  .pipe(
+    gulpIf((file) => {
+      return file.eslint != null && file.eslint.fixed;
+    }, gulp.dest('./src'))
+  )
+  .pipe(eslint.failAfterError());
 });
+
+gulp.task('lintTests', () => {
+  return gulp.src(['./tests/**/*.js'])
+  .pipe(
+    eslint({
+      useEslintrc: true,
+      fix: true,
+    })
+  )
+  .pipe(eslint.format())
+  .pipe(prettier())
+  .pipe(
+    gulpIf((file) => {
+      return file.eslint != null && file.eslint.fixed;
+    }, gulp.dest('./tests'))
+  )
+  .pipe(eslint.failAfterError());
+});
+
+gulp.task('lint', gulp.series('lintSrcs', 'lintTests'));
 
 gulp.task('clean', () => {
   return del([
@@ -66,25 +90,26 @@ gulp.task('i18n', () => {
     .pipe(gulp.dest('./dist/locales'));
 });
 
-gulp.task('assets', ['i18n'], () => {
+gulp.task('assets', gulp.series('i18n', () => {
   return gulp.src([
       './src/**/*.{less,ico,png,json,yaml,yml}',
       '!./src/locales/**/*.{yaml,yml}'
     ])
     .pipe(gulp.dest('./dist'));
-});
+}));
 
-gulp.task('js', ['assets'], () => {
+gulp.task('js', gulp.series('assets', () => {
   return gulp.src('./src/**/*.js')
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.init(), util.noop()))
-    .pipe(babel({
-      minified: minified,
-      compact: minified,
-      presets: ["env"],
-      plugins: ['add-module-exports']
-    }))
-    .pipe(gulpif(!sourcemapEnabled, uglify({
-      mangle: minified,
+    .pipe(sourcemaps.init())
+    .pipe(
+      babel({
+        minified: true,
+        compact: true,
+        configFile: './.babelrc',
+      })
+    )
+    .pipe(uglify({
+      mangle: true,
       output: {
         comments: 'some',
       },
@@ -100,17 +125,17 @@ gulp.task('js', ['assets'], () => {
         unsafe_math: true,
         unsafe: true
       },
-    }), util.noop()))
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.write('.'), util.noop()))
+    }))
+    .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('./dist'));
-});
+}));
 
 gulp.task('less', () => {
   return gulp.src('./src/**/*.less')
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.init(), util.noop()))
+    .pipe(sourcemaps.init())
     .pipe(less())
     .pipe(cleancss({compatibility: 'ie8'}))
-    .pipe(gulpif(sourcemapEnabled, sourcemaps.write('.'), util.noop()))
+    .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('./dist'));
 });
 
@@ -128,34 +153,26 @@ gulp.task('html', () => {
     .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('build', ['lint', 'js', 'less', 'html', 'assets']);
+gulp.task('build', gulp.series('lint', 'js', 'less', 'html', 'assets'));
 
 gulp.task('testAssets', () => {
   return gulp.src('./tests/**/*.{css,less,ico,png,html,json,yaml,yml}')
   .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('testJs', ['cleanTestJs', 'build'], () => {
-  return gulp.src('./tests/**/*.js')
-    .pipe(sourcemaps.init())
-    .pipe(babel({
-      presets: ['env'],
-      plugins: ['add-module-exports']
-    }))
-    .pipe(sourcemaps.write('.'))
-    .pipe(gulp.dest('./dist'));
-});
+gulp.task('test', gulp.series('build', 'testAssets', () => {
+  process.env.NODE_ENV = 'test';
+  return gulp.src('tests').pipe(jest({
+    modulePaths: [
+      '<rootDir>/src'
+    ],
+    preprocessorIgnorePatterns: [
+      '<rootDir>/dist/',
+      '<rootDir>/node_modules/'
+    ],
+    verbose: true,
+    automock: false
+  }));
+}));
 
-gulp.task('test', ['testJs', 'testAssets'], () => {
-  return gulp.src([
-    './dist/**/*.test.js',
-  ], {read: false})
-  .pipe(mocha({
-    require: ['source-map-support/register'],
-    reporter: 'spec'
-  }))
-  .once('error', () => process.exit(1))
-  .once('end', () => process.exit())
-});
-
-gulp.task('default', ['build']);
+gulp.task('default', gulp.series('build'));
