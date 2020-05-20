@@ -770,7 +770,7 @@ module.exports = function (RED) {
               }
             }
             this.send({
-              payload: payload,
+              payload,
             });
           });
         }
@@ -801,7 +801,7 @@ module.exports = function (RED) {
         });
         this.genericBleNode.register(this);
 
-        this.on('input', async (msg) => {
+        this.on('input', async (msg, send) => {
           debugIn(`input arrived! msg=>${JSON.stringify(msg)}`);
           let obj = msg.payload || {};
           try {
@@ -835,7 +835,13 @@ module.exports = function (RED) {
               if (this.useString) {
                 payload = JSON.stringify(payload);
               }
-              this.send({
+              const node = this;
+              send =
+                send ||
+                function () {
+                  node.send.apply(node, arguments);
+                };
+              send({
                 payload,
               });
             }
