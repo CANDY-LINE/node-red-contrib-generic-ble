@@ -1,5 +1,5 @@
 <script type="text/x-red" data-help-name="Generic BLE in">
-<p>Emits read characteristic values and/or notified characteristic values.</p>
+<p>Emits read characteristic values and/or notified characteristic values. Accepts connect/disconnect requests as well.</p>
 <h3>Outputs</h3>
 <p>
 The output object is contained in <code>msg.payload</code> property. Its structure is as follows:
@@ -20,24 +20,22 @@ You can access each <code>Buffer object</code> data in the same form as array el
 </p>
 <h3>Inputs</h3>
 <p>
-Expects a message used for triggering <code>Read</code> operation or subscribing <code>Notify</code> events.
+Expects a message used for peripheral connecting/disconnecting operation, triggering <code>Read</code> operation, or subscribing <code>Notify</code> events.
 <dl>
 <dt>For <code>Connect</code> operation:</dt>
 <dd>
 In order to connect a peripheral device, set <code>msg.topic</code> to <code>connect</code>.
-<code>msg.payload</code> is always ignored.
+<code>msg.payload</code> is always ignored. This operation doesn't emit anything from the Output port.
 </dd>
 <dt>For <code>Disonnect</code> operation:</dt>
 <dd>
 In order to disconnect a peripheral device, set <code>msg.topic</code> to <code>disconnect</code>.
-<code>msg.payload</code> is always ignored.
+<code>msg.payload</code> is always ignored. This operation doesn't emit anything from the Output port.
 </dd>
 <dt>For <code>Read</code> operation:</dt>
 <dd>
 You can set one or more characteristic uuids separated by comma (CSV) to query to <code>msg.topic</code>.
 However, leave <code>msg.topic</code> empty if you want to query all readable characteristics.
-
-<b>Note that the Read operation to the subscribing uuids cancels the subscriptions.</b>
 </dd>
 <dt>For subscribing <code>Notify</code> events:</dt>
 <dd>
@@ -61,13 +59,26 @@ The <code>period</code> property is the period for subscribing <code>Notify</cod
 
 <script type="text/x-red" data-help-name="Generic BLE out">
 <p>
-Writes characteristic values associated with given characteristic UUIDs.
+Writes characteristic values associated with given characteristic UUIDs. Accepts connect/disconnect requests as well.
 </p>
 <h3>Inputs</h3>
 <p>
+Expects a message used for peripheral connecting/disconnecting operation, or triggering <code>Write</code> operation.
+<dl>
+<dt>For <code>Connect</code> operation:</dt>
+<dd>
+In order to connect a peripheral device, set <code>msg.topic</code> to <code>connect</code>.
+<code>msg.payload</code> is always ignored.
+</dd>
+<dt>For <code>Disonnect</code> operation:</dt>
+<dd>
+In order to disconnect a peripheral device, set <code>msg.topic</code> to <code>disconnect</code>.
+<code>msg.payload</code> is always ignored.
+</dd>
+<dt>For <code>Write</code> operation:</dt>
+<dd>
 In order to write characteristic values,
 the following structure object is required in <code>msg.payload</code> property.
-</p>
 <pre>
 {
   "[writable characteristics UUID 1]": (value),
@@ -89,19 +100,9 @@ The acceptable writable <code>value</code> type is one of:
   <li><code>int</code> value</li>
 </ul>
 This node translates these values into a Buffer object.
-
-This node accepts the peripheral connecting/disconnecting command as well.
-<dt>For <code>Connect</code> operation:</dt>
-<dd>
-In order to connect a peripheral device, set <code>msg.topic</code> to <code>connect</code>.
-<code>msg.payload</code> is always ignored.
-</dd>
-<dt>For <code>Disonnect</code> operation:</dt>
-<dd>
-In order to disconnect a peripheral device, set <code>msg.topic</code> to <code>disconnect</code>.
-<code>msg.payload</code> is always ignored.
-</dd>
 </p>
+</dd>
+</dl>
 </script>
 
 <script type="text/x-red" data-help-name="Generic BLE">
