@@ -710,7 +710,7 @@ module.exports = function (RED) {
         return;
       }
       await Promise.all(
-        notifiables.map((r) => {
+        notifiables.map(async (r) => {
           r.addDataListener((data, isNotification) => {
             if (isNotification) {
               let readObj = {
