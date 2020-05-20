@@ -107,25 +107,22 @@ This node translates these values into a Buffer object.
 
 <script type="text/x-red" data-help-name="Generic BLE">
 <p>
-By default, you can register your BLE device by providing its MAC address.
-If you don't have the address, you can use <code>Scan Result</code> select box in the dialog to find your device.
+In order to register a new BLE peripheral device, you have to use <code>Scan Result</code> select box in the dialog.
+This means whenever you register a new device, you need it and make it discoverable so that this node is able to find it.
 </p>
 <p>
-In order to use the widget, enable <code>Select from scan result</code> checkbox.
-And you can see the list of BLE devices around the machine where Node-RED runs.
+Check <code>BLE Scanniing</code> in order to start BLE scanning. And you can see the list of BLE devices around the machine where Node-RED runs.
+The select box lsit values will be updated automatically when BLE scanning is running. They will be refreshed every 10 seconds.
 </p>
 <p>
 This node looks for advertised names and show them on the list.
-However, some of devices don't have the name.
-In that case, you will see <code>(Unnamed)</code> label.
+However, some of devices don't have the name (or failed to resolve it because of the underlying BLE library limitations).
+In that case, you will see a device address or a <code>(Unnamed)</code> label text.
 </p>
 <p>
-The node will try to update the device name when the device has <code>Device Name (2a00)</code> characteristic.
-This can be done when you choose a device from the list.
-</p>
-<p>
-<code>GATT Characteristics</code> just shows the info provided by the device itself.
-The info contains characteristic UUID, which will help you to compose or parse messages
-on writing/reading characteristics.
+Once you choose a device to register, click/tap <code>Apply</code> button to apply the selected device.
+<code>Local Name</code>, <code>MAC</code> and <code>UUID</code> will be populated automatically.
+<code>GATT Characteristics</code> will also be updated when services and characteristics discovery is successful.
+When you see <code>(not available)</code> message in the box, check if the device is NOT sleeping (a sleeping device fails to respond to a connect request) and click <code>Apply</code> again.
 </p>
 </script>
