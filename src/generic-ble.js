@@ -752,27 +752,7 @@ module.exports = function (RED) {
       this.genericBleNode = RED.nodes.getNode(this.genericBleNodeId);
       if (this.genericBleNode) {
         if (this.notification) {
-          this.genericBleNode.on('ble-notify', (uuid, readObj, err) => {
-            if (err) {
-              this.error(`<${uuid}> notify: (err:${err}, stack:${err.stack})`);
-              return;
-            }
-            let payload = {
-              uuid: uuid,
-              characteristics: readObj,
-            };
-            if (this.useString) {
-              try {
-                payload = JSON.stringify(payload);
-              } catch (err) {
-                this.warn(`<${uuid}> notify: (err:${err}, stack:${err.stack})`);
-                return;
-              }
-            }
-            this.send({
-              payload,
-            });
-          });
+          this.genericBleNode.on('ble-notify', this.onBleNotify.bind(this));
         }
         this.on('connected', () => {
           this.status({
@@ -861,6 +841,27 @@ module.exports = function (RED) {
         });
       }
       this.name = n.name;
+    }
+    onBleNotify(uuid, readObj, err) {
+      if (err) {
+        this.error(`<${uuid}> notify: (err:${err}, stack:${err.stack})`);
+        return;
+      }
+      let payload = {
+        uuid: uuid,
+        characteristics: readObj,
+      };
+      if (this.useString) {
+        try {
+          payload = JSON.stringify(payload);
+        } catch (err) {
+          this.warn(`<${uuid}> notify: (err:${err}, stack:${err.stack})`);
+          return;
+        }
+      }
+      this.send({
+        payload,
+      });
     }
   }
   RED.nodes.registerType('Generic BLE in', GenericBLEInNode);
