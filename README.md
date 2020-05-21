@@ -17,14 +17,14 @@ The node status modes are as follows:
 
 - `missing` the configured BLE peripheral device is missing.　When the device is discovered, the state transitions to `disconnected`. The `disconnected` device may transiton to `missing` again when RSSI is invalidated (Linux only)
 - `disconnected` when the configured BLE peripheral device is found but not conncted
-- `connecting` when the configured BLE peripheral device is being connecting
+- `connecting` when the configured BLE peripheral device is being connected
 - `connected` when the configured BLE peripheral device is connected
-- `disconnecting` when the configured BLE peripheral device is being disconnecting
+- `disconnecting` when the configured BLE peripheral device is being disconnected
 - `error` when unexpected error occurs
 
 Known issues for Linux BlueZ D-Bus API:
 
-- Unlike the oler version, **you must set the process owner's permission properly and manually**. Non-root user's Node-RED process will fail to get this node working. Read `Installation Note (Linux)` below.
+- Unlike the older version, **you must set the process owner's permission properly and manually**. Non-root user's Node-RED process will fail to get this node working. Read `Installation Note (Linux)` below.
 - It seems the local name in advertisement packet isn't transferred to `LocalName` property in org.bluez.Device1 BlueZ D-Bus API. With the HCI socket implementaion, the local name was resolved. So the local name can be resolved on macOS and Windows.
 - `Bluetooth: hci0: hardware error 0x03` error sometimes occurs (and logged in syslog). When it's observed, all devices are disconnected and cahches are gone. The node tries to power on the BLE adapter again.
 
