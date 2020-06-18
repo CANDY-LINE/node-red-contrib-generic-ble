@@ -1,6 +1,9 @@
 node-red-contrib-generic-ble
 ===
 
+[![GitHub release](https://img.shields.io/github/release/CANDY-LINE/node-red-contrib-generic-ble.svg)](https://github.com/CANDY-LINE/node-red-contrib-generic-ble/releases/latest)
+[![master Build Status](https://travis-ci.org/CANDY-LINE/node-red-contrib-generic-ble.svg?branch=master)](https://travis-ci.org/CANDY-LINE/node-red-contrib-generic-ble/)
+
 A Node-RED node set for providing access to generic BLE **peripheral** GATT characteristics.
 
 As of v4.0.0, this node is optmized for Linux with BlueZ 5 D-Bus API (HCI socket is no longer used on Linux).
