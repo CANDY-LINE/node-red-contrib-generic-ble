@@ -1,5 +1,8 @@
 # Revision History
 
+* 4.0.2
+  - Fix Module Loading Error on macOS
+
 * 4.0.1
   - Fix Module Loading Error
 

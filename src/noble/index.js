@@ -30,7 +30,7 @@ if (platform === 'linux') {
 }
 if (!bindings) {
   debug(`Loading the default resolve-bindings module in @abandonware/noble.`);
-  bindings = require('../../node_modules/@abandonware/noble/lib/resolve-bindings')();
+  bindings = require('@abandonware/noble/lib/resolve-bindings')();
 }
 
 class PeripheralRemovableNoble extends Noble {
