@@ -136,12 +136,11 @@ function onStateChangeFunc(RED) {
 function onErrorFunc(RED) {
   return (err) => {
     debug(`[GenericBLE:ERROR] ${err.message}, ${err.stack}`);
+    RED.log.error(err);
     if (!noble.initialized) {
       RED.log.error(
-        `BlueZ Permission Error. See 'Installation Note' in README at https://flows.nodered.org/node/node-red-contrib-generic-ble for addressing the issue.`
+        `The error seems to be a BlueZ Permission Error. See 'Installation Note' in README at https://flows.nodered.org/node/node-red-contrib-generic-ble for addressing the issue.`
       );
-    } else {
-      RED.log.error(err);
     }
     Object.values(configBleDevices).forEach((node) => node.emit('error'));
   };
