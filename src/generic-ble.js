@@ -135,8 +135,9 @@ function onStateChangeFunc(RED) {
 
 function onErrorFunc(RED) {
   return (err) => {
-    debug(`[GenericBLE:ERROR] ${err.message}, ${err.stack}`);
-    RED.log.error(err);
+    const message = `[GenericBLE:ERROR] ${err.message}, ${err.stack}`;
+    debug(message);
+    RED.log.error(message);
     if (!noble.initialized) {
       RED.log.error(
         `The error seems to be a BlueZ Permission Error. See 'Installation Note' in README at https://flows.nodered.org/node/node-red-contrib-generic-ble for addressing the issue.`
