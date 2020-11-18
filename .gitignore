@@ -5,3 +5,4 @@ dist
 *.tgz
 *.log
 .node-version
+.python-version

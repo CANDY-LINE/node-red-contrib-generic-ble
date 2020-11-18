@@ -160,7 +160,7 @@ gulp.task('testAssets', () => {
   .pipe(gulp.dest('./dist'));
 });
 
-gulp.task('test', gulp.series('build', 'testAssets', () => {
+gulp.task('test', gulp.series('build', 'testAssets', done => {
   process.env.NODE_ENV = 'test';
   return gulp.src('tests').pipe(jest({
     modulePaths: [
@@ -172,7 +172,9 @@ gulp.task('test', gulp.series('build', 'testAssets', () => {
     ],
     verbose: true,
     automock: false
-  }));
+  }))
+  .once('error', () => { done();process.exit(1); })
+  .once('end', () => { done();process.exit(); })
 }));
 
 gulp.task('default', gulp.series('build'));

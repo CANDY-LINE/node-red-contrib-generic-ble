@@ -22,12 +22,28 @@ You can access each <code>Buffer object</code> data in the same form as array el
 <p>
 Expects a message used for peripheral connecting/disconnecting operation, triggering <code>Read</code> operation, or subscribing <code>Notify</code> events.
 <dl>
-<dt>For <code>Connect</code> operation:</dt>
+<dt>For <code>scanStart</code> operation:</dt>
+<dd>
+In order to start BLE scanning to discover peripheral devices, set <code>msg.topic</code> to <code>scanStart</code>.
+<code>msg.payload</code> is always ignored. This operation doesn't emit anything from the Output port.
+</dd>
+<dt>For <code>scanStop</code> operation:</dt>
+<dd>
+In order to stop BLE scanning, set <code>msg.topic</code> to <code>scanStop</code>.
+<code>msg.payload</code> is always ignored. This operation doesn't emit anything from the Output port.
+</dd>
+<dt>For <code>scanRestart</code> operation:</dt>
+<dd>
+In order to restart BLE scanning, set <code>msg.topic</code> to <code>scanRestart</code>.
+This operation performs <code>ScanStop</code> then <code>ScanStart</code>.
+<code>msg.payload</code> is always ignored. This operation doesn't emit anything from the Output port.
+</dd>
+<dt>For <code>connect</code> operation:</dt>
 <dd>
 In order to connect a peripheral device, set <code>msg.topic</code> to <code>connect</code>.
 <code>msg.payload</code> is always ignored. This operation doesn't emit anything from the Output port.
 </dd>
-<dt>For <code>Disonnect</code> operation:</dt>
+<dt>For <code>disconnect</code> operation:</dt>
 <dd>
 In order to disconnect a peripheral device, set <code>msg.topic</code> to <code>disconnect</code>.
 <code>msg.payload</code> is always ignored. This operation doesn't emit anything from the Output port.

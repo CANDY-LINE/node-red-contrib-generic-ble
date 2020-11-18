@@ -135,13 +135,13 @@ function onStateChangeFunc(RED) {
 
 function onErrorFunc(RED) {
   return (err) => {
-    debug(`[GenericBLE:ERROR] ${err.message}, ${err.stack}`);
+    const message = `[GenericBLE:ERROR] ${err.message}, ${err.stack}`;
+    debug(message);
+    RED.log.error(message);
     if (!noble.initialized) {
       RED.log.error(
-        `BlueZ Permission Error. See 'Installation Note' in README at https://flows.nodered.org/node/node-red-contrib-generic-ble for addressing the issue.`
+        `The error seems to be a BlueZ Permission Error. See 'Installation Note' in README at https://flows.nodered.org/node/node-red-contrib-generic-ble for addressing the issue.`
       );
-    } else {
-      RED.log.error(err);
     }
     Object.values(configBleDevices).forEach((node) => node.emit('error'));
   };
@@ -184,6 +184,7 @@ function startBLEScanning(RED) {
   noble.addListener('error', handlers.onError);
 
   if (noble.state === 'poweredOn') {
+    RED.log.info(`[GenericBLE] Start BLE scanning`);
     noble.startScanning([], true);
     genericBleState.scanning = true;
   } else {
@@ -803,7 +804,19 @@ module.exports = function (RED) {
             // ignore
           }
           try {
-            if (msg.topic === 'connect') {
+            if (msg.topic === 'scanStart') {
+              startBLEScanning(RED);
+              return;
+            } else if (msg.topic === 'scanStop') {
+              stopBLEScanning(RED);
+              return;
+            } else if (msg.topic === 'scanRestart') {
+              stopBLEScanning(RED);
+              setTimeout(() => {
+                startBLEScanning(RED);
+              }, 1000);
+              return;
+            } else if (msg.topic === 'connect') {
               await this.genericBleNode.connectPeripheral();
             } else if (msg.topic === 'disconnect') {
               await this.genericBleNode.disconnectPeripheral();
