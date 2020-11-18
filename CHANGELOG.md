@@ -1,5 +1,9 @@
 # Revision History
 
+* 4.0.3
+  - Always show BLE error info
+  - Update dependencies
+
 * 4.0.2
   - Fix Module Loading Error on macOS
 
