@@ -183,6 +183,7 @@ function startBLEScanning(RED) {
   noble.addListener('error', handlers.onError);
 
   if (noble.state === 'poweredOn') {
+    RED.log.info(`[GenericBLE] Start BLE scanning`);
     noble.startScanning([], true);
     genericBleState.scanning = true;
   } else {
@@ -802,7 +803,19 @@ module.exports = function (RED) {
             // ignore
           }
           try {
-            if (msg.topic === 'connect') {
+            if (msg.topic === 'scanStart') {
+              startBLEScanning(RED);
+              return;
+            } else if (msg.topic === 'scanStop') {
+              stopBLEScanning(RED);
+              return;
+            } else if (msg.topic === 'scanRestart') {
+              stopBLEScanning(RED);
+              setTimeout(() => {
+                startBLEScanning(RED);
+              }, 1000);
+              return;
+            } else if (msg.topic === 'connect') {
               await this.genericBleNode.connectPeripheral();
             } else if (msg.topic === 'disconnect') {
               await this.genericBleNode.disconnectPeripheral();

@@ -11,6 +11,11 @@ The node should still work on macOS and Windows as nothing is modified for these
 
 Supported operations are as follows:
 
+- Start BLE Scanning
+- Stop BLE Scanning
+- Restart BLE Scanning (Stop then start BLE Scanning again)
+- Connect to a peripheral device
+- Disonnect from a peripheral device
 - Read
 - Write
 - Write without Response
