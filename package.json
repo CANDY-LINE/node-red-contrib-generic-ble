@@ -55,7 +55,7 @@
     "natives": "^1.1.6",
     "prettier": "^2.1.2",
     "sinon": "^2.1.0",
-    "supertest": "^1.1.0"
+    "supertest": "^6.3.2"
   },
   "dependencies": {
     "@abandonware/noble": "^1.9.2-10",
