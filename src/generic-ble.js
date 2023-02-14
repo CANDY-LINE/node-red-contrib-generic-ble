@@ -828,7 +828,7 @@ module.exports = function (RED) {
               debugIn(`<${this.genericBleNode.uuid}> read: OK`);
               if (!readObj) {
                 this.warn(
-                  `<${this.genericBleNode.uuid}> tpoic[${msg.topic}]: (no data)`
+                  `<${this.genericBleNode.uuid}> topic[${msg.topic}]: (no data)`
                 );
                 return;
               }
@@ -851,10 +851,10 @@ module.exports = function (RED) {
             }
           } catch (err) {
             debugIn(
-              `<${this.genericBleNode.uuid}> tpoic[${msg.topic}]: (err:${err}, stack:${err.stack})`
+              `<${this.genericBleNode.uuid}> topic[${msg.topic}]: (err:${err}, stack:${err.stack})`
             );
             this.error(
-              `<${this.genericBleNode.uuid}> tpoic[${msg.topic}]: (err:${err}, stack:${err.stack})`
+              `<${this.genericBleNode.uuid}> topic[${msg.topic}]: (err:${err}, stack:${err.stack})`
             );
           }
         });
